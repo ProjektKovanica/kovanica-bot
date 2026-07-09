@@ -12,13 +12,11 @@ export class ReminderService {
     }
     
     start() {
-        // Svaki dan u 9:00
         cron.schedule('0 9 * * *', async () => {
             console.log('⏰ Šaljem daily reminder...');
             await this.sendDailyReminder();
         });
         
-        // Svaki dan u 18:00
         cron.schedule('0 18 * * *', async () => {
             console.log('⏰ Šaljem afternoon reminder...');
             await this.sendAfternoonReminder();

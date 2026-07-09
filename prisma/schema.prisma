@@ -27,6 +27,12 @@ model User {
   
   nfts          NFT[]
   withdrawals   Withdrawal[]
+  quests        Quest[]
+  
+  achievements  Achievement[]
+  spins         Spin?
+  boosts        Boost[]
+  vips          VIP[]
 
   @@map("users")
 }
@@ -48,7 +54,6 @@ model NFT {
   maxSupply       Int      @default(100) @map("max_supply")
   totalMinted     Int      @default(0) @map("total_minted")
   
-  // STAKING
   staked          Boolean  @default(false)
   stakeStartDate  DateTime? @map("stake_start_date")
   stakeEndDate    DateTime? @map("stake_end_date")
@@ -79,4 +84,67 @@ model PoolTracking {
   lastUpdated    DateTime @default(now()) @map("last_updated")
 
   @@map("pool_tracking")
+}
+
+model Quest {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  type        String
+  target      Int
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  reward      Float    @default(0)
+  date        DateTime @default(now()) @map("quest_date")
+  completedAt DateTime? @map("completed_at")
+
+  @@unique([userId, type, date])
+  @@map("quests")
+}
+
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  type        String
+  name        String
+  description String
+  reward      Float
+  unlockedAt  DateTime @default(now()) @map("unlocked_at")
+
+  @@unique([userId, type])
+  @@map("achievements")
+}
+
+model Spin {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  lastSpin    DateTime @default(now()) @map("last_spin")
+  reward      Float?
+  rewardType  String?
+
+  @@map("spins")
+}
+
+model Boost {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  type        String
+  expiresAt   DateTime @map("expires_at")
+  active      Boolean  @default(true)
+
+  @@map("boosts")
+}
+
+model VIP {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  level       String   @default("gold")
+  expiresAt   DateTime @map("expires_at")
+  active      Boolean  @default(true)
+
+  @@map("vips")
 }

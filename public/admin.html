@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kovanica Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0a0a1a; color: #e6f1ff; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #ffd700; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 16px; border: 1px solid rgba(255,255,255,0.06); }
+        .card .label { font-size: 12px; color: #8892b0; text-transform: uppercase; }
+        .card .value { font-size: 28px; font-weight: 700; color: #ffd700; }
+        .card .sub { font-size: 14px; color: #4ade80; }
+        table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.02); border-radius: 12px; overflow: hidden; }
+        th { background: rgba(255,255,255,0.06); padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #8892b0; }
+        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; }
+        .status-pending { color: #fbbf24; }
+        .status-processed { color: #4ade80; }
+        .status-failed { color: #f87171; }
+        .refresh-btn { background: #7c3aed; border: none; color: white; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 16px; }
+        .refresh-btn:hover { opacity: 0.9; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Kovanica Admin Dashboard</h1>
+        <button class="refresh-btn" onclick="loadData()">🔄 Osvježi</button>
+
+        <div class="grid" id="statsGrid">
+            <div class="card">
+                <div class="label">👥 Korisnika</div>
+                <div class="value" id="totalUsers">0</div>
+            </div>
+            <div class="card">
+                <div class="label">✅ Aktivni danas</div>
+                <div class="value" id="activeToday">0</div>
+            </div>
+            <div class="card">
+                <div class="label">👆 Ukupno klikova</div>
+                <div class="value" id="totalClicks">0</div>
+            </div>
+            <div class="card">
+                <div class="label">💸 Pending isplata</div>
+                <div class="value" id="pendingWithdrawals">0</div>
+            </div>
+            <div class="card">
+                <div class="label">🎨 Iskopano NFT</div>
+                <div class="value" id="totalNFTs">0</div>
+            </div>
+            <div class="card">
+                <div class="label">💰 Ukupno KVNC</div>
+                <div class="value" id="totalBalance">0</div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div>
+                <h3 style="margin-bottom:12px;">📋 Zadnje isplate</h3>
+                <table>
+                    <thead><tr><th>ID</th><th>Korisnik</th><th>Iznos</th><th>Status</th><th>Datum</th></tr></thead>
+                    <tbody id="withdrawalsTable"></tbody>
+                </table>
+            </div>
+            <div>
+                <h3 style="margin-bottom:12px;">🏆 Top rudari</h3>
+                <table>
+                    <thead><tr><th>#</th><th>ID</th><th>Klikovi</th></tr></thead>
+                    <tbody id="leaderboardTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                // Statistike
+                const statsRes = await fetch('/api/admin/stats');
+                const stats = await statsRes.json();
+                document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                document.getElementById('activeToday').textContent = stats.activeToday || 0;
+                document.getElementById('totalClicks').textContent = (stats.totalClicks || 0).toLocaleString();
+                document.getElementById('pendingWithdrawals').textContent = stats.pendingWithdrawals || 0;
+                document.getElementById('totalNFTs').textContent = stats.totalNFTs || 0;
+                document.getElementById('totalBalance').textContent = (stats.totalBalance || 0).toFixed(2);
+
+                // Isplate
+                const wRes = await fetch('/api/admin/withdrawals');
+                const wData = await wRes.json();
+                const wBody = document.getElementById('withdrawalsTable');
+                wBody.innerHTML = wData.map(w => `
+                    <tr>
+                        <td>#${w.id}</td>
+                        <td>${w.user?.telegramId || 'Nepoznato'}</td>
+                        <td>${w.amount}</td>
+                        <td class="status-${w.status}">${w.status}</td>
+                        <td>${new Date(w.requestedAt).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+
+                // Leaderboard
+                const lbRes = await fetch('/api/admin/leaderboard');
+                const lbData = await lbRes.json();
+                const lbBody = document.getElementById('leaderboardTable');
+                lbBody.innerHTML = lbData.map((u, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${u.telegramId}</td>
+                        <td>${u.totalClicks}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Greška:', error);
+            }
+        }
+
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>

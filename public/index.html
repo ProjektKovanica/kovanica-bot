@@ -9,50 +9,259 @@
 </head>
 <body>
     <div id="app">
+        <!-- HEADER -->
         <div class="header">
-            <div class="rank-badge" id="rankBadge">⛏️ Brončani rudar</div>
+            <div class="header-top">
+                <div class="lang-selector">
+                    <button class="lang-btn active" data-lang="hr">🇭🇷 HR</button>
+                    <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+                </div>
+                <div class="rank-badge" id="rankBadge">⛏️ Brončani rudar</div>
+                <div class="vip-badge" id="vipBadge" style="display:none;">👑 VIP</div>
+            </div>
+
+            <!-- TON CONNECT -->
+            <div class="ton-connect" id="tonConnect">
+                <button class="ton-connect-btn" id="tonConnectBtn">🔗 Poveži TON wallet</button>
+                <span class="ton-address" id="tonAddress" style="display:none;"></span>
+            </div>
+
+            <!-- LIVE PRICE TICKER -->
+            <div class="price-ticker" id="priceTicker">
+                <span class="ticker-label">💰 KVNC</span>
+                <span class="ticker-price" id="tickerPrice">0.0000 USDT</span>
+                <span class="ticker-change" id="tickerChange">+0.00%</span>
+            </div>
+
             <div class="balance-container">
-                <span class="label">💰 Balans</span>
-                <span class="balance" id="balance">0.0000</span>
-                <span class="currency">KVNC</span>
+                <span class="label" data-i18n="balance">💰 Balans</span>
+                <div class="balance-row">
+                    <span class="balance" id="balance">0.0000</span>
+                    <span class="currency">KVNC</span>
+                </div>
+                <div class="balance-change" id="balanceChange"></div>
             </div>
         </div>
 
+        <!-- DASHBOARD STATS -->
+        <div class="dashboard-section" id="dashboardSection">
+            <h3>📊 Statistike</h3>
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <span class="dash-label">👥 Korisnika</span>
+                    <span class="dash-value" id="dashUsers">0</span>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-label">✅ Aktivni danas</span>
+                    <span class="dash-value" id="dashActive">0</span>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-label">👆 Ukupno klikova</span>
+                    <span class="dash-value" id="dashClicks">0</span>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-label">💰 Ukupno KVNC</span>
+                    <span class="dash-value" id="dashBalance">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="progress-container">
+            <div class="progress-label">
+                <span data-i18n="progress_to_rank">📈 Napredak do sljedećeg ranga</span>
+                <span id="progressText">0 / 100</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="rankProgress" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- CTA GUMB -->
+        <div class="cta-section">
+            <button class="cta-btn" id="ctaBtn">
+                <span class="cta-icon">⛏️</span>
+                <span class="cta-text" data-i18n="start_mining">ZAPOČNI RUDARENJE</span>
+                <span class="cta-sub" data-i18n="per_click">+1 KVNC po kliku</span>
+            </button>
+        </div>
+
+        <!-- STATISTIKE -->
         <div class="stats-grid">
             <div class="stat-item">
-                <span class="stat-label">👆 Klikovi danas</span>
-                <span class="stat-value" id="dailyClicks">0 / 500</span>
+                <span class="stat-label" data-i18n="daily_clicks">👆 Danas</span>
+                <span class="stat-value" id="dailyClicks">0 / 10000</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">⭐️ Daily bonus</span>
+                <span class="stat-label" data-i18n="bonus">⭐️ Bonus</span>
                 <span class="stat-value" id="bonusStatus">✅ Aktivan</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">👑 Ukupno klikova</span>
+                <span class="stat-label" data-i18n="total_clicks">👑 Ukupno</span>
                 <span class="stat-value" id="totalClicks">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label" data-i18n="boost">🔥 Boost</span>
+                <span class="stat-value" id="boostStatus">❌ Neaktivan</span>
             </div>
         </div>
 
+        <!-- MINE AREA -->
         <div class="mine-area">
-            <div class="pickaxe" id="pickaxe">⛏️</div>
+            <div class="mine-glow"></div>
+            <div class="pickaxe-wrapper">
+                <div class="pickaxe" id="pickaxe">⛏️</div>
+                <div class="particles" id="particles"></div>
+            </div>
             <button class="mine-btn" id="mineBtn">
-                <span class="btn-text">RUDARI!</span>
-                <span class="btn-sub">+0.1 KVNC</span>
+                <span class="btn-text" data-i18n="mine_btn">RUDARI!</span>
+                <span class="btn-sub" id="rewardSub">+1 KVNC</span>
             </button>
-            <div class="click-counter" id="clickCounter">+0.1</div>
+            <div class="click-counter" id="clickCounter">+1</div>
         </div>
 
+        <!-- AKCIJE -->
         <div class="actions">
             <button class="action-btn" id="refreshBtn">🔄 Osvježi</button>
+            <button class="action-btn" id="spinBtn">🎡 Spin</button>
+            <button class="action-btn" id="boostBtn">⚡ Boost</button>
             <button class="action-btn" id="withdrawBtn">💸 Isplata</button>
+            <button class="action-btn" id="liquidityBtn">💧 Likvidnost</button>
         </div>
 
+        <!-- QUICK STATS -->
+        <div class="quick-stats">
+            <div class="quick-stat">
+                <span class="qs-label" data-i18n="referrals">👥 Pozvani</span>
+                <span class="qs-value" id="referralCount">0</span>
+            </div>
+            <div class="quick-stat">
+                <span class="qs-label" data-i18n="rank">🏆 Rang</span>
+                <span class="qs-value" id="rankText">Brončani</span>
+            </div>
+            <div class="quick-stat">
+                <span class="qs-label" data-i18n="nfts">🎨 NFT</span>
+                <span class="qs-value" id="nftCount">0</span>
+            </div>
+        </div>
+
+        <!-- ACHIEVEMENTI -->
+        <div class="achievement-section" id="achievementSection">
+            <h3><span data-i18n="achievements">🏅 Postignuća</span> <span id="achCount" style="color:#8892b0;font-weight:400;font-size:11px;">0/8</span></h3>
+            <div id="achievementList"></div>
+        </div>
+
+        <!-- QUESTS -->
+        <div class="quests-section" id="questsSection">
+            <h3 data-i18n="daily_quests">📋 Dnevni Zadaci</h3>
+            <div id="questsList"></div>
+        </div>
+
+        <!-- LEADERBOARD -->
+        <div class="leaderboard-section" id="leaderboardSection">
+            <h3 data-i18n="leaderboard">🏆 Top 10 Rudara</h3>
+            <div id="leaderboardList"></div>
+        </div>
+
+        <!-- GAMES -->
+        <div class="games-section" id="gamesSection">
+            <h3 data-i18n="games">🎮 Mini Igre</h3>
+            <div class="games-grid">
+                <button class="game-btn" id="gameRPS">
+                    <span class="game-icon">✊</span>
+                    <span data-i18n="game_rps">Kam-Ško-Pap</span>
+                </button>
+                <button class="game-btn" id="gameGuess">
+                    <span class="game-icon">🔢</span>
+                    <span data-i18n="game_guess">Pogodi broj</span>
+                </button>
+                <button class="game-btn" id="gameSlot">
+                    <span class="game-icon">🎰</span>
+                    <span data-i18n="game_slot">Slot</span>
+                </button>
+                <button class="game-btn" id="gameTrivia">
+                    <span class="game-icon">🧠</span>
+                    <span data-i18n="game_trivia">Trivia</span>
+                </button>
+                <button class="game-btn" id="gameCoinFlip">
+                    <span class="game-icon">🪙</span>
+                    <span data-i18n="game_coinflip">Coin Flip</span>
+                </button>
+                <button class="game-btn" id="gameMemory">
+                    <span class="game-icon">🧠</span>
+                    <span data-i18n="game_memory">Memory</span>
+                </button>
+                <!-- NOVE IGRE -->
+                <button class="game-btn" id="gameBlackjack">
+                    <span class="game-icon">🃏</span>
+                    Blackjack
+                </button>
+                <button class="game-btn" id="gameDice">
+                    <span class="game-icon">🎲</span>
+                    Dice
+                </button>
+                <button class="game-btn" id="gameWheel">
+                    <span class="game-icon">🎡</span>
+                    Wheel
+                </button>
+            </div>
+            <div id="gameResult"></div>
+        </div>
+
+        <!-- PRICE CHART -->
+        <div class="chart-section" id="chartSection">
+            <h3 data-i18n="price_chart">📈 Grafikon cijene</h3>
+            <canvas id="priceChart" height="120"></canvas>
+            <div class="chart-info" id="chartInfo">
+                <span>💰 <span id="chartPrice">0.0000</span> USDT</span>
+                <span>📊 <span data-i18n="volume">Volumen</span>: <span id="chartVolume">0</span></span>
+            </div>
+        </div>
+
+        <!-- SWAP SECTION -->
+        <div class="swap-section" id="swapSection">
+            <h3 data-i18n="quick_swap">🔄 Brzi Swap</h3>
+            <div class="swap-container">
+                <div class="swap-row">
+                    <span class="swap-label" data-i18n="swap_from">Od</span>
+                    <span class="swap-value" id="swapFrom">KVNC</span>
+                </div>
+                <div class="swap-arrow">⬇️</div>
+                <div class="swap-row">
+                    <span class="swap-label" data-i18n="swap_to">Za</span>
+                    <div class="swap-buttons">
+                        <button class="swap-btn active" data-to="GRAM">🪙 GRAM</button>
+                        <button class="swap-btn" data-to="USDT">💵 USDT</button>
+                    </div>
+                </div>
+                <div class="swap-amount">
+                    <input type="number" id="swapAmount" placeholder="Unesi iznos..." />
+                    <button class="swap-execute" id="swapExecute" data-i18n="swap_execute">Swap</button>
+                </div>
+                <div id="swapResult"></div>
+            </div>
+        </div>
+
+        <!-- WALLET SECTION -->
+        <div class="wallet-section" id="walletSection">
+            <h3 data-i18n="wallet">🔗 Wallet</h3>
+            <div class="wallet-container">
+                <input type="text" id="walletInput" placeholder="EQD... (TON adresa)" />
+                <button class="wallet-btn" id="walletSaveBtn" data-i18n="save">💾 Spremi</button>
+            </div>
+            <div id="walletStatus" style="margin-top:6px;font-size:12px;color:#8892b0;"></div>
+        </div>
+
+        <!-- FOOTER -->
         <div class="footer">
-            <span>👥 Pozvani: <span id="referralCount">0</span></span>
-            <span>🏆 Rang: <span id="rankText">Brončani</span></span>
+            <span data-i18n="footer_version">v2.0</span>
+            <span data-i18n="footer_powered">💎 Kovanica</span>
+            <span>⚡ ${new Date().getFullYear()}</span>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

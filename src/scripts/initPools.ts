@@ -27,4 +27,7 @@ async function initPools() {
     console.log('✅ Svi pool-ovi su inicijalizirani!');
 }
 
-initPools().catch(console.error);
+initPools()
+    .then(() => console.log('✅ Inicijalizacija završena!'))
+    .catch(console.error)
+    .finally(() => prisma.$disconnect());

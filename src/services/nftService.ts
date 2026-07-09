@@ -80,7 +80,7 @@ export class NFTService {
             where: { id: nftId, userId: user.id }
         });
         if (!nft) return null;
-        if (nft.staked) return null; // Ne može se opremiti stake-an NFT
+        if (nft.staked) return null;
 
         await prisma.nFT.updateMany({
             where: { userId: user.id },
@@ -91,6 +91,31 @@ export class NFTService {
             where: { id: nftId },
             data: { equipped: true }
         });
+    }
+
+    static async unequipNFT(telegramId: string, nftId?: number) {
+        const user = await prisma.user.findUnique({
+            where: { telegramId },
+            include: { nfts: true }
+        });
+        if (!user) return null;
+
+        let nft;
+        if (nftId) {
+            nft = user.nfts.find(n => n.id === nftId);
+            if (!nft) return null;
+            if (!nft.equipped) return null;
+        } else {
+            nft = user.nfts.find(n => n.equipped);
+            if (!nft) return null;
+        }
+
+        await prisma.nFT.update({
+            where: { id: nft.id },
+            data: { equipped: false }
+        });
+
+        return nft;
     }
 
     static async getEquippedNFT(telegramId: string) {
