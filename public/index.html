@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kovanica Rudnik</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="rank-badge" id="rankBadge">⛏️ Brončani rudar</div>
+            <div class="balance-container">
+                <span class="label">💰 Balans</span>
+                <span class="balance" id="balance">0.0000</span>
+                <span class="currency">KVNC</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">👆 Klikovi danas</span>
+                <span class="stat-value" id="dailyClicks">0 / 500</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">⭐️ Daily bonus</span>
+                <span class="stat-value" id="bonusStatus">✅ Aktivan</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">👑 Ukupno klikova</span>
+                <span class="stat-value" id="totalClicks">0</span>
+            </div>
+        </div>
+
+        <div class="mine-area">
+            <div class="pickaxe" id="pickaxe">⛏️</div>
+            <button class="mine-btn" id="mineBtn">
+                <span class="btn-text">RUDARI!</span>
+                <span class="btn-sub">+0.1 KVNC</span>
+            </button>
+            <div class="click-counter" id="clickCounter">+0.1</div>
+        </div>
+
+        <div class="actions">
+            <button class="action-btn" id="refreshBtn">🔄 Osvježi</button>
+            <button class="action-btn" id="withdrawBtn">💸 Isplata</button>
+        </div>
+
+        <div class="footer">
+            <span>👥 Pozvani: <span id="referralCount">0</span></span>
+            <span>🏆 Rang: <span id="rankText">Brončani</span></span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "kovanica-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.0",
+    "@types/node-cron": "^3.0.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@ton/blueprint": "^0.45.0",
+    "@ton/crypto": "^3.3.0",
+    "@ton/ton": "^16.3.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "grammy": "^1.44.0",
+    "node-cron": "^4.6.0",
+    "prisma": "^5.22.0"
+  }
+}

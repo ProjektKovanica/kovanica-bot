@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  telegramId    String   @unique @map("telegram_id")
+  tonWallet     String?  @map("ton_wallet")
+  clickBalance  Float    @default(0) @map("click_balance")
+  totalClicks   Int      @default(0) @map("total_clicks")
+  dailyClicks   Int      @default(0) @map("daily_clicks")
+  lastClickDate DateTime @default(now()) @map("last_click_date")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  referredBy    Int?     @map("referred_by")
+  referralCount Int      @default(0) @map("referral_count")
+  referredByUser User?   @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals     User[]   @relation("UserReferrals")
+  
+  lastBonusDate DateTime? @map("last_bonus_date")
+  
+  nfts          NFT[]
+  withdrawals   Withdrawal[]
+
+  @@map("users")
+}
+
+model NFT {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  user            User     @relation(fields: [userId], references: [id])
+  tokenId         Int      @map("token_id")
+  contractAddress String   @map("contract_address")
+  rarity          String
+  name            String
+  image           String
+  bonusMultiplier Float    @default(1) @map("bonus_multiplier")
+  mintReward      Float    @default(0) @map("mint_reward")
+  requiredClicks  Int      @default(0) @map("required_clicks")
+  mintedAt        DateTime @default(now()) @map("minted_at")
+  equipped        Boolean  @default(false)
+  maxSupply       Int      @default(100) @map("max_supply")
+  totalMinted     Int      @default(0) @map("total_minted")
+  
+  // STAKING
+  staked          Boolean  @default(false)
+  stakeStartDate  DateTime? @map("stake_start_date")
+  stakeEndDate    DateTime? @map("stake_end_date")
+  stakingReward   Float    @default(0.1) @map("staking_reward")
+
+  @@map("nfts")
+}
+
+model Withdrawal {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Float
+  status      String   @default("pending")
+  tonAddress  String   @map("ton_address")
+  requestedAt DateTime @default(now()) @map("requested_at")
+  processedAt DateTime? @map("processed_at")
+
+  @@map("withdrawals")
+}
+
+model PoolTracking {
+  id             Int      @id @default(autoincrement())
+  poolName       String   @unique @map("pool_name")
+  totalAllocated Float    @map("total_allocated")
+  spent          Float    @default(0)
+  remaining      Float    @default(0)
+  lastUpdated    DateTime @default(now()) @map("last_updated")
+
+  @@map("pool_tracking")
+}

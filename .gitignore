@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+dist/
+
+# Environment variables (OSJETLJIVO!)
+.env
+.env.local
+.env.production
+
+# PM2 logs
+logs/
+*.log
+pm2-*.log
+
+# Prisma
+prisma/*.db
+prisma/*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
