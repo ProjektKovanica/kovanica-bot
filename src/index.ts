@@ -4,6 +4,7 @@ import * as dotenv from "dotenv";
 import { createServer } from "http";
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 import { WebSocketService } from "./services/websocketService.js";
@@ -31,7 +32,7 @@ const bot = new Bot(process.env.BOT_TOKEN!);
 // === KONSTANTE ===
 const INITIAL_REWARD = 1.0;
 const DAILY_LIMIT = 10000;
-const MIN_WITHDRAWAL = 100000;
+const MIN_WITHDRAWAL = 1000;
 const REFERRAL_BONUS_INVITER = 10;
 const REFERRAL_BONUS_NEW = 5;
 const DAILY_BONUS_MULTIPLIER = 2;
@@ -95,9 +96,7 @@ async function initBot() {
         let referrerId: number | null = null;
         if (payload && payload.length > 1 && payload[1].startsWith("ref_")) {
             const refTelegramId = payload[1].replace("ref_", "");
-            const referrer = await prisma.user.findUnique({
-                where: { telegramId: refTelegramId },
-            });
+            const referrer = await prisma.user.findUnique({ where: { telegramId: refTelegramId } });
             if (referrer && referrer.telegramId !== telegramId) {
                 referrerId = referrer.id;
             }
@@ -106,62 +105,171 @@ async function initBot() {
         const user = await prisma.user.upsert({
             where: { telegramId },
             update: {},
-            create: {
-                telegramId,
-                referredBy: referrerId || undefined,
-            },
+            create: { telegramId, referredBy: referrerId || undefined },
         });
 
         if (referrerId && user.referredBy === referrerId) {
             await prisma.user.update({
                 where: { id: referrerId },
-                data: {
-                    clickBalance: { increment: REFERRAL_BONUS_INVITER },
-                    referralCount: { increment: 1 },
-                },
+                data: { clickBalance: { increment: REFERRAL_BONUS_INVITER }, referralCount: { increment: 1 } },
             });
             await prisma.user.update({
                 where: { id: user.id },
                 data: { clickBalance: { increment: REFERRAL_BONUS_NEW } },
             });
-            
-            await ctx.reply(
-                `🎉 Dobrodošao! Dobio si ${REFERRAL_BONUS_NEW} KVNC bonus!\n` +
-                `Tvoj pozivatelj je dobio ${REFERRAL_BONUS_INVITER} KVNC bonus.`
-            );
+            await ctx.reply(`🎉 Dobrodošao! Dobio si ${REFERRAL_BONUS_NEW} KVNC bonus!\nYour referrer received ${REFERRAL_BONUS_INVITER} KVNC bonus.`);
         }
 
         const rank = getRank(user.totalClicks);
+        const bonusAvailable = !user.lastBonusDate || !isToday(user.lastBonusDate);
+
         await ctx.reply(
-            `🪙 Kovanica (KVNC) Tap Miner\n\n` +
-            `👑 Rang: ${rank}\n` +
-            `💰 Balans: ${user.clickBalance} KVNC\n` +
-            `👆 Klikni za rudarenje! (Limit: ${DAILY_LIMIT} klikova/dan)\n` +
-            `⭐️ Nagrada po kliku: ${INITIAL_REWARD} KVNC\n` +
-            `🔥 Prvi klik danas: ${INITIAL_REWARD * DAILY_BONUS_MULTIPLIER} KVNC (2x)\n\n` +
-            `📊 /status - Tvoj profil\n` +
-            `🏆 /leaderboard - Top rudari\n` +
-            `👥 /referral - Pozovi prijatelje\n` +
-            `💳 /wallet - Spremi GRAM adresu\n` +
-            `💸 /withdraw - Zatraži isplatu (min ${MIN_WITHDRAWAL} KVNC)\n` +
-            `🎨 /nfts - Pregled NFT-ova\n` +
-            `🔒 /stake - Stake-aj NFT\n` +
-            `🔓 /unstake - Prekini staking\n` +
-            `📊 /stakeinfo - Pregled stake-anih NFT-ova\n` +
-            `🔓 /unequip - Skini opremljeni NFT\n` +
-            `💧 /liquidity - DEX Pool-ovi (USDT/GRAM)\n` +
-            `🎮 /games - Mini igre\n` +
-            `💰 /price - Cijena KVNC\n` +
-            `💧 /pools - DEX Pool-ovi\n` +
-            `🔄 /swap - Swap link\n` +
-            `🚀 /mine - Otvori rudnik (Mini App)`,
+            `🪙 Kovanica (KVNC) Tap Miner\n` +
+            `Welcome to the Kovanica mining ecosystem!\n\n` +
+            `👑 Rang / Rank: ${rank}\n` +
+            `💰 Balans / Balance: ${user.clickBalance.toFixed(2)} KVNC\n` +
+            `⭐ Nagrada / Reward: ${INITIAL_REWARD} KVNC/klik\n` +
+            `${bonusAvailable ? "🔥 Daily bonus dostupan! / Available! (2x)" : "✅ Daily bonus iskorišten / used"}`,
             {
                 reply_markup: {
                     inline_keyboard: [
-                        [{ text: "🔨 Klikni za rudarenje", callback_data: "tap" }]
-                    ]
-                }
+                        [{ text: "🚀 Otvori rudnik / Open Mine", web_app: { url: process.env.MINI_APP_URL || "https://kovanica.online" } }],
+                        [
+                            { text: "📊 Status profila", callback_data: "menu_status" },
+                            { text: "🏆 Ljestvica / Top", callback_data: "menu_leaderboard" },
+                        ],
+                        [
+                            { text: "🎨 Moji NFT-ovi", callback_data: "menu_nfts" },
+                            { text: "👥 Referral", callback_data: "menu_referral" },
+                        ],
+                        [
+                            { text: "💰 Cijena KVNC", callback_data: "menu_price" },
+                            { text: "🔄 Swap", callback_data: "menu_swap" },
+                        ],
+                        [
+                            { text: "💸 Isplata / Withdraw", callback_data: "menu_withdraw" },
+                            { text: "💳 Wallet", callback_data: "menu_wallet" },
+                        ],
+                        [{ text: "🎮 Mini igre / Games", callback_data: "menu_games" }],
+                    ],
+                },
             }
+        );
+    });
+
+    bot.callbackQuery("menu_status", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        if (!ctx.from) return;
+        const telegramId = String(ctx.from.id);
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return ctx.reply("Klikni /start prvo!");
+        const rank = getRank(user.totalClicks);
+        const equippedNFT = await NFTService.getEquippedNFT(telegramId);
+        const achievements = await prisma.achievement.count({ where: { userId: user.id } });
+        const bonusText = equippedNFT ? `\n⭐ NFT bonus: ${equippedNFT.bonusMultiplier}x (${equippedNFT.name})` : "";
+        await ctx.reply(
+            `📊 Tvoj rudarski profil:\n\n` +
+            `👑 Rang: ${rank}\n` +
+            `💰 Balans: ${user.clickBalance.toFixed(2)} KVNC\n` +
+            `👆 Ukupno klikova: ${user.totalClicks}\n` +
+            `📅 Današnjih klikova: ${user.dailyClicks}/${DAILY_LIMIT}\n` +
+            `📊 Nagrada po kliku: ${INITIAL_REWARD} KVNC${bonusText}\n` +
+            `👥 Pozvanih: ${user.referralCount}\n` +
+            `🏅 Postignuća: ${achievements}\n` +
+            `⭐️ Daily bonus: ${user.lastBonusDate && isToday(user.lastBonusDate) ? "✅ Iskorišten danas" : "✅ Dostupan (2x)"}\n` +
+            `📅 Zadnji klik: ${user.lastClickDate.toLocaleString()}`
+        );
+    });
+
+    bot.callbackQuery("menu_leaderboard", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        const topUsers = await prisma.user.findMany({ orderBy: { totalClicks: "desc" }, take: 10 });
+        if (topUsers.length === 0) return ctx.reply("⛏️ Još nema rudara!");
+        let message = "🏆 TOP 10 RUDARA 🏆\n\n";
+        topUsers.forEach((u, i) => {
+            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+            message += `${medal} ${u.telegramId} — ${u.totalClicks} klikova (${getRank(u.totalClicks)})\n`;
+        });
+        await ctx.reply(message);
+    });
+
+    bot.callbackQuery("menu_nfts", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        await ctx.reply("Koristite /nfts za pregled NFT-ova.");
+    });
+
+    bot.callbackQuery("menu_referral", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        if (!ctx.from) return;
+        const telegramId = String(ctx.from.id);
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return ctx.reply("Klikni /start prvo!");
+        const link = `https://t.me/${ctx.me.username}?start=ref_${telegramId}`;
+        await ctx.reply(`👥 Tvoj referral link:\n${link}\n\n🎁 Za svakog novog korisnika dobit ćeš ${REFERRAL_BONUS_INVITER} KVNC!\n👤 Pozvao/la si: ${user.referralCount} korisnika`);
+    });
+
+    bot.callbackQuery("menu_price", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        try {
+            const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
+            await ctx.reply(
+                `💰 LIVE CIJENA KVNC\n\n` +
+                `💵 USDT: ${price.usdt.toFixed(6)}\n` +
+                `🪙 GRAM: ${price.gram.toFixed(6)}\n` +
+                `📈 24h: ${price.change24h > 0 ? "+" : ""}${price.change24h.toFixed(2)}%\n` +
+                `💧 Likvidnost: $${price.liquidity.toFixed(2)}\n\n` +
+                `📊 Izvor: STON.fi`
+            );
+        } catch (e) {
+            await ctx.reply("❌ Nije moguće dohvatiti cijenu.");
+        }
+    });
+
+    bot.callbackQuery("menu_swap", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        await ctx.reply(`🔄 Swap KVNC\n\n/swap GRAM 100 — swap 100 KVNC za GRAM\n/swap USDT 100 — swap 100 KVNC za USDT`);
+    });
+
+    bot.callbackQuery("menu_withdraw", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        if (!ctx.from) return;
+        const telegramId = String(ctx.from.id);
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return ctx.reply("Klikni /start prvo!");
+        if (!user.tonWallet) return ctx.reply(`⚠️ Prvo spremi wallet adresu:\n/wallet EQ...`);
+        if (user.clickBalance < MIN_WITHDRAWAL) {
+            return ctx.reply(`⚠️ Minimalni iznos: ${MIN_WITHDRAWAL} KVNC\n💰 Tvoj balans: ${user.clickBalance.toFixed(2)} KVNC\n📊 Nedostaje: ${(MIN_WITHDRAWAL - user.clickBalance).toFixed(2)} KVNC`);
+        }
+        await ctx.reply(`Koristi /withdraw za potvrdu isplate.`);
+    });
+
+    bot.callbackQuery("menu_wallet", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        if (!ctx.from) return;
+        const telegramId = String(ctx.from.id);
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return ctx.reply("Klikni /start prvo!");
+        if (user.tonWallet) {
+            await ctx.reply(`💳 Trenutni wallet:\n${user.tonWallet}\n\nZa promjenu: /wallet NOVA_ADRESA`);
+        } else {
+            await ctx.reply(`💳 Nemaš spremljenog walleta.\n\nDodaj: /wallet EQ...`);
+        }
+    });
+
+    bot.callbackQuery("menu_games", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        await ctx.reply(
+            `🎮 Mini igre / Games\n\n` +
+            `✂️ /rps kamen — Kamen-škare-papir\n` +
+            `🔢 /guess BROJ — Pogodi broj (1-10)\n` +
+            `🎰 /slot — Slot machine\n` +
+            `❓ /trivia — Kviz\n` +
+            `🪙 /coinflip IZNOS — Coin flip\n` +
+            `🃏 /blackjack IZNOS — Blackjack\n` +
+            `🎲 /dice IZNOS BROJ — Kocka\n` +
+            `🎡 /wheel — Kotač sreće\n` +
+            `🧠 /memory — Memorijska igra\n` +
+            `🎡 /spin — Dnevni spin`
         );
     });
 
@@ -1372,6 +1480,49 @@ async function initBot() {
     });
 
     // === API ENDPOINTI ===
+
+    // === RATE LIMITING ===
+    const tapLimiter = rateLimit({
+        windowMs: 60 * 1000,
+        max: 60,
+        message: { error: "Previše zahtjeva / Too many requests" },
+        standardHeaders: true,
+        legacyHeaders: false,
+    });
+
+    const apiLimiter = rateLimit({
+        windowMs: 60 * 1000,
+        max: 100,
+        message: { error: "Previše zahtjeva / Too many requests" },
+    });
+
+    app.use("/api/tap", tapLimiter);
+    app.use("/api/", apiLimiter);
+
+    // === WEBHOOK HANDLER ===
+    app.post("/webhook", express.json(), async (req, res) => {
+        try {
+            await bot.handleUpdate(req.body);
+            res.sendStatus(200);
+        } catch (err) {
+            console.error("Webhook error:", err);
+            res.sendStatus(500);
+        }
+    });
+
+
+    // === RATE LIMITING ===
+    // === WEBHOOK HANDLER ===
+    app.post("/webhook", express.json(), async (req, res) => {
+        try {
+            await bot.handleUpdate(req.body);
+            res.sendStatus(200);
+        } catch (err) {
+            console.error("Webhook error:", err);
+            res.sendStatus(500);
+        }
+    });
+
     app.post('/api/me', async (req, res) => {
         try {
             const { initData, rawUser } = req.body;
@@ -1893,11 +2044,17 @@ async function initBot() {
     // ============================================
     // START BOT (TEK NAKON SERVERA!)
     // ============================================
-    bot.start({
-        onStart: (botInfo) => {
-            console.log(`✅ Bot ${botInfo.username} je živ!`);
-        },
-    });
+    if (process.env.NODE_ENV === "production") {
+        await bot.init();
+        console.log(`✅ Bot ${bot.botInfo.username} je živ!`);
+        console.log("✅ Bot radi u webhook modu!");
+    } else {
+        bot.start({
+            onStart: (botInfo) => {
+                console.log(`✅ Bot ${botInfo.username} je živ!`);
+            },
+        });
+    }
 
     bot.catch((err) => {
         console.error("❌ Greška:", err);

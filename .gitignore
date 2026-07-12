@@ -33,3 +33,8 @@ temp/
 *.tmp
 backup_*.sql
 *.save
+.env
+dist/
+node_modules/
+*.save
+*.bak

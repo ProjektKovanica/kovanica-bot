@@ -11,17 +11,17 @@
     "backup": "ts-node src/scripts/backupDatabase.ts"
   },
   "dependencies": {
-    "@grammyjs/session": "^1.1.2",
     "@prisma/client": "^5.22.0",
-    "@ton/ton": "^16.3.0",
-    "@ton/crypto": "^3.3.0",
     "@ton/core": "^0.59.0",
+    "@ton/crypto": "^3.3.0",
+    "@ton/ton": "^16.3.0",
     "@tonconnect/sdk": "^2.2.0",
     "axios": "^1.7.2",
     "chart.js": "^4.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-rate-limit": "^8.5.2",
     "grammy": "^1.30.0",
     "node-cron": "^3.0.3",
     "ws": "^8.18.1"
