@@ -8,69 +8,64 @@ datasource db {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  telegramId    String   @unique @map("telegram_id")
-  tonWallet     String?  @map("ton_wallet")
-  clickBalance  Float    @default(0) @map("click_balance")
-  totalClicks   Int      @default(0) @map("total_clicks")
-  dailyClicks   Int      @default(0) @map("daily_clicks")
-  lastClickDate DateTime @default(now()) @map("last_click_date")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  
-  referredBy    Int?     @map("referred_by")
-  referralCount Int      @default(0) @map("referral_count")
-  referredByUser User?   @relation("UserReferrals", fields: [referredBy], references: [id])
-  referrals     User[]   @relation("UserReferrals")
-  
-  lastBonusDate DateTime? @map("last_bonus_date")
-  
-  nfts          NFT[]
-  withdrawals   Withdrawal[]
-  quests        Quest[]
-  
-  achievements  Achievement[]
-  spins         Spin?
-  boosts        Boost[]
-  vips          VIP[]
+  id             Int           @id @default(autoincrement())
+  telegramId     String        @unique @map("telegram_id")
+  tonWallet      String?       @map("ton_wallet")
+  clickBalance   Float         @default(0) @map("click_balance")
+  totalClicks    Int           @default(0) @map("total_clicks")
+  dailyClicks    Int           @default(0) @map("daily_clicks")
+  lastClickDate  DateTime      @default(now()) @map("last_click_date")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  referredBy     Int?          @map("referred_by")
+  referralCount  Int           @default(0) @map("referral_count")
+  lastBonusDate  DateTime?     @map("last_bonus_date")
+  achievements   Achievement[]
+  boosts         Boost[]
+  nfts           NFT[]
+  quests         Quest[]
+  spins          Spin?
+  referredByUser User?         @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals      User[]        @relation("UserReferrals")
+  vips           VIP[]
+  withdrawals    Withdrawal[]
 
   @@map("users")
 }
 
 model NFT {
-  id              Int      @id @default(autoincrement())
-  userId          Int      @map("user_id")
-  user            User     @relation(fields: [userId], references: [id])
-  tokenId         Int      @map("token_id")
-  contractAddress String   @map("contract_address")
+  id              Int       @id @default(autoincrement())
+  userId          Int       @map("user_id")
+  tokenId         Int       @map("token_id")
+  contractAddress String    @map("contract_address")
   rarity          String
   name            String
   image           String
-  bonusMultiplier Float    @default(1) @map("bonus_multiplier")
-  mintReward      Float    @default(0) @map("mint_reward")
-  requiredClicks  Int      @default(0) @map("required_clicks")
-  mintedAt        DateTime @default(now()) @map("minted_at")
-  equipped        Boolean  @default(false)
-  maxSupply       Int      @default(100) @map("max_supply")
-  totalMinted     Int      @default(0) @map("total_minted")
-  
-  staked          Boolean  @default(false)
-  stakeStartDate  DateTime? @map("stake_start_date")
+  bonusMultiplier Float     @default(1) @map("bonus_multiplier")
+  mintReward      Float     @default(0) @map("mint_reward")
+  requiredClicks  Int       @default(0) @map("required_clicks")
+  mintedAt        DateTime  @default(now()) @map("minted_at")
+  equipped        Boolean   @default(false)
+  maxSupply       Int       @default(100) @map("max_supply")
+  totalMinted     Int       @default(0) @map("total_minted")
   stakeEndDate    DateTime? @map("stake_end_date")
-  stakingReward   Float    @default(0.1) @map("staking_reward")
+  stakeStartDate  DateTime? @map("stake_start_date")
+  staked          Boolean   @default(false)
+  stakingReward   Float     @default(0.1) @map("staking_reward")
+  user            User      @relation(fields: [userId], references: [id])
 
   @@map("nfts")
 }
 
 model Withdrawal {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
   amount      Float
-  status      String   @default("pending")
-  tonAddress  String   @map("ton_address")
-  requestedAt DateTime @default(now()) @map("requested_at")
+  status      String    @default("pending")
+  tonAddress  String    @map("ton_address")
+  requestedAt DateTime  @default(now()) @map("requested_at")
   processedAt DateTime? @map("processed_at")
+  user        User      @relation(fields: [userId], references: [id])
 
   @@map("withdrawals")
 }
@@ -87,16 +82,16 @@ model PoolTracking {
 }
 
 model Quest {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
   type        String
   target      Int
-  progress    Int      @default(0)
-  completed   Boolean  @default(false)
-  reward      Float    @default(0)
-  date        DateTime @default(now()) @map("quest_date")
+  progress    Int       @default(0)
+  completed   Boolean   @default(false)
+  reward      Float     @default(0)
+  date        DateTime  @default(now()) @map("quest_date")
   completedAt DateTime? @map("completed_at")
+  user        User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, type, date])
   @@map("quests")
@@ -105,46 +100,46 @@ model Quest {
 model Achievement {
   id          Int      @id @default(autoincrement())
   userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
   type        String
   name        String
   description String
   reward      Float
   unlockedAt  DateTime @default(now()) @map("unlocked_at")
+  user        User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, type])
   @@map("achievements")
 }
 
 model Spin {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @unique @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
-  lastSpin    DateTime @default(now()) @map("last_spin")
-  reward      Float?
-  rewardType  String?
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique @map("user_id")
+  lastSpin   DateTime @default(now()) @map("last_spin")
+  reward     Float?
+  rewardType String?
+  user       User     @relation(fields: [userId], references: [id])
 
   @@map("spins")
 }
 
 model Boost {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
-  type        String
-  expiresAt   DateTime @map("expires_at")
-  active      Boolean  @default(true)
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String
+  expiresAt DateTime @map("expires_at")
+  active    Boolean  @default(true)
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("boosts")
 }
 
 model VIP {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
-  level       String   @default("gold")
-  expiresAt   DateTime @map("expires_at")
-  active      Boolean  @default(true)
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  level     String   @default("gold")
+  expiresAt DateTime @map("expires_at")
+  active    Boolean  @default(true)
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("vips")
 }

@@ -1,415 +1,368 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export class GameService {
-    // === GAME 1: KAMEN-ŠKARE-PAPIR ===
-    static async playRPS(userId: string, choice: string): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
+    // ============================================
+    // KAMEN-ŠKARE-PAPIR
+    // ============================================
+    static async playRPS(telegramId: string, playerChoice: string) {
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
 
-        const options = ['kamen', 'škare', 'papir'];
-        const botChoice = options[Math.floor(Math.random() * 3)];
-
+        const choices = ['kamen', 'škare', 'papir'];
+        const botChoice = choices[Math.floor(Math.random() * choices.length)];
         let result = '';
         let reward = 0;
 
-        if (choice === botChoice) {
-            result = '🤝 Izjednačeno!';
-            reward = 0;
+        if (playerChoice === botChoice) {
+            result = '🤝 Neriješeno!';
         } else if (
-            (choice === 'kamen' && botChoice === 'škare') ||
-            (choice === 'škare' && botChoice === 'papir') ||
-            (choice === 'papir' && botChoice === 'kamen')
+            (playerChoice === 'kamen' && botChoice === 'škare') ||
+            (playerChoice === 'škare' && botChoice === 'papir') ||
+            (playerChoice === 'papir' && botChoice === 'kamen')
         ) {
-            result = '🎉 POBJEDA!';
+            result = '🎉 Pobjeda!';
             reward = 2;
+        } else {
+            result = '😢 Poraz!';
+        }
+
+        if (reward > 0) {
             await prisma.user.update({
-                where: { telegramId: userId },
+                where: { telegramId },
                 data: { clickBalance: { increment: reward } }
             });
-        } else {
-            result = '💀 Poraz!';
-            reward = 0;
         }
 
         return {
-            game: 'kamen-škare-papir',
-            playerChoice: choice,
-            botChoice: botChoice,
-            result: result,
-            reward: reward,
+            playerChoice,
+            botChoice,
+            result,
+            reward
         };
     }
 
-    // === GAME 2: POGODI BROJ ===
-    static async guessNumber(userId: string, guess: number): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
+    // ============================================
+    // POGODI BROJ
+    // ============================================
+    static async guessNumber(telegramId: string, guess: number) {
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
 
         const target = Math.floor(Math.random() * 10) + 1;
-        let reward = 0;
         let result = '';
+        let reward = 0;
 
         if (guess === target) {
-            result = '🎉 POGODIO SI!';
+            result = '🎉 Pogodio si! +5 KVNC';
             reward = 5;
+        } else {
+            result = `❌ Netočno. Cilj je bio ${target}.`;
+        }
+
+        if (reward > 0) {
             await prisma.user.update({
-                where: { telegramId: userId },
+                where: { telegramId },
                 data: { clickBalance: { increment: reward } }
             });
-        } else {
-            result = `❌ Netočno! Bio je ${target}.`;
-            reward = 0;
         }
 
         return {
-            game: 'pogodi-broj',
-            guess: guess,
-            target: target,
-            result: result,
-            reward: reward,
+            guess,
+            target,
+            result,
+            reward
         };
     }
 
-    // === GAME 3: SLOT ===
-    static async playSlot(userId: string): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
-
-        if (user.clickBalance < 1) {
-            return { error: 'Nedovoljno KVNC! Treba 1 KVNC.' };
-        }
-
-        await prisma.user.update({
-            where: { telegramId: userId },
-            data: { clickBalance: { decrement: 1 } }
-        });
+    // ============================================
+    // SLOT
+    // ============================================
+    static async playSlot(telegramId: string) {
+        const COST = 1;
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
+        if (user.clickBalance < COST) return { error: `Nemaš dovoljno KVNC. Potrebno: ${COST} KVNC` };
 
         const symbols = ['🍒', '🍋', '🍊', '🍇', '💎', '7️⃣'];
         const slots = [
-            symbols[Math.floor(Math.random() * 6)],
-            symbols[Math.floor(Math.random() * 6)],
-            symbols[Math.floor(Math.random() * 6)]
+            symbols[Math.floor(Math.random() * symbols.length)],
+            symbols[Math.floor(Math.random() * symbols.length)],
+            symbols[Math.floor(Math.random() * symbols.length)]
         ];
 
         let reward = 0;
         let result = '';
 
+        // Provjera dobitaka
         if (slots[0] === slots[1] && slots[1] === slots[2]) {
-            if (slots[0] === '💎') {
+            // Sva tri ista
+            if (slots[0] === '7️⃣') {
                 reward = 100;
-                result = '💎 JACKPOT! 100 KVNC!';
-            } else if (slots[0] === '7️⃣') {
+                result = '🎰 JACKPOT! +100 KVNC';
+            } else if (slots[0] === '💎') {
                 reward = 50;
-                result = '7️⃣ TRI 7! 50 KVNC!';
+                result = '🎰 DIJAMANT! +50 KVNC';
             } else {
                 reward = 10;
-                result = '🎉 TRI ISTA! 10 KVNC!';
+                result = `🎰 Tri ${slots[0]}! +10 KVNC`;
             }
         } else if (slots[0] === slots[1] || slots[1] === slots[2] || slots[0] === slots[2]) {
             reward = 2;
-            result = '👏 DVA ISTA! 2 KVNC!';
+            result = '🎰 Dva ista! +2 KVNC';
         } else {
-            result = '😢 Ništa. Pokušaj ponovno!';
+            result = '😢 Ništa. -1 KVNC';
         }
 
-        if (reward > 0) {
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { increment: reward } }
-            });
-        }
+        const netChange = reward - COST;
+        await prisma.user.update({
+            where: { telegramId },
+            data: { clickBalance: { increment: netChange } }
+        });
 
         return {
-            game: 'slot',
-            slots: slots,
-            result: result,
-            reward: reward,
-            cost: 1,
+            slots,
+            result,
+            reward,
+            netChange
         };
     }
 
-    // === GAME 4: TRIVIA ===
-    static async playTrivia(userId: string): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
+    // ============================================
+    // TRIVIA (KVIZ)
+    // ============================================
+    static async playTrivia(telegramId: string) {
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
 
+        // Jednostavna pitanja
         const questions = [
             {
-                question: 'Koja je godina osnovan TON blockchain?',
-                options: ['2018', '2019', '2020', '2021'],
-                answer: 0
+                question: "Koji je glavni grad Hrvatske?",
+                options: ["Zagreb", "Split", "Rijeka", "Osijek"],
+                correct: 0
             },
             {
-                question: 'Koji je native token TON blockchaina?',
-                options: ['TON', 'GRAM', 'KVNC', 'USDT'],
-                answer: 1
+                question: "Koja je najveća planeta u Sunčevom sustavu?",
+                options: ["Saturn", "Jupiter", "Neptun", "Uran"],
+                correct: 1
             },
             {
-                question: 'Tko je osnovao Telegram?',
-                options: ['Pavel Durov', 'Vitalik Buterin', 'Satoshi Nakamoto', 'Elon Musk'],
-                answer: 0
-            },
-            {
-                question: 'Koliko traje jedan blok na TON-u?',
-                options: ['1s', '2s', '3s', '4s'],
-                answer: 0
-            },
-            {
-                question: 'Kako se zove tvoj token?',
-                options: ['TON', 'GRAM', 'KVNC', 'BTC'],
-                answer: 2
+                question: "Tko je napisao 'Orlando'?",
+                options: ["Virginia Woolf", "James Joyce", "William Faulkner", "Ernest Hemingway"],
+                correct: 0
             }
         ];
 
         const q = questions[Math.floor(Math.random() * questions.length)];
-        
+        const reward = 3;
+
+        // Spremi trenutno pitanje za korisnika (možeš koristiti cache, ali za sada samo vrati)
+        // U stvarnom scenariju bi trebao spremiti stanje po korisniku, ali ovdje samo vraćamo pitanje.
         return {
-            game: 'trivia',
             question: q.question,
             options: q.options,
-            answer: q.answer,
-            reward: 3
+            correct: q.correct,
+            reward
         };
     }
 
-    // === GAME 5: COIN FLIP ===
-    static async playCoinFlip(userId: string, bet: number): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
+    // ============================================
+    // COIN FLIP
+    // ============================================
+    static async playCoinFlip(telegramId: string, bet: number) {
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
+        if (user.clickBalance < bet) return { error: `Nemaš dovoljno KVNC. Stanje: ${user.clickBalance.toFixed(2)}` };
+        if (bet < 1) return { error: "Minimalni ulog je 1 KVNC." };
+
+        const outcome = Math.random() < 0.5 ? 'glava' : 'pismo';
+        const win = outcome === 'glava'; // Pretpostavimo da korisnik uvijek bira glavu? Zapravo, u botu nema izbora, ali mi ćemo reći da je pobjeda ako padne glava.
+        // Pošto u komandi nema odabira, neka bude jednostavno: 50% šanse.
+        const netChange = win ? bet : -bet;
+
+        await prisma.user.update({
+            where: { telegramId },
+            data: { clickBalance: { increment: netChange } }
         });
-        if (!user) return { error: 'User not found' };
-
-        if (bet < 1 || bet > user.clickBalance) {
-            return { error: `Nedovoljno KVNC! Imaš: ${user.clickBalance}` };
-        }
-
-        const result = Math.random() < 0.5 ? 'glava' : 'pismo';
-        const win = Math.random() < 0.5;
-
-        let reward = 0;
-        if (win) {
-            reward = bet * 2;
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { increment: reward } }
-            });
-        } else {
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { decrement: bet } }
-            });
-        }
 
         return {
-            game: 'coin-flip',
-            bet: bet,
-            result: result,
-            win: win,
-            reward: reward,
-            netChange: win ? bet : -bet
+            result: outcome,
+            win,
+            bet,
+            netChange
         };
     }
 
-    // === GAME 6: MEMORY ===
-    static async playMemory(userId: string): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
+    // ============================================
+    // MEMORY
+    // ============================================
+    static async playMemory(telegramId: string) {
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
 
-        const sequence = Array.from({ length: 5 }, () => Math.floor(Math.random() * 10));
-        const sequenceStr = sequence.join(' ');
+        // Generiraj niz od 4 broja
+        const sequence = [];
+        for (let i = 0; i < 4; i++) {
+            sequence.push(Math.floor(Math.random() * 9) + 1);
+        }
+        const reward = 2;
 
+        // Spremi sekvencu za korisnika (u stvarnosti bi trebao spremiti u cache)
+        // Ovdje samo vraćamo sekvencu da je korisnik vidi.
         return {
-            game: 'memory',
-            sequence: sequenceStr,
-            reward: 2
+            sequence: sequence.join(' '),
+            reward
         };
     }
 
-    // === GAME 7: BLACKJACK (21) ===
-    static async playBlackjack(userId: string, bet: number): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
+    // ============================================
+    // BLACKJACK (NOVO)
+    // ============================================
+    static async playBlackjack(telegramId: string, bet: number) {
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
+        if (user.clickBalance < bet) return { error: `Nemaš dovoljno KVNC. Stanje: ${user.clickBalance.toFixed(2)}` };
+        if (bet < 1) return { error: "Minimalni ulog je 1 KVNC." };
 
-        if (bet < 1 || bet > user.clickBalance) {
-            return { error: `Nedovoljno KVNC! Imaš: ${user.clickBalance}` };
+        const deck = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11];
+        const drawCard = () => deck[Math.floor(Math.random() * deck.length)];
+
+        const playerCards = [drawCard(), drawCard()];
+        const dealerCards = [drawCard(), drawCard()];
+
+        const calculateTotal = (cards: number[]) => {
+            let total = cards.reduce((a, b) => a + b, 0);
+            while (total > 21 && cards.includes(11)) {
+                total -= 10;
+                cards[cards.indexOf(11)] = 1;
+            }
+            return total;
+        };
+
+        let playerTotal = calculateTotal(playerCards);
+        let dealerTotal = calculateTotal(dealerCards);
+
+        while (dealerTotal < 17) {
+            dealerCards.push(drawCard());
+            dealerTotal = calculateTotal(dealerCards);
         }
 
-        // Igrač dobiva dvije karte
-        const playerCards = [
-            Math.floor(Math.random() * 10) + 1,
-            Math.floor(Math.random() * 10) + 1
-        ];
-        const dealerCards = [
-            Math.floor(Math.random() * 10) + 1,
-            Math.floor(Math.random() * 10) + 1
-        ];
+        let result = "";
+        let netChange = 0;
 
-        const playerTotal = playerCards.reduce((a, b) => a + b, 0);
-        const dealerTotal = dealerCards.reduce((a, b) => a + b, 0);
-
-        let result = '';
-        let reward = 0;
-
-        // Provjeri blackjack
-        if (playerTotal === 21 && dealerTotal === 21) {
-            result = '🤝 Izjednačeno! (Blackjack)';
-            reward = bet;
-        } else if (playerTotal === 21) {
-            result = '🎉 BLACKJACK!';
-            reward = bet * 2.5;
-        } else if (dealerTotal === 21) {
-            result = '💀 Dealer ima Blackjack!';
-            reward = 0;
+        if (playerTotal === 21 && playerCards.length === 2) {
+            result = "🎉 Blackjack! Pobjeda!";
+            netChange = bet * 1.5;
         } else if (playerTotal > 21) {
-            result = '💀 Prešao si 21!';
-            reward = 0;
+            result = "💀 Prešao si 21. Gubiš!";
+            netChange = -bet;
         } else if (dealerTotal > 21) {
-            result = '🎉 Dealer je prešao 21!';
-            reward = bet * 2;
+            result = "🎉 Dealer je prešao 21. Pobjeda!";
+            netChange = bet;
         } else if (playerTotal > dealerTotal) {
-            result = '🎉 POBJEDA!';
-            reward = bet * 2;
+            result = "🎉 Pobjeda!";
+            netChange = bet;
         } else if (playerTotal < dealerTotal) {
-            result = '💀 Poraz!';
-            reward = 0;
+            result = "😢 Poraz.";
+            netChange = -bet;
         } else {
-            result = '🤝 Izjednačeno!';
-            reward = bet;
-        }
-
-        if (reward > 0) {
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { increment: reward } }
-            });
-        } else if (reward === 0 && playerTotal <= 21) {
-            // Ako je izgubio, oduzmi ulog
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { decrement: bet } }
-            });
-        }
-
-        return {
-            game: 'blackjack',
-            playerCards: playerCards,
-            dealerCards: dealerCards,
-            playerTotal: playerTotal,
-            dealerTotal: dealerTotal,
-            result: result,
-            reward: reward,
-            bet: bet,
-            netChange: reward > 0 ? reward - bet : -bet
-        };
-    }
-
-    // === GAME 8: DICE ===
-    static async playDice(userId: string, bet: number, guess: number): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
-
-        if (bet < 1 || bet > user.clickBalance) {
-            return { error: `Nedovoljno KVNC! Imaš: ${user.clickBalance}` };
-        }
-        if (guess < 1 || guess > 6) {
-            return { error: 'Pogodi broj između 1 i 6!' };
-        }
-
-        const roll = Math.floor(Math.random() * 6) + 1;
-        const win = guess === roll;
-
-        let reward = 0;
-        if (win) {
-            reward = bet * 6;
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { increment: reward } }
-            });
-        } else {
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { decrement: bet } }
-            });
-        }
-
-        return {
-            game: 'dice',
-            bet: bet,
-            guess: guess,
-            roll: roll,
-            win: win,
-            reward: reward,
-            netChange: win ? reward - bet : -bet
-        };
-    }
-
-    // === GAME 9: WHEEL OF FORTUNE ===
-    static async playWheel(userId: string): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { telegramId: userId }
-        });
-        if (!user) return { error: 'User not found' };
-
-        if (user.clickBalance < 5) {
-            return { error: 'Treba 5 KVNC za spin!' };
+            result = "🤝 Izjednačeno (push). Ulog vraćen.";
+            netChange = 0;
         }
 
         await prisma.user.update({
-            where: { telegramId: userId },
-            data: { clickBalance: { decrement: 5 } }
+            where: { telegramId },
+            data: { clickBalance: { increment: netChange } }
         });
 
-        const segments = [
-            { label: '💎 JACKPOT', multiplier: 20, weight: 1 },
-            { label: '🎉 2x', multiplier: 2, weight: 10 },
-            { label: '💰 1.5x', multiplier: 1.5, weight: 15 },
-            { label: '🔄 1x', multiplier: 1, weight: 20 },
-            { label: '😢 0.5x', multiplier: 0.5, weight: 20 },
-            { label: '💀 Bankrot', multiplier: 0, weight: 10 },
-            { label: '🎁 Bonus', multiplier: 3, weight: 5 },
-            { label: '🔥 5x', multiplier: 5, weight: 2 },
-        ];
+        return {
+            playerCards,
+            dealerCards,
+            playerTotal,
+            dealerTotal,
+            bet,
+            netChange,
+            result
+        };
+    }
 
-        const totalWeight = segments.reduce((s, seg) => s + seg.weight, 0);
-        let rand = Math.random() * totalWeight;
-        let chosen = segments[0];
-        for (const seg of segments) {
-            rand -= seg.weight;
-            if (rand <= 0) { chosen = seg; break; }
-        }
+    // ============================================
+    // DICE (NOVO)
+    // ============================================
+    static async playDice(telegramId: string, bet: number, guess: number) {
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
+        if (user.clickBalance < bet) return { error: `Nemaš dovoljno KVNC. Stanje: ${user.clickBalance.toFixed(2)}` };
+        if (bet < 1) return { error: "Minimalni ulog je 1 KVNC." };
+        if (guess < 1 || guess > 6) return { error: "Pogodi broj između 1 i 6." };
 
-        let reward = 0;
-        if (chosen.multiplier > 0) {
-            reward = Math.floor(5 * chosen.multiplier);
-            await prisma.user.update({
-                where: { telegramId: userId },
-                data: { clickBalance: { increment: reward } }
-            });
-        }
+        const roll = Math.floor(Math.random() * 6) + 1;
+        const win = guess === roll;
+        const multiplier = 5;
+        const netChange = win ? bet * multiplier : -bet;
+
+        await prisma.user.update({
+            where: { telegramId },
+            data: { clickBalance: { increment: netChange } }
+        });
 
         return {
-            game: 'wheel',
-            segment: chosen.label,
-            multiplier: chosen.multiplier,
-            reward: reward,
-            cost: 5,
-            netChange: reward - 5
+            guess,
+            roll,
+            win,
+            bet,
+            netChange,
+            result: win ? `🎉 POGODIO! +${bet * multiplier} KVNC` : `😢 Nisi pogodio. -${bet} KVNC`
+        };
+    }
+
+    // ============================================
+    // WHEEL (NOVO)
+    // ============================================
+    static async playWheel(telegramId: string) {
+        const COST = 5;
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return { error: "Korisnik nije pronađen." };
+        if (user.clickBalance < COST) return { error: `Nemaš dovoljno KVNC. Potrebno: ${COST} KVNC` };
+
+        const segments = [
+            { label: "1x", multiplier: 1 },
+            { label: "2x", multiplier: 2 },
+            { label: "3x", multiplier: 3 },
+            { label: "5x", multiplier: 5 },
+            { label: "10x", multiplier: 10 },
+            { label: "20x", multiplier: 20 },
+            { label: "LOSE", multiplier: 0 },
+        ];
+
+        const weighted = [
+            ...Array(20).fill(segments[0]),
+            ...Array(15).fill(segments[1]),
+            ...Array(10).fill(segments[2]),
+            ...Array(5).fill(segments[3]),
+            ...Array(3).fill(segments[4]),
+            ...Array(2).fill(segments[5]),
+            ...Array(5).fill(segments[6]),
+        ];
+
+        const pick = weighted[Math.floor(Math.random() * weighted.length)];
+        const reward = pick.multiplier * COST;
+        const netChange = reward - COST;
+
+        await prisma.user.update({
+            where: { telegramId },
+            data: { clickBalance: { increment: netChange } }
+        });
+
+        return {
+            segment: pick.label,
+            multiplier: pick.multiplier,
+            reward,
+            cost: COST,
+            netChange,
+            result: pick.multiplier === 0 ? "😢 Ništa nisi osvojio." : `🎉 Osvojio si ${reward} KVNC!`
         };
     }
 }

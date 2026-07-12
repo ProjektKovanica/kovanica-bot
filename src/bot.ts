@@ -1,3 +1,4 @@
+
 import { Bot, Context } from "grammy";
 import { PrismaClient } from "@prisma/client";
 import * as dotenv from "dotenv";
@@ -11,9 +12,7 @@ import { TonPaymentService } from './services/tonPaymentService.js';
 import { DexService } from './services/dexService.js';
 import { AnalyticsService } from './services/analyticsService.js';
 import { AntiBotService } from './services/antiBotService.js';
-import { ReferralService } from './services/referralService.js';
 import { getNextNFT, getStakingReward } from './nft/rarity.js';
-import { VaultService } from "./services/vaultService.js";
 
 dotenv.config();
 
@@ -31,7 +30,6 @@ const DAILY_BONUS_MULTIPLIER = 2;
 // === SERVISI ===
 const analytics = new AnalyticsService(bot);
 const antiBot = new AntiBotService();
-const referralService = new ReferralService();
 const pushService = new PushService(bot);
 
 function getRank(totalClicks: number): string {
@@ -59,7 +57,7 @@ bot.command("start", async (ctx: Context) => {
     if (!ctx.from) return ctx.reply("Nema korisnika!");
     const telegramId = String(ctx.from.id);
 
-    await QuestService.createDailyQuests(telegramId);
+    // await QuestService.createDailyQuests(telegramId);
 
     const payload = ctx.message?.text?.split(" ");
     let referrerId: number | null = null;
@@ -78,7 +76,7 @@ bot.command("start", async (ctx: Context) => {
         update: {},
         create: {
             telegramId,
-            referredBy: referrerId,
+            referredBy: referrerId || undefined,
         },
     });
 
@@ -123,11 +121,11 @@ bot.command("start", async (ctx: Context) => {
         `👥 /referral - Pozovi prijatelje\n` +
         `💳 /wallet - Spremi GRAM adresu\n` +
         `💸 /withdraw - Zatraži isplatu (min ${MIN_WITHDRAWAL} KVNC)\n` +
-        `⚠️ Isplate se za sada obrađuju ručno od strane admina.\n` +
         `🎨 /nfts - Pregled NFT-ova\n` +
         `🔒 /stake - Stake-aj NFT\n` +
         `🔓 /unstake - Prekini staking\n` +
         `📊 /stakeinfo - Pregled stake-anih NFT-ova\n` +
+	`🔐 /equip -Opremi NFT\n` +
         `🔓 /unequip - Skini opremljeni NFT\n` +
         `💧 /liquidity - DEX Pool-ovi (USDT/GRAM)\n` +
         `🎮 /games - Mini igre\n` +
@@ -145,184 +143,6 @@ bot.command("start", async (ctx: Context) => {
     );
 });
 
-// ============================================
-// /blackjack – Igraj Blackjack
-// ============================================
-bot.command("blackjack", async (ctx: Context) => {
-    if (!ctx.from) return ctx.reply("Nema korisnika!");
-    const input = ctx.message?.text?.split(" ");
-    if (!input || input.length < 2) {
-        return ctx.reply("📝 Pošalji: /blackjack IZNOS\nPrimjer: /blackjack 10");
-    }
-
-    const bet = parseInt(input[1]);
-    if (isNaN(bet) || bet <= 0) {
-        return ctx.reply("❌ Unesi pozitivan broj!");
-    }
-
-    const result = await GameService.playBlackjack(String(ctx.from.id), bet);
-    if (result.error) return ctx.reply(`❌ ${result.error}`);
-
-    await ctx.reply(
-        `🃏 **Blackjack** 🃏\n\n` +
-        `🎴 Tvoje karte: ${result.playerCards.join(', ')} (${result.playerTotal})\n` +
-        `🎴 Dealerove karte: ${result.dealerCards[0]}, ?\n` +
-        `${result.result}\n` +
-        `💰 Ulog: ${result.bet} KVNC\n` +
-        `💵 Neto: ${result.netChange > 0 ? '+' : ''}${result.netChange} KVNC`
-    );
-});
-
-// ============================================
-// /dice – Baci kocku
-// ============================================
-bot.command("dice", async (ctx: Context) => {
-    if (!ctx.from) return ctx.reply("Nema korisnika!");
-    const input = ctx.message?.text?.split(" ");
-    if (!input || input.length < 3) {
-        return ctx.reply("📝 Pošalji: /dice IZNOS BROJ\nPrimjer: /dice 10 3");
-    }
-
-    const bet = parseInt(input[1]);
-    const guess = parseInt(input[2]);
-    if (isNaN(bet) || bet <= 0) return ctx.reply("❌ Unesi pozitivan iznos!");
-    if (isNaN(guess) || guess < 1 || guess > 6) {
-        return ctx.reply("❌ Pogodi broj između 1 i 6!");
-    }
-
-    const result = await GameService.playDice(String(ctx.from.id), bet, guess);
-    if (result.error) return ctx.reply(`❌ ${result.error}`);
-
-    const emoji = result.win ? '🎉' : '😢';
-    await ctx.reply(
-        `🎲 **Dice** 🎲\n\n` +
-        `${emoji} Tvoj pogodak: ${result.guess}\n` +
-        `🎲 Kocka: ${result.roll}\n` +
-        `${result.win ? '✅ POGODIO!' : '❌ Nisi pogodio!'}\n` +
-        `💰 Ulog: ${result.bet} KVNC\n` +
-        `💵 Neto: ${result.netChange > 0 ? '+' : ''}${result.netChange} KVNC`
-    );
-});
-
-// ============================================
-// /wheel – Kotač sreće
-// ============================================
-bot.command("wheel", async (ctx: Context) => {
-    if (!ctx.from) return ctx.reply("Nema korisnika!");
-    const result = await GameService.playWheel(String(ctx.from.id));
-    if (result.error) return ctx.reply(`❌ ${result.error}`);
-
-    await ctx.reply(
-        `🎡 **Kotač sreće** 🎡\n\n` +
-        `🎯 Segment: ${result.segment}\n` +
-        `📊 Multiplier: ${result.multiplier}x\n` +
-        `💰 Nagrada: ${result.reward} KVNC\n` +
-        `💸 Ulog: ${result.cost} KVNC\n` +
-        `💵 Neto: ${result.netChange > 0 ? '+' : ''}${result.netChange} KVNC`
-    );
-});
-
-// ============================================
-// /withdraw – Zatraži isplatu
-// ============================================
-bot.command("withdraw", async (ctx: Context) => {
-    if (!ctx.from) return ctx.reply("Nema korisnika!");
-    const telegramId = String(ctx.from.id);
-    const user = await prisma.user.findUnique({ where: { telegramId } });
-    if (!user) return ctx.reply("Klikni /start prvo!");
-
-    if (!user.tonWallet) {
-        return ctx.reply(
-            "⚠️ Prvo spremi svoju GRAM adresu:\n" +
-            "/wallet EQD_... (tvoja GRAM adresa)"
-        );
-    }
-
-    const MIN_WITHDRAWAL = 100000;
-    if (user.clickBalance < MIN_WITHDRAWAL) {
-        return ctx.reply(
-            `⚠️ Minimalni iznos za isplatu je ${MIN_WITHDRAWAL} KVNC.\n` +
-            `💰 Potrebno još: ${(MIN_WITHDRAWAL - user.clickBalance).toFixed(2)} KVNC`
-        );
-    }
-
-    const pending = await prisma.withdrawal.findFirst({
-        where: {
-            userId: user.id,
-            status: "pending",
-        },
-    });
-    if (pending) {
-        return ctx.reply("⏳ Već imaš jedan zahtjev na čekanju.");
-    }
-
-    const withdrawal = await prisma.withdrawal.create({
-        data: {
-            userId: user.id,
-            amount: user.clickBalance,
-            tonAddress: user.tonWallet,
-            status: "pending",
-        },
-    });
-
-    await ctx.reply(
-        `✅ Zahtjev za isplatu zaprimljen!\n\n` +
-        `💰 Iznos: ${user.clickBalance} KVNC\n` +
-        `📤 GRAM adresa: ${user.tonWallet}\n` +
-        `🆔 ID zahtjeva: ${withdrawal.id}\n\n` +
-        `⏳ Isplata će biti obrađena automatski u roku 15 minuta.`
-    );
-});
-
-// ============================================
-// /processwithdrawals – Ručna obrada (admin)
-// ============================================
-bot.command("processwithdrawals", async (ctx: Context) => {
-    const ownerId = process.env.OWNER_ID;
-    if (!ctx.from || String(ctx.from.id) !== ownerId) {
-        return ctx.reply("⛔ Samo vlasnik.");
-    }
-
-    await ctx.reply("⏳ Pokrećem obradu...");
-
-    try {
-        await TonPaymentService.processPendingWithdrawals();
-        await ctx.reply("✅ Obrada završena!");
-    } catch (error: any) {
-        await ctx.reply(`❌ Greška: ${error.message}`);
-    }
-});
-
-// ============================================
-// /checkwithdrawals – Pregled pending (admin)
-// ============================================
-bot.command("checkwithdrawals", async (ctx: Context) => {
-    const ownerId = process.env.OWNER_ID;
-    if (!ctx.from || String(ctx.from.id) !== ownerId) {
-        return ctx.reply("⛔ Samo vlasnik.");
-    }
-
-    const pending = await prisma.withdrawal.findMany({
-        where: { status: "pending" },
-        include: { user: true }
-    });
-
-    if (pending.length === 0) {
-        return ctx.reply("✅ Nema pending zahtjeva.");
-    }
-
-    let message = "📊 **Pending isplate:**\n\n";
-    for (const w of pending) {
-        message += `🆔 ${w.id}\n`;
-        message += `👤 ${w.user.telegramId}\n`;
-        message += `💰 ${w.amount} KVNC\n`;
-        message += `📤 \`${w.tonAddress}\`\n`;
-        message += `📅 ${w.requestedAt.toLocaleString()}\n\n`;
-    }
-
-    await ctx.reply(message, { parse_mode: 'Markdown' });
-});
-
 bot.command("status", async (ctx: Context) => {
     if (!ctx.from) return ctx.reply("Nema korisnika!");
     const telegramId = String(ctx.from.id);
@@ -332,9 +152,9 @@ bot.command("status", async (ctx: Context) => {
     const rank = getRank(user.totalClicks);
     const equippedNFT = await NFTService.getEquippedNFT(telegramId);
     
-    const quests = await QuestService.getTodayQuests(telegramId);
-    const completedQuests = quests.filter(q => q.completed).length;
-    const totalQuests = quests.length;
+    // Questovi su privremeno isključeni
+    const completedQuests = 0;
+    const totalQuests = 0;
     
     const achievements = await prisma.achievement.count({
         where: { userId: user.id }
@@ -410,56 +230,6 @@ bot.command("wallet", async (ctx: Context) => {
     await ctx.reply("✅ GRAM adresa spremljena!");
 });
 
-bot.command("withdraw", async (ctx: Context) => {
-    if (!ctx.from) return ctx.reply("Nema korisnika!");
-    const telegramId = String(ctx.from.id);
-    const user = await prisma.user.findUnique({ where: { telegramId } });
-    if (!user) return ctx.reply("Klikni /start prvo!");
-
-    if (!user.tonWallet) {
-        return ctx.reply(
-            "⚠️ Prvo spremi svoju GRAM adresu:\n" +
-            "/wallet EQD_... (tvoja GRAM adresa)"
-        );
-    }
-
-    if (user.clickBalance < MIN_WITHDRAWAL) {
-        return ctx.reply(
-            `⚠️ Minimalni iznos za isplatu je ${MIN_WITHDRAWAL} KVNC.\n` +
-            `💰 Potrebno još: ${(MIN_WITHDRAWAL - user.clickBalance).toFixed(2)} KVNC`
-        );
-    }
-
-    const pending = await prisma.withdrawal.findFirst({
-        where: {
-            userId: user.id,
-            status: "pending",
-        },
-    });
-    if (pending) {
-        return ctx.reply("⏳ Već imaš jedan zahtjev na čekanju. Obradit ćemo ga uskoro.");
-    }
-
-    const withdrawal = await prisma.withdrawal.create({
-        data: {
-            userId: user.id,
-            amount: user.clickBalance,
-            tonAddress: user.tonWallet,
-            status: "pending",
-        },
-    });
-
-    await ctx.reply(
-        `✅ Zahtjev za isplatu zaprimljen!\n\n` +
-        `💰 Iznos: ${user.clickBalance} KVNC\n` +
-        `📤 GRAM adresa: ${user.tonWallet}\n` +
-        `🆔 ID zahtjeva: ${withdrawal.id}\n\n` +
-        `⏳ **Isplate se obrađuju ručno od strane admina.**\n` +
-        `📅 Bit će obrađen u roku 24-48h.\n` +
-        `📢 Hvala na razumijevanju!`
-    );
-});
-
 bot.command("nfts", async (ctx: Context) => {
     if (!ctx.from) return ctx.reply("Nema korisnika!");
     const telegramId = String(ctx.from.id);
@@ -495,7 +265,7 @@ bot.command("nfts", async (ctx: Context) => {
         message += `${emoji} ${nft.name} (${nft.rarity})${equipped}${staked}\n`;
         message += `  ⭐ Bonus: ${nft.bonusMultiplier}x | Nagrada: ${nft.mintReward} KVNC\n`;
         message += `  📅 Staking: ${nft.stakingReward} KVNC/dan\n`;
-        message += `  📦 Supply: ${nft.totalMinted}/${nft.maxSupply} | 🆔 ID: ${nft.id}\n\n`;
+        message += `  🆔 ID: ${nft.id}\n\n`;
     }
     
     const supplyStatus = await NFTService.getSupplyStatus();
@@ -771,7 +541,7 @@ bot.command("rps", async (ctx: Context) => {
         `Ti: ${result.playerChoice}\n` +
         `Bot: ${result.botChoice}\n` +
         `${result.result}\n` +
-        `${result.reward > 0 ? `💰 +${result.reward} KVNC` : ''}`
+        `${result.reward ? `💰 +${result.reward} KVNC` : ''}`
     );
 });
 
@@ -795,7 +565,7 @@ bot.command("guess", async (ctx: Context) => {
         `Tvoj broj: ${result.guess}\n` +
         `Cilj: ${result.target}\n` +
         `${result.result}\n` +
-        `${result.reward > 0 ? `💰 +${result.reward} KVNC` : ''}`
+        `${result.reward ? `💰 +${result.reward} KVNC` : ''}`
     );
 });
 
@@ -806,9 +576,9 @@ bot.command("slot", async (ctx: Context) => {
     
     await ctx.reply(
         `🎰 **Slot**\n\n` +
-        `${result.slots.join(' | ')}\n\n` +
+        `${result.slots ? result.slots.join(' | ') : ''}\n\n` +
         `${result.result}\n` +
-        `${result.reward > 0 ? `💰 +${result.reward} KVNC` : '💸 -1 KVNC (ulog)'}`
+        `${result.reward ? `💰 +${result.reward} KVNC` : '💸 -1 KVNC (ulog)'}`
     );
 });
 
@@ -819,8 +589,10 @@ bot.command("trivia", async (ctx: Context) => {
 
     let message = "🧠 **Trivia Kviz** 🧠\n\n";
     message += `📝 ${result.question}\n\n`;
-    for (let i = 0; i < result.options.length; i++) {
-        message += `${i + 1}. ${result.options[i]}\n`;
+    if (result.options) {
+        for (let i = 0; i < result.options.length; i++) {
+            message += `${i + 1}. ${result.options[i]}\n`;
+        }
     }
     message += `\n💰 Nagrada: ${result.reward} KVNC\n`;
     message += `📝 Odgovori: /trivia_answer BROJ`;
@@ -835,7 +607,6 @@ bot.command("trivia_answer", async (ctx: Context) => {
         return ctx.reply("📝 Pošalji: /trivia_answer BROJ");
     }
 
-    const answer = parseInt(input[1]) - 1;
     const reward = 3;
     await prisma.user.update({
         where: { telegramId: String(ctx.from.id) },
@@ -866,7 +637,7 @@ bot.command("coinflip", async (ctx: Context) => {
         `${emoji} Rezultat: ${result.result}\n` +
         `${result.win ? '✅ POBJEDA!' : '❌ PORAZ!'}\n` +
         `💰 Ulog: ${result.bet} KVNC\n` +
-        `💵 Neto: ${result.netChange > 0 ? '+' : ''}${result.netChange} KVNC`
+        `💵 Neto: ${result.netChange ? (result.netChange > 0 ? '+' : '') : ''}${result.netChange || 0} KVNC`
     );
 });
 
@@ -898,6 +669,74 @@ bot.command("memory_answer", async (ctx: Context) => {
     });
 
     await ctx.reply(`✅ Točno! +${reward} KVNC`);
+});
+
+bot.command("blackjack", async (ctx: Context) => {
+    if (!ctx.from) return ctx.reply("Nema korisnika!");
+    const input = ctx.message?.text?.split(" ");
+    if (!input || input.length < 2) {
+        return ctx.reply("📝 Pošalji: /blackjack IZNOS\nPrimjer: /blackjack 10");
+    }
+
+    const bet = parseInt(input[1]);
+    if (isNaN(bet) || bet <= 0) {
+        return ctx.reply("❌ Unesi pozitivan broj!");
+    }
+
+    const result = await GameService.playBlackjack(String(ctx.from.id), bet);
+    if (result.error) return ctx.reply(`❌ ${result.error}`);
+
+    await ctx.reply(
+        `🃏 **Blackjack** 🃏\n\n` +
+        `🎴 Tvoje karte: ${result.playerCards ? result.playerCards.join(', ') : ''} (${result.playerTotal || 0})\n` +
+        `🎴 Dealerove karte: ${result.dealerCards ? result.dealerCards[0] : ''}, ?\n` +
+        `${result.result}\n` +
+        `💰 Ulog: ${result.bet} KVNC\n` +
+        `💵 Neto: ${result.netChange ? (result.netChange > 0 ? '+' : '') : ''}${result.netChange || 0} KVNC`
+    );
+});
+
+bot.command("dice", async (ctx: Context) => {
+    if (!ctx.from) return ctx.reply("Nema korisnika!");
+    const input = ctx.message?.text?.split(" ");
+    if (!input || input.length < 3) {
+        return ctx.reply("📝 Pošalji: /dice IZNOS BROJ\nPrimjer: /dice 10 3");
+    }
+
+    const bet = parseInt(input[1]);
+    const guess = parseInt(input[2]);
+    if (isNaN(bet) || bet <= 0) return ctx.reply("❌ Unesi pozitivan iznos!");
+    if (isNaN(guess) || guess < 1 || guess > 6) {
+        return ctx.reply("❌ Pogodi broj između 1 i 6!");
+    }
+
+    const result = await GameService.playDice(String(ctx.from.id), bet, guess);
+    if (result.error) return ctx.reply(`❌ ${result.error}`);
+
+    const emoji = result.win ? '🎉' : '😢';
+    await ctx.reply(
+        `🎲 **Dice** 🎲\n\n` +
+        `${emoji} Tvoj pogodak: ${result.guess}\n` +
+        `🎲 Kocka: ${result.roll}\n` +
+        `${result.win ? '✅ POGODIO!' : '❌ Nisi pogodio!'}\n` +
+        `💰 Ulog: ${result.bet} KVNC\n` +
+        `💵 Neto: ${result.netChange ? (result.netChange > 0 ? '+' : '') : ''}${result.netChange || 0} KVNC`
+    );
+});
+
+bot.command("wheel", async (ctx: Context) => {
+    if (!ctx.from) return ctx.reply("Nema korisnika!");
+    const result = await GameService.playWheel(String(ctx.from.id));
+    if (result.error) return ctx.reply(`❌ ${result.error}`);
+
+    await ctx.reply(
+        `🎡 **Kotač sreće** 🎡\n\n` +
+        `🎯 Segment: ${result.segment}\n` +
+        `📊 Multiplier: ${result.multiplier}x\n` +
+        `💰 Nagrada: ${result.reward} KVNC\n` +
+        `💸 Ulog: ${result.cost} KVNC\n` +
+        `💵 Neto: ${result.netChange ? (result.netChange > 0 ? '+' : '') : ''}${result.netChange || 0} KVNC`
+    );
 });
 
 bot.command("price", async (ctx: Context) => {
@@ -1154,38 +993,6 @@ bot.command("stats", async (ctx: Context) => {
     await ctx.reply(message, { parse_mode: 'Markdown' });
 });
 
-bot.command("referraltree", async (ctx: Context) => {
-    if (!ctx.from) return ctx.reply("Nema korisnika!");
-    const telegramId = String(ctx.from.id);
-
-    const tree = await referralService.getReferralTree(telegramId);
-    if (!tree) return ctx.reply("Nema podataka.");
-
-    await ctx.reply(
-        `👥 **Tvoje referral stablo:**\n\n` +
-        `📊 Direktni: ${tree.direct}\n` +
-        `📊 Indirektni: ${tree.indirect}\n` +
-        `📊 Ukupno: ${tree.total}\n\n` +
-        `💡 Pozivaj prijatelje za više nagrada!`
-    );
-});
-
-bot.command("referralleaderboard", async (ctx: Context) => {
-    const top = await referralService.getReferralLeaderboard(10);
-    
-    if (top.length === 0) {
-        return ctx.reply("📭 Još nema referala!");
-    }
-
-    let message = "🏆 **TOP 10 REFERERA** 🏆\n\n";
-    top.forEach((user, index) => {
-        const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
-        message += `${medal} ${user.telegramId.slice(0, 12)}... — ${user.referralCount} pozvanih\n`;
-    });
-
-    await ctx.reply(message);
-});
-
 bot.command("captcha", async (ctx: Context) => {
     if (!ctx.from) return ctx.reply("Nema korisnika!");
     const telegramId = String(ctx.from.id);
@@ -1422,12 +1229,12 @@ bot.callbackQuery("tap", async (ctx: Context) => {
 
     const rank = getRank(updated.totalClicks);
     
-    await QuestService.updateQuestProgress(telegramId, 'clicks');
+    // await QuestService.updateQuestProgress(telegramId, 'clicks');
     
     const nftResult = await NFTService.checkAndMintNFT(telegramId, updated.totalClicks);
     let nftMessage = '';
     if (nftResult) {
-        await QuestService.updateQuestProgress(telegramId, 'nft');
+       // await QuestService.updateQuestProgress(telegramId, 'nft');
         
         const nft = nftResult.nft;
         nftMessage = `\n\n🎉 **ISKOPAO SI NFT!**\n` +

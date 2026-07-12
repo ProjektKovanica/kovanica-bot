@@ -10,114 +10,124 @@ const QUEST_TYPES = {
 
 export class QuestService {
     static async createDailyQuests(telegramId: string) {
-        const user = await prisma.user.findUnique({
-            where: { telegramId }
-        });
-        if (!user) return;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        for (const [key, quest] of Object.entries(QUEST_TYPES)) {
-            const existing = await prisma.quest.findUnique({
-                where: {
-                    userId_type_date: {
-                        userId: user.id,
-                        type: quest.type,
-                        date: today,
-                    }
-                }
+        try {
+            const user = await prisma.user.findUnique({
+                where: { telegramId }
             });
+            if (!user) return;
 
-            if (!existing) {
-                await prisma.quest.create({
-                    data: {
-                        userId: user.id,
-                        type: quest.type,
-                        target: quest.target,
-                        reward: quest.reward,
-                        progress: 0,
-                        completed: false,
-                        date: today,
-                    }
-                });
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (const [key, quest] of Object.entries(QUEST_TYPES)) {
+                const existing = await prisma.$queryRaw`
+                    SELECT * FROM quests 
+                    WHERE user_id = ${user.id} 
+                    AND type = ${quest.type} 
+                    AND quest_date = ${today}
+                    LIMIT 1
+                `;
+
+                if (!existing || (Array.isArray(existing) && existing.length === 0)) {
+                    await prisma.$executeRaw`
+                        INSERT INTO quests (user_id, type, target, reward, progress, completed, quest_date)
+                        VALUES (${user.id}, ${quest.type}, ${quest.target}, ${quest.reward}, 0, false, ${today})
+                    `;
+                }
             }
+        } catch (error) {
+            console.error('❌ Quest creation error:', error);
         }
     }
 
     static async updateQuestProgress(telegramId: string, type: string, amount: number = 1) {
-        const user = await prisma.user.findUnique({
-            where: { telegramId }
-        });
-        if (!user) return null;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const quest = await prisma.quest.findUnique({
-            where: {
-                userId_type_date: {
-                    userId: user.id,
-                    type: type,
-                    date: today,
-                }
-            }
-        });
-
-        if (!quest || quest.completed) return null;
-
-        const newProgress = quest.progress + amount;
-        const completed = newProgress >= quest.target;
-
-        const updated = await prisma.quest.update({
-            where: { id: quest.id },
-            data: {
-                progress: newProgress,
-                completed: completed,
-                completedAt: completed ? new Date() : null,
-            }
-        });
-
-        if (completed) {
-            await prisma.user.update({
-                where: { telegramId },
-                data: {
-                    clickBalance: { increment: quest.reward }
-                }
+        try {
+            const user = await prisma.user.findUnique({
+                where: { telegramId }
             });
-        }
+            if (!user) return null;
 
-        return updated;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const quest = await prisma.$queryRaw<any[]>`
+                SELECT * FROM quests 
+                WHERE user_id = ${user.id} 
+                AND type = ${type} 
+                AND quest_date = ${today}
+                LIMIT 1
+            `;
+
+            if (!quest || quest.length === 0 || quest[0].completed) return null;
+
+            const q = quest[0];
+            const newProgress = q.progress + amount;
+            const completed = newProgress >= q.target;
+
+            await prisma.$executeRaw`
+                UPDATE quests 
+                SET progress = ${newProgress}, 
+                    completed = ${completed},
+                    completed_at = ${completed ? new Date() : null}
+                WHERE id = ${q.id}
+            `;
+
+            if (completed) {
+                await prisma.user.update({
+                    where: { telegramId },
+                    data: {
+                        clickBalance: { increment: q.reward }
+                    }
+                });
+            }
+
+            return { ...q, progress: newProgress, completed };
+        } catch (error) {
+            console.error('❌ Quest update error:', error);
+            return null;
+        }
     }
 
     static async getTodayQuests(telegramId: string) {
-        const user = await prisma.user.findUnique({
-            where: { telegramId }
-        });
-        if (!user) return [];
+        try {
+            const user = await prisma.user.findUnique({
+                where: { telegramId }
+            });
+            if (!user) return [];
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-        return await prisma.quest.findMany({
-            where: {
-                userId: user.id,
-                date: today,
-            }
-        });
+            const quests = await prisma.$queryRaw<any[]>`
+                SELECT * FROM quests 
+                WHERE user_id = ${user.id} 
+                AND quest_date = ${today}
+            `;
+
+            return quests || [];
+        } catch (error) {
+            console.error('❌ Get quests error:', error);
+            return [];
+        }
     }
 
     static async getCompletedQuests(telegramId: string) {
-        const user = await prisma.user.findUnique({
-            where: { telegramId }
-        });
-        if (!user) return [];
+        try {
+            const user = await prisma.user.findUnique({
+                where: { telegramId }
+            });
+            if (!user) return [];
 
-        return await prisma.quest.findMany({
-            where: {
-                userId: user.id,
-                completed: true,
-            }
-        });
+            const quests = await prisma.$queryRaw<any[]>`
+                SELECT * FROM quests 
+                WHERE user_id = ${user.id} 
+                AND completed = true
+            `;
+
+            return quests || [];
+        } catch (error) {
+            console.error('❌ Get completed quests error:', error);
+            return [];
+        }
     }
 }

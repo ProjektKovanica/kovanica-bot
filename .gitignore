@@ -1,6 +1,7 @@
 # Node modules
 node_modules/
 dist/
+build/
 
 # Environment variables (OSJETLJIVO!)
 .env
@@ -31,3 +32,4 @@ tmp/
 temp/
 *.tmp
 backup_*.sql
+*.save

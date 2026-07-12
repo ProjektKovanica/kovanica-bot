@@ -50,7 +50,6 @@ export class DexService {
             const response = await axios.get(`${STON_API}/pools`, {
                 params: { jetton_master: jettonMasterAddress }
             });
-
             const pools = response.data?.pools || [];
 
             // Ako nema poolova, vrati prazne podatke

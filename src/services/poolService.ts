@@ -31,7 +31,6 @@ export class PoolService {
             data: {
                 spent: { increment: amount },
                 remaining: { decrement: amount },
-                lastUpdated: new Date()
             }
         });
         return true;
