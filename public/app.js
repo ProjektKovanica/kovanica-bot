@@ -486,7 +486,8 @@ async function loadNFTs() {
                 <span class="nft-card-rarity">${nft.rarity}</span>
                 <div class="nft-card-actions">
                     <button class="nft-action-btn" onclick="equipNFT(${nft.id})">${nft.id === equippedId ? '✅' : 'Opremi'}</button>
-                    <button class="nft-action-btn" onclick="stakeNFT(${nft.id})" style="color:var(--energy);border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.1)">${nft.stakedAt ? '🔒' : 'Stake'}</button>
+                    <button class="nft-action-btn" onclick="stakeNFT(${nft.id})" style="color:var(--energy);border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.1)">${nft.staked ? '🔒 Unstake' : 'Stake'}</button>
+                    <button class="nft-action-btn" onclick="withdrawNFT(${nft.id})" style="color:var(--boost);border-color:rgba(255,107,53,0.2);background:rgba(255,107,53,0.1)">📤 Withdraw</button>
                 </div>
             </div>`).join('');
     } catch (e) { grid.innerHTML = '<div class="nft-loading">Greška pri učitavanju NFT-ova</div>'; }
@@ -515,6 +516,36 @@ async function stakeNFT(nftId) {
         tg.HapticFeedback.notificationOccurred('success');
         loadNFTs();
     } catch (e) { console.error(e); }
+}
+
+
+async function withdrawNFT(nftId) {
+    const user = tg.initDataUnsafe?.user || null;
+    if (!user) return;
+
+    tg.showConfirm(
+        'Povući NFT na tvoj TON wallet?\nAdmin će ga poslati u roku 24h.',
+        async (confirmed) => {
+            if (!confirmed) return;
+            try {
+                const response = await fetch('/api/nft/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    tg.showAlert('✅ ' + data.message);
+                    tg.HapticFeedback.notificationOccurred('success');
+                    loadNFTs();
+                } else {
+                    tg.showAlert('❌ ' + (data.error || 'Greška'));
+                }
+            } catch(e) {
+                tg.showAlert('❌ Greška pri withdrawalu');
+            }
+        }
+    );
 }
 
 async function handleUnequip() {
