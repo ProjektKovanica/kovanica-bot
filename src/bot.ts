@@ -1239,8 +1239,8 @@ bot.callbackQuery("tap", async (ctx: Context) => {
         const nft = nftResult.nft;
         nftMessage = `\n\n🎉 **ISKOPAO SI NFT!**\n` +
                      `${nft.name} (${nft.rarity})\n` +
-                     `⭐ Bonus: +${nftResult.mintReward} KVNC\n` +
-                     `📦 Preostalo: ${nftResult.remainingSupply}/${nftResult.maxSupply}`;
+                     `⭐ Bonus: +${nftResult.reward} KVNC\n` +
+                     `📦 Preostalo: ${nftResult.nft.id}/${nftResult.maxSupply}`;
         
         await pushService.notifyNewNFT(telegramId, nft);
         
@@ -1249,8 +1249,8 @@ bot.callbackQuery("tap", async (ctx: Context) => {
                 caption: `🎉 **ISKOPAO SI NFT!** 🎉\n\n` +
                          `**${nft.name}** (${nft.rarity})\n` +
                          `⭐ Bonus: ${nft.bonusMultiplier}x na sve klikove\n` +
-                         `💰 Nagrada: +${nftResult.mintReward} KVNC\n` +
-                         `📦 Preostalo: ${nftResult.remainingSupply}/${nftResult.maxSupply}\n\n` +
+                         `💰 Nagrada: +${nftResult.reward} KVNC\n` +
+                         `📦 Preostalo: ${nftResult.nft.id}/${nftResult.maxSupply}\n\n` +
                          `💡 /equip ${nft.id} - Opremi NFT za bonus\n` +
                          `💡 /unequip - Skini opremljeni NFT\n` +
                          `💡 /stake ${nft.id} - Stake-aj NFT za pasivnu zaradu`

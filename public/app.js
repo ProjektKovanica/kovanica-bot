@@ -1,135 +1,598 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
+tg.setHeaderColor('#0f0f28');
+tg.setBackgroundColor('#080818');
 
+// === STATE ===
 let userData = null;
 let isProcessing = false;
+let energy = 1000;
+let maxEnergy = 1000;
+let boostEndTime = null;
+let boostInterval = null;
+let energyInterval = null;
+let currentTab = 'mine';
+let refLink = '';
+let soundEnabled = true;
+let audioCtx = null;
 
+// === AUDIO ===
+function playTapSound() {
+    if (!soundEnabled) return;
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.1);
+    } catch(e) {}
+}
+
+// === RANK CONFIG ===
+const RANKS = [
+    { name: '🪨 Novi rudar', min: 0, max: 100 },
+    { name: '⛏️ Početnik', min: 100, max: 500 },
+    { name: '⛏️ Napredni rudar', min: 500, max: 2000 },
+    { name: '🥉 Brončani rudar', min: 2000, max: 5000 },
+    { name: '🥈 Srebrni rudar', min: 5000, max: 10000 },
+    { name: '🥇 Zlatni rudar', min: 10000, max: 20000 },
+    { name: '🔹 Platinasti rudar', min: 20000, max: 50000 },
+    { name: '💎 Dijamantni rudar', min: 50000, max: 100000 },
+    { name: '👑 Kralj rudara', min: 100000, max: Infinity },
+];
+
+function getRankInfo(totalClicks) {
+    for (let i = RANKS.length - 1; i >= 0; i--) {
+        if (totalClicks >= RANKS[i].min) return { ...RANKS[i], index: i };
+    }
+    return { ...RANKS[0], index: 0 };
+}
+
+function getRankProgress(totalClicks) {
+    const rank = getRankInfo(totalClicks);
+    if (rank.max === Infinity) return 100;
+    const progress = ((totalClicks - rank.min) / (rank.max - rank.min)) * 100;
+    return Math.min(100, Math.max(0, progress));
+}
+
+// === INIT ===
 async function init() {
     try {
         const user = tg.initDataUnsafe?.user || null;
         if (!user) {
-            tg.showAlert('Greška pri povezivanju!');
+            tg.showAlert('Greška pri povezivanju s Telegramom!');
             return;
         }
 
-        console.log('📱 Telegram User:', user);
+        // Avatar
+        const avatarEl = document.getElementById('avatar');
+        if (avatarEl) {
+            if (user.photo_url) {
+                avatarEl.style.backgroundImage = `url(${user.photo_url})`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.textContent = (user.first_name || 'R')[0].toUpperCase();
+            }
+        }
+
+        // Username
+        const usernameEl = document.getElementById('username');
+        if (usernameEl) usernameEl.textContent = user.first_name || user.username || 'Rudar';
 
         const response = await fetch('/api/me', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                rawUser: user,
-                initData: tg.initData || ''
-            })
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
         });
 
-        if (!response.ok) {
-            const error = await response.text();
-            console.error('❌ API Error:', error);
-            throw new Error(`HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         userData = await response.json();
-        console.log('✅ User Data:', userData);
-        
+        energy = userData.energy || maxEnergy;
+        maxEnergy = userData.maxEnergy || 1000;
+
         updateUI(userData);
+        startEnergyRegen();
+
+        // Referral link
+        refLink = `https://t.me/kovanicatapbot?start=ref_${user.id}`;
+        const refLinkEl = document.getElementById('refLink');
+        if (refLinkEl) refLinkEl.textContent = refLink;
+
+        const refCountEl = document.getElementById('refCount');
+        if (refCountEl) refCountEl.textContent = userData.referralCount || 0;
+        const refEarnedEl = document.getElementById('refEarned');
+        if (refEarnedEl) refEarnedEl.textContent = ((userData.referralCount || 0) * 10).toFixed(0);
+
         tg.HapticFeedback.impactOccurred('light');
     } catch (error) {
-        console.error('❌ Init error:', error);
-        tg.showAlert('Greška pri učitavanju podataka!');
+        console.error('Init error:', error);
+        tg.showAlert('Greška pri učitavanju. Pokušaj ponovo.');
     }
 }
 
+// === UPDATE UI ===
 function updateUI(data) {
+    if (!data) return;
+
+    // Balans
     const balanceEl = document.getElementById('balance');
-    if (balanceEl) {
-        balanceEl.textContent = data.clickBalance?.toFixed(4) || '0.0000';
-    }
-    
-    const clicksEl = document.getElementById('totalClicks');
-    if (clicksEl) {
-        clicksEl.textContent = data.totalClicks || 0;
-    }
-    
-    const dailyEl = document.getElementById('dailyClicks');
-    if (dailyEl) {
-        dailyEl.textContent = `${data.dailyClicks || 0} / ${data.dailyLimit || 10000}`;
-    }
-    
+    if (balanceEl) balanceEl.textContent = (data.clickBalance || 0).toFixed(4);
+
+    // Rang
+    const totalClicks = data.totalClicks || 0;
+    const rankInfo = getRankInfo(totalClicks);
     const rankEl = document.getElementById('rankBadge');
-    if (rankEl) {
-        rankEl.textContent = data.rank || 'Novi rudar';
+    if (rankEl) rankEl.textContent = data.rank || rankInfo.name;
+
+    // Rank progress bar
+    const progress = getRankProgress(totalClicks);
+    const progressFill = document.getElementById('rankProgressFill');
+    const progressText = document.getElementById('rankProgressText');
+    if (progressFill) progressFill.style.width = `${progress}%`;
+    if (progressText) {
+        if (rankInfo.max === Infinity) {
+            progressText.textContent = '👑 MAX RANG';
+        } else {
+            progressText.textContent = `${totalClicks.toLocaleString()} / ${rankInfo.max.toLocaleString()}`;
+        }
+    }
+
+    // Stats
+    const totalEl = document.getElementById('totalClicks');
+    if (totalEl) totalEl.textContent = totalClicks.toLocaleString();
+
+    // Daily clicks — samo današnji klikovi bez limita
+    const dailyEl = document.getElementById('dailyClicks');
+    if (dailyEl) dailyEl.textContent = (data.dailyClicks || 0).toLocaleString();
+
+    // Reward
+    const rewardEl = document.getElementById('rewardPerTap');
+    if (rewardEl) rewardEl.textContent = `${(data.baseReward || data.reward || 1).toFixed(4)} KVNC`;
+
+    const rewardSubEl = document.getElementById('rewardSub');
+    if (rewardSubEl) rewardSubEl.textContent = `+${(data.baseReward || data.reward || 1).toFixed(4)} KVNC/klik`;
+
+    // Energy
+    energy = data.energy !== undefined ? data.energy : energy;
+    maxEnergy = data.maxEnergy || 1000;
+    updateEnergyUI();
+
+    // Boost
+    if (data.boostActive && data.boostEndsAt) {
+        startBoostTimer(new Date(data.boostEndsAt).getTime());
+    }
+
+    // Gumb
+    const mineBtn = document.getElementById('mineBtn');
+    if (mineBtn) mineBtn.disabled = energy <= 0;
+}
+
+// === ENERGY ===
+function updateEnergyUI() {
+    const fill = document.getElementById('energyFill');
+    const val = document.getElementById('energyVal');
+    const pct = maxEnergy > 0 ? Math.min(100, (energy / maxEnergy) * 100) : 0;
+    if (fill) fill.style.width = `${pct}%`;
+    if (val) val.textContent = `${Math.floor(energy)} / ${maxEnergy}`;
+
+    // Countdown do pune energije
+    const countdown = document.getElementById('energyCountdown');
+    if (countdown) {
+        if (energy >= maxEnergy) {
+            countdown.textContent = '⚡ Energija puna!';
+            countdown.style.color = 'var(--energy)';
+        } else {
+            const secsLeft = Math.ceil((maxEnergy - energy) / 2);
+            const mins = Math.floor(secsLeft / 60);
+            const secs = secsLeft % 60;
+            countdown.textContent = `🔋 Puno za: ${mins}m ${secs}s`;
+            countdown.style.color = 'var(--muted)';
+        }
     }
 }
 
-async function handleMine() {
-    if (isProcessing) return;
+function startEnergyRegen() {
+    if (energyInterval) clearInterval(energyInterval);
+    energyInterval = setInterval(() => {
+        if (energy < maxEnergy) {
+            energy = Math.min(maxEnergy, energy + 2);
+            updateEnergyUI();
+            if (energy > 0) {
+                const mineBtn = document.getElementById('mineBtn');
+                if (mineBtn && !isProcessing) mineBtn.disabled = false;
+            }
+        }
+    }, 1000);
+}
+
+// === BOOST TIMER ===
+function startBoostTimer(endTimestamp) {
+    const boostBar = document.getElementById('boostBar');
+    if (boostBar) boostBar.style.display = 'flex';
+    if (boostInterval) clearInterval(boostInterval);
+    const totalDuration = 10 * 60 * 1000;
+    boostInterval = setInterval(() => {
+        const remaining = endTimestamp - Date.now();
+        if (remaining <= 0) {
+            clearInterval(boostInterval);
+            if (boostBar) boostBar.style.display = 'none';
+            return;
+        }
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        const timeEl = document.getElementById('boostTime');
+        if (timeEl) timeEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        const pct = Math.min(100, (remaining / totalDuration) * 100);
+        const progressEl = document.getElementById('boostProgress');
+        if (progressEl) progressEl.style.width = `${pct}%`;
+    }, 1000);
+    boostEndTime = endTimestamp;
+}
+
+// === PARTICLES ===
+function spawnParticles(x, y) {
+    const container = document.getElementById('particleContainer');
+    if (!container) return;
+    const colors = ['#ffd200', '#ff6b35', '#00d4ff', '#ffffff', '#fda085'];
+    for (let i = 0; i < 8; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `
+            left: ${x}px; top: ${y}px;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            --dx: ${(Math.random() - 0.5) * 120}px;
+            --dy: ${-(Math.random() * 100 + 40)}px;
+        `;
+        container.appendChild(p);
+        setTimeout(() => p.remove(), 700);
+    }
+}
+
+// === MINE ===
+async function handleMine(event) {
+    if (isProcessing || energy <= 0) return;
     isProcessing = true;
 
     const btn = document.getElementById('mineBtn');
-    btn.textContent = '⛏️ RUDARI...';
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
+
+    // Animacija
+    const pickaxe = document.getElementById('pickaxe');
+    if (pickaxe) {
+        pickaxe.classList.add('hit');
+        setTimeout(() => pickaxe.classList.remove('hit'), 150);
+    }
+
+    // Particles
+    if (event) {
+        const rect = event.target.getBoundingClientRect();
+        spawnParticles(event.clientX, event.clientY);
+    } else {
+        const wrapper = document.getElementById('pickaxe');
+        if (wrapper) {
+            const rect = wrapper.getBoundingClientRect();
+            spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2);
+        }
+    }
+
+    // Sound
+    playTapSound();
+
+    // Optimistic energy update
+    energy = Math.max(0, energy - 1);
+    updateEnergyUI();
+
+    tg.HapticFeedback.impactOccurred('medium');
 
     try {
         const user = tg.initDataUnsafe?.user || null;
-        if (!user) {
-            tg.showAlert('Greška pri rudarenju!');
-            isProcessing = false;
-            btn.textContent = '⛏️ RUDARI!';
-            btn.disabled = false;
-            return;
-        }
+        if (!user) throw new Error('No user');
 
         const response = await fetch('/api/tap', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                rawUser: user,
-                initData: tg.initData || ''
-            })
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
         });
 
         if (!response.ok) {
-            const error = await response.text();
-            console.error('❌ Tap Error:', error);
+            if (response.status === 429) {
+                tg.showAlert('Previše brzo!');
+                isProcessing = false;
+                if (btn) btn.disabled = false;
+                return;
+            }
+            if (response.status === 400) {
+                tg.showAlert('⚡ Nema energije! Pričekaj regeneraciju.');
+                isProcessing = false;
+                if (btn) btn.disabled = true;
+                return;
+            }
             throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
         userData = data;
-        updateUI(data);
-        
-        tg.HapticFeedback.impactOccurred('medium');
-        
-        const counter = document.getElementById('clickCounter');
-        if (counter) {
-            counter.textContent = `+${data.reward?.toFixed(1) || 1}`;
-            counter.classList.add('show');
-            setTimeout(() => counter.classList.remove('show'), 500);
+
+        // Update balans
+        const balanceEl = document.getElementById('balance');
+        if (balanceEl) balanceEl.textContent = (data.clickBalance || 0).toFixed(4);
+
+        const totalEl = document.getElementById('totalClicks');
+        if (totalEl) totalEl.textContent = (data.totalClicks || 0).toLocaleString();
+
+        // Daily clicks bez /500
+        const dailyEl = document.getElementById('dailyClicks');
+        if (dailyEl) dailyEl.textContent = (data.dailyClicks || 0).toLocaleString();
+
+        // Rank progress
+        const progress = getRankProgress(data.totalClicks || 0);
+        const progressFill = document.getElementById('rankProgressFill');
+        if (progressFill) progressFill.style.width = `${progress}%`;
+
+        // Energy iz servera
+        if (data.energy !== undefined) {
+            energy = data.energy;
+            updateEnergyUI();
         }
-        
-        const pickaxe = document.getElementById('pickaxe');
-        if (pickaxe) {
-            pickaxe.classList.add('hit');
-            setTimeout(() => pickaxe.classList.remove('hit'), 150);
-        }
-        
+
+        // Floating reward
+        const reward = data.reward || data.baseReward || 1;
+        showFloatingCounter(`+${reward.toFixed(4)}`);
+
     } catch (error) {
-        console.error('❌ Tap error:', error);
-        tg.showAlert('Greška pri rudarenju!');
+        console.error('Tap error:', error);
+        energy = Math.min(maxEnergy, energy + 1);
+        updateEnergyUI();
     }
 
     isProcessing = false;
-    btn.textContent = '⛏️ RUDARI!';
-    btn.disabled = false;
+    if (btn) btn.disabled = energy <= 0;
 }
 
+function showFloatingCounter(text) {
+    const counter = document.getElementById('clickCounter');
+    if (!counter) return;
+    counter.textContent = text;
+    counter.classList.remove('show');
+    void counter.offsetWidth;
+    counter.classList.add('show');
+    setTimeout(() => counter.classList.remove('show'), 600);
+}
+
+// === BOOST ===
+async function handleBoost() {
+    if (boostEndTime && boostEndTime > Date.now()) {
+        tg.showAlert('Boost je već aktivan!');
+        return;
+    }
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch('/api/boost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+        });
+        const data = await response.json();
+        if (data.boostActive && data.boostEndsAt) {
+            startBoostTimer(new Date(data.boostEndsAt).getTime());
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.showAlert('⚡ 2x Boost aktiviran na 10 minuta!');
+        } else if (data.error) {
+            tg.showAlert(data.error);
+        }
+    } catch (e) { console.error('Boost error:', e); }
+}
+
+// === SOUND TOGGLE ===
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('soundBtn');
+    if (btn) btn.textContent = soundEnabled ? '🔊' : '🔇';
+    tg.HapticFeedback.selectionChanged();
+}
+
+// === TABS ===
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const tabBtn = document.querySelector(`[data-tab="${tab}"]`);
+    if (tabBtn) tabBtn.classList.add('active');
+    const tabContent = document.getElementById(`tab-${tab}`);
+    if (tabContent) tabContent.classList.add('active');
+    tg.HapticFeedback.selectionChanged();
+    if (tab === 'leaderboard') loadLeaderboard();
+    if (tab === 'nft') loadNFTs();
+    if (tab === 'quests') loadQuests();
+}
+
+// === LEADERBOARD ===
+async function loadLeaderboard() {
+    const list = document.getElementById('lbList');
+    if (!list) return;
+    list.innerHTML = '<div class="lb-loading">Učitavanje...</div>';
+    try {
+        const response = await fetch('/api/leaderboard');
+        const data = await response.json();
+        const users = data.users || data || [];
+        if (!users.length) { list.innerHTML = '<div class="lb-loading">Nema podataka</div>'; return; }
+        const myId = String(tg.initDataUnsafe?.user?.id || '');
+        const medals = ['🥇', '🥈', '🥉'];
+        list.innerHTML = users.map((u, i) => {
+            const isMe = u.telegramId === myId;
+            const medal = medals[i] || `${i + 1}.`;
+            return `
+                <div class="lb-item ${isMe ? 'me' : ''}">
+                    <span class="lb-rank">${medal}</span>
+                    <div class="lb-info">
+                        <span class="lb-name">${isMe ? '👤 Ti' : `Rudar #${u.telegramId.slice(-4)}`}</span>
+                        <span class="lb-rank-label">${getRankInfo(u.totalClicks).name}</span>
+                    </div>
+                    <span class="lb-clicks">${(u.totalClicks || 0).toLocaleString()}</span>
+                </div>`;
+        }).join('');
+        const myRankIdx = users.findIndex(u => u.telegramId === myId);
+        const myRankEl = document.getElementById('lbMyRank');
+        const myRankNum = document.getElementById('myRankNum');
+        if (myRankIdx !== -1 && myRankEl && myRankNum) {
+            myRankEl.style.display = 'block';
+            myRankNum.textContent = `#${myRankIdx + 1}`;
+        }
+    } catch (e) { list.innerHTML = '<div class="lb-loading">Greška pri učitavanju</div>'; }
+}
+
+// === NFTs ===
+async function loadNFTs() {
+    const grid = document.getElementById('nftGrid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="nft-loading">Učitavanje NFT-ova...</div>';
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch('/api/nftcount', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+        });
+        const data = await response.json();
+        const nfts = data.nfts || [];
+        if (!nfts.length) {
+            grid.innerHTML = `<div class="nft-loading" style="grid-column:1/-1">Nemaš NFT-ova.<br><span style="font-size:11px">Rudarenjem otključavaš NFT-ove!</span></div>`;
+            return;
+        }
+        const equippedId = data.equippedNftId;
+        const equippedNFT = nfts.find(n => n.id === equippedId);
+        if (equippedNFT) {
+            document.getElementById('nftEqEmpty').style.display = 'none';
+            document.getElementById('nftEqCard').style.display = 'flex';
+            document.getElementById('nftEqIcon').textContent = getNFTIcon(equippedNFT.rarity);
+            document.getElementById('nftEqName').textContent = equippedNFT.name;
+            document.getElementById('nftEqBonus').textContent = `${equippedNFT.bonusMultiplier}x bonus`;
+        }
+        grid.innerHTML = nfts.map(nft => `
+            <div class="nft-card ${nft.id === equippedId ? 'equipped' : ''}">
+                <span class="nft-card-icon">${getNFTIcon(nft.rarity)}</span>
+                <span class="nft-card-name">${nft.name}</span>
+                <span class="nft-card-bonus">${nft.bonusMultiplier}x bonus</span>
+                <span class="nft-card-rarity">${nft.rarity}</span>
+                <div class="nft-card-actions">
+                    <button class="nft-action-btn" onclick="equipNFT(${nft.id})">${nft.id === equippedId ? '✅' : 'Opremi'}</button>
+                    <button class="nft-action-btn" onclick="stakeNFT(${nft.id})" style="color:var(--energy);border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.1)">${nft.stakedAt ? '🔒' : 'Stake'}</button>
+                </div>
+            </div>`).join('');
+    } catch (e) { grid.innerHTML = '<div class="nft-loading">Greška pri učitavanju NFT-ova</div>'; }
+}
+
+function getNFTIcon(rarity) {
+    const icons = { 'bronze': '⛏️', 'silver': '🥈', 'gold': '🥇', 'diamond': '💎', 'fire': '🔥', 'legendary': '👑' };
+    return icons[rarity?.toLowerCase()] || '🎨';
+}
+
+async function equipNFT(nftId) {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        await fetch('/api/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId }) });
+        tg.HapticFeedback.notificationOccurred('success');
+        loadNFTs();
+    } catch (e) { console.error(e); }
+}
+
+async function stakeNFT(nftId) {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        await fetch('/api/stake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId }) });
+        tg.HapticFeedback.notificationOccurred('success');
+        loadNFTs();
+    } catch (e) { console.error(e); }
+}
+
+async function handleUnequip() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        await fetch('/api/unequip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '' }) });
+        document.getElementById('nftEqEmpty').style.display = 'flex';
+        document.getElementById('nftEqCard').style.display = 'none';
+        tg.HapticFeedback.notificationOccurred('success');
+        loadNFTs();
+    } catch (e) { console.error(e); }
+}
+
+// === QUESTS ===
+async function loadQuests() {
+    const list = document.getElementById('questList');
+    if (!list) return;
+    list.innerHTML = '<div class="lb-loading">Učitavanje zadataka...</div>';
+
+    const quests = [
+        { id: 'daily_clicks', title: '⛏️ Rudarski dan', desc: 'Klikni 100 puta danas', target: 100, reward: 50, type: 'daily' },
+        { id: 'total_clicks', title: '💎 Iskusni rudar', desc: 'Ukupno 1000 klikova', target: 1000, reward: 100, type: 'total' },
+        { id: 'referral', title: '👥 Pozovi prijatelja', desc: 'Pozovi 1 korisnika', target: 1, reward: 200, type: 'referral' },
+        { id: 'streak', title: '🔥 Dnevni streak', desc: 'Rudari 7 dana zaredom', target: 7, reward: 500, type: 'streak' },
+    ];
+
+    const totalClicks = userData?.totalClicks || 0;
+    const dailyClicks = userData?.dailyClicks || 0;
+    const referralCount = userData?.referralCount || 0;
+
+    list.innerHTML = quests.map(q => {
+        let current = 0;
+        if (q.type === 'daily') current = Math.min(q.target, dailyClicks);
+        if (q.type === 'total') current = Math.min(q.target, totalClicks);
+        if (q.type === 'referral') current = Math.min(q.target, referralCount);
+        const pct = Math.min(100, (current / q.target) * 100);
+        const done = current >= q.target;
+        return `
+            <div class="quest-item ${done ? 'done' : ''}">
+                <div class="quest-header">
+                    <span class="quest-title">${q.title}</span>
+                    <span class="quest-reward">+${q.reward} KVNC</span>
+                </div>
+                <div class="quest-desc">${q.desc}</div>
+                <div class="quest-progress-wrap">
+                    <div class="quest-progress-fill" style="width:${pct}%"></div>
+                </div>
+                <div class="quest-footer">
+                    <span class="quest-count">${current} / ${q.target}</span>
+                    ${done ? '<span class="quest-done-badge">✅ Završeno</span>' : ''}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+// === REFERRAL ===
+function copyRefLink() {
+    if (!refLink) return;
+    navigator.clipboard?.writeText(refLink).then(() => {
+        tg.showAlert('✅ Link kopiran!');
+    }).catch(() => tg.showAlert(refLink));
+    tg.HapticFeedback.notificationOccurred('success');
+}
+
+function shareRefLink() {
+    if (!refLink) return;
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('⛏️ Pridruži se Kovanica rudniku i rudari KVNC kripto!')}`);
+}
+
+// === START ===
 document.addEventListener('DOMContentLoaded', () => {
     const mineBtn = document.getElementById('mineBtn');
-    if (mineBtn) {
-        mineBtn.addEventListener('click', handleMine);
-    }
+    if (mineBtn) mineBtn.addEventListener('click', handleMine);
+    
+    const pickaxe = document.getElementById('pickaxe');
+    if (pickaxe) pickaxe.addEventListener('click', handleMine);
 });
 
 init();
-console.log('🚀 Kovanica Mini App loaded!');
+console.log('🚀 Kovanica Mini App v2.2 loaded!');

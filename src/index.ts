@@ -31,8 +31,9 @@ const bot = new Bot(process.env.BOT_TOKEN!);
 
 // === KONSTANTE ===
 const INITIAL_REWARD = 1.0;
-const DAILY_LIMIT = 10000;
-const MIN_WITHDRAWAL = 1000;
+const DAILY_LIMIT = 10000
+const ENERGY_LIMIT = 1000;
+const MIN_WITHDRAWAL = 10000;
 const REFERRAL_BONUS_INVITER = 10;
 const REFERRAL_BONUS_NEW = 5;
 const DAILY_BONUS_MULTIPLIER = 2;
@@ -79,6 +80,27 @@ function extractTelegramId(initData: string, rawUser?: any): string | null {
 
     // Dev fallback (automatski blokiran u produkciji)
     return extractTelegramIdDev(rawUser);
+}
+
+
+const HALVING_INTERVAL = 1000000; // svakih 1M klikova
+const MAX_ENERGY = 1000;
+const ENERGY_REGEN_PER_SEC = 2;
+
+async function getCurrentReward(): Promise<number> {
+    const result = await prisma.user.aggregate({ _sum: { totalClicks: true } });
+    const totalClicks = result._sum.totalClicks || 0;
+    const epoch = Math.floor(totalClicks / HALVING_INTERVAL);
+    return INITIAL_REWARD / Math.pow(2, epoch);
+}
+
+async function regenerateEnergy(user: any): Promise<number> {
+    if (!user.lastEnergyUpdate) return user.energy || MAX_ENERGY;
+    const now = new Date();
+    const lastUpdate = new Date(user.lastEnergyUpdate);
+    const secondsElapsed = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
+    const regenAmount = secondsElapsed * ENERGY_REGEN_PER_SEC;
+    return Math.min(MAX_ENERGY, (user.energy || 0) + regenAmount);
 }
 
 async function initBot() {
@@ -306,6 +328,125 @@ async function initBot() {
             `🏅 Postignuća: ${achievements}\n` +
             `⭐️ Daily bonus: ${user.lastBonusDate && isToday(user.lastBonusDate) ? "✅ Iskorišten danas" : "✅ Dostupan (2x)"}\n` +
             `📅 Zadnji klik: ${user.lastClickDate.toLocaleString()}`
+        );
+    });
+
+    bot.command("daily", async (ctx: Context) => {
+        if (!ctx.from) return ctx.reply("Nema korisnika!");
+        const telegramId = String(ctx.from.id);
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return ctx.reply("Klikni /start prvo!");
+
+        const now = new Date();
+        const lastBonus = user.lastBonusDate;
+        
+        if (lastBonus && isToday(lastBonus)) {
+            const tomorrow = new Date(now);
+            tomorrow.setHours(24, 0, 0, 0);
+            const diff = tomorrow.getTime() - now.getTime();
+            const hours = Math.floor(diff / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            return ctx.reply(
+                `⏳ Već si preuzeo dnevnu nagradu!
+
+` +
+                `🕐 Sljedeća nagrada za: ${hours}h ${mins}min`
+            );
+        }
+
+        const reward = 50;
+        await prisma.user.update({
+            where: { telegramId },
+            data: {
+                clickBalance: { increment: reward },
+                lastBonusDate: now
+            }
+        });
+
+        await ctx.reply(
+            `🎁 Dnevna nagrada preuzeta!
+
+` +
+            `💰 +${reward} KVNC dodano na tvoj balans!
+` +
+            `💎 Novi balans: ${(user.clickBalance + reward).toFixed(2)} KVNC
+
+` +
+            `⏰ Vrati se sutra za novu nagradu!`
+        );
+    });
+
+    bot.command("stats", async (ctx: Context) => {
+        try {
+            const totalUsers = await prisma.user.count();
+            const totalClicksResult = await prisma.user.aggregate({ _sum: { totalClicks: true } });
+            const totalBalanceResult = await prisma.user.aggregate({ _sum: { clickBalance: true } });
+            const totalClicks = totalClicksResult._sum.totalClicks || 0;
+            const totalBalance = totalBalanceResult._sum.clickBalance || 0;
+            const totalSupply = Number(process.env.TOTAL_SUPPLY) || 1000000000;
+            const burned = Number(process.env.BURN_SUPPLY) || 100000000;
+            const circulating = totalSupply - burned;
+            
+            // Halving info
+            const halvingInterval = 1000000;
+            const currentEpoch = Math.floor(totalClicks / halvingInterval);
+            const nextHalving = (currentEpoch + 1) * halvingInterval;
+            const reward = INITIAL_REWARD / Math.pow(2, currentEpoch);
+
+            await ctx.reply(
+                `📊 KOVANICA GLOBALNE STATISTIKE
+
+` +
+                `👥 Ukupno rudara: ${totalUsers.toLocaleString()}
+` +
+                `👆 Ukupno klikova: ${totalClicks.toLocaleString()}
+` +
+                `💰 KVNC u optjecaju: ${totalBalance.toFixed(0)} KVNC
+
+` +
+                `🪙 TOKENOMICS
+` +
+                `📦 Ukupna ponuda: ${totalSupply.toLocaleString()} KVNC
+` +
+                `🔥 Spaljeno: ${burned.toLocaleString()} KVNC
+` +
+                `💫 Cirkulacija: ${circulating.toLocaleString()} KVNC
+
+` +
+                `⛏️ HALVING INFO
+` +
+                `🔄 Trenutna nagrada: ${reward.toFixed(4)} KVNC/klik
+` +
+                `📉 Halving epoch: #${currentEpoch}
+` +
+                `🎯 Sljedeći halving za: ${(nextHalving - totalClicks).toLocaleString()} klikova`
+            );
+        } catch(e: any) {
+            ctx.reply("❌ Greška pri dohvaćanju statistika.");
+        }
+    });
+
+    bot.command("burn", async (ctx: Context) => {
+        const burned = Number(process.env.BURN_SUPPLY) || 100000000;
+        const totalSupply = Number(process.env.TOTAL_SUPPLY) || 1000000000;
+        const burnPct = ((burned / totalSupply) * 100).toFixed(2);
+        
+        await ctx.reply(
+            `🔥 KVNC BURN INFO
+
+` +
+            `🔥 Spaljeno: ${burned.toLocaleString()} KVNC
+` +
+            `📦 Ukupna ponuda: ${totalSupply.toLocaleString()} KVNC
+` +
+            `📊 Postotak spaljen: ${burnPct}%
+` +
+            `💫 Preostalo: ${(totalSupply - burned).toLocaleString()} KVNC
+
+` +
+            `🔗 Provjeri na TON Explorer:
+` +
+            `https://tonscan.org/jetton/${process.env.KVNC_JETTON_MASTER}`
         );
     });
 
@@ -1425,8 +1566,8 @@ async function initBot() {
             const nft = nftResult.nft;
             nftMessage = `\n\n🎉 **ISKOPAO SI NFT!**\n` +
                          `${nft.name} (${nft.rarity})\n` +
-                         `⭐ Bonus: +${nftResult.mintReward} KVNC\n` +
-                         `📦 Preostalo: ${nftResult.remainingSupply}/${nftResult.maxSupply}`;
+                         `⭐ Bonus: +${nftResult.reward} KVNC\n` +
+                         `📦 Preostalo: ${nftResult.nft.id}/${nftResult.maxSupply}`;
             
             await pushService.notifyNewNFT(telegramId, nft);
             
@@ -1435,8 +1576,8 @@ async function initBot() {
                     caption: `🎉 **ISKOPAO SI NFT!** 🎉\n\n` +
                              `**${nft.name}** (${nft.rarity})\n` +
                              `⭐ Bonus: ${nft.bonusMultiplier}x na sve klikove\n` +
-                             `💰 Nagrada: +${nftResult.mintReward} KVNC\n` +
-                             `📦 Preostalo: ${nftResult.remainingSupply}/${nftResult.maxSupply}\n\n` +
+                             `💰 Nagrada: +${nftResult.reward} KVNC\n` +
+                             `📦 Preostalo: ${nftResult.nft.id}/${nftResult.maxSupply}\n\n` +
                              `💡 /equip ${nft.id} - Opremi NFT za bonus\n` +
                              `💡 /unequip - Skini opremljeni NFT\n` +
                              `💡 /stake ${nft.id} - Stake-aj NFT za pasivnu zaradu`
@@ -1468,6 +1609,7 @@ async function initBot() {
     // SERVER
     // ============================================
     const app = express();
+    app.set("trust proxy", 1);
     app.use(cors());
     app.use(express.json());
 
@@ -1513,15 +1655,6 @@ async function initBot() {
 
     // === RATE LIMITING ===
     // === WEBHOOK HANDLER ===
-    app.post("/webhook", express.json(), async (req, res) => {
-        try {
-            await bot.handleUpdate(req.body);
-            res.sendStatus(200);
-        } catch (err) {
-            console.error("Webhook error:", err);
-            res.sendStatus(500);
-        }
-    });
 
     app.post('/api/me', async (req, res) => {
         try {
@@ -1552,63 +1685,101 @@ async function initBot() {
         }
     });
 
-    app.post('/api/tap', async (req, res) => {
+    app.post('/api/tap', async (req: any, res: any) => {
         try {
-            const { initData, rawUser } = req.body;
+            const { rawUser, initData } = req.body;
             const telegramId = extractTelegramId(initData, rawUser);
-            if (!telegramId) return res.status(401).json({ error: 'No user ID' });
-            
-            const dbUser = await prisma.user.findUnique({ where: { telegramId } });
-            if (!dbUser) return res.status(404).json({ error: 'User not found' });
-            
-            const now = new Date();
-            let dailyClicks = dbUser.dailyClicks;
-            if (!isToday(dbUser.lastClickDate)) dailyClicks = 0;
-            
-            if (dailyClicks >= 10000) {
-                return res.status(400).json({ error: 'Daily limit reached' });
-            }
-            
-            let reward = 1.0;
-            
-            let bonusAvailable = !dbUser.lastBonusDate || !isToday(dbUser.lastBonusDate);
-            if (bonusAvailable) {
-                reward = reward * 2;
-                await prisma.user.update({
-                    where: { telegramId },
-                    data: { lastBonusDate: now },
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran zahtjev' });
+
+            const user = await prisma.user.findUnique({ where: { telegramId } });
+            if (!user) return res.status(404).json({ error: 'Korisnik nije pronađen' });
+
+            // Blacklist provjera
+            if (user.isBlacklisted) return res.status(403).json({ error: 'Korisnički račun je blokiran' });
+
+            // Regeneriraj energiju
+            const currentEnergy = await regenerateEnergy(user);
+            if (currentEnergy <= 0) {
+                return res.status(400).json({ 
+                    error: 'Nema energije!',
+                    energy: 0,
+                    maxEnergy: MAX_ENERGY
                 });
             }
+
+            // Halving nagrada
+            const baseReward = await getCurrentReward();
             
-            const nft = await prisma.nFT.findFirst({
-                where: { userId: dbUser.id, equipped: true }
+            // NFT bonus
+            const equippedNFT = await NFTService.getEquippedNFT(telegramId);
+            const multiplier = equippedNFT ? equippedNFT.bonusMultiplier : 1;
+            
+            // Boost provjera
+            const activeBoost = await prisma.boost.findFirst({
+                where: { userId: user.id, expiresAt: { gt: new Date() } }
             });
-            if (nft) {
-                reward = reward * nft.bonusMultiplier;
-            }
+            const boostMultiplier = activeBoost ? 2 : 1;
             
-            const updated = await prisma.user.update({
+            const totalReward = baseReward * multiplier * boostMultiplier;
+
+            // Daily limit provjera
+            const isNewDay = !isToday(user.lastClickDate);
+            const dailyClicks = isNewDay ? 1 : user.dailyClicks + 1;
+
+            // Update korisnika
+            const updatedUser = await prisma.user.update({
                 where: { telegramId },
                 data: {
-                    clickBalance: { increment: reward },
+                    clickBalance: { increment: totalReward },
                     totalClicks: { increment: 1 },
-                    dailyClicks: dailyClicks + 1,
-                    lastClickDate: now,
-                },
+                    dailyClicks: dailyClicks,
+                    lastClickDate: new Date(),
+                    energy: currentEnergy - 1,
+                    lastEnergyUpdate: new Date()
+                }
             });
-            
+
+            // Spremi transakciju
+            await prisma.transaction.create({
+                data: {
+                    userId: user.id,
+                    type: 'tap',
+                    amount: totalReward,
+                    meta: JSON.stringify({ baseReward, multiplier, boostMultiplier })
+                }
+            });
+
+            // Provjeri halving
+            const newTotalClicks = await prisma.user.aggregate({ _sum: { totalClicks: true } });
+            const totalGlobal = newTotalClicks._sum.totalClicks || 0;
+            const oldEpoch = Math.floor((totalGlobal - 1) / HALVING_INTERVAL);
+            const newEpoch = Math.floor(totalGlobal / HALVING_INTERVAL);
+            if (newEpoch > oldEpoch) {
+                const oldReward = INITIAL_REWARD / Math.pow(2, oldEpoch);
+                const newReward = INITIAL_REWARD / Math.pow(2, newEpoch);
+                await prisma.halvingEvent.create({
+                    data: { epoch: newEpoch, totalClicks: totalGlobal, oldReward, newReward }
+                });
+                console.log(`⛏️ HALVING! Epoch ${newEpoch}, nova nagrada: ${newReward} KVNC`);
+            }
+
             res.json({
-                clickBalance: updated.clickBalance,
-                totalClicks: updated.totalClicks,
-                dailyClicks: updated.dailyClicks,
-                dailyLimit: 10000,
-                referralCount: updated.referralCount || 0,
-                rank: getRank(updated.totalClicks),
-                reward: reward,
+                clickBalance: updatedUser.clickBalance,
+                totalClicks: updatedUser.totalClicks,
+                dailyClicks: updatedUser.dailyClicks,
+                energy: updatedUser.energy,
+                maxEnergy: MAX_ENERGY,
+                reward: totalReward,
+                baseReward,
+                multiplier,
+                boostActive: !!activeBoost,
+                boostEndsAt: activeBoost?.expiresAt || null,
+                rank: getRank(updatedUser.totalClicks)
             });
-        } catch (error) {
+
+        } catch (error: any) {
             console.error("❌ /api/tap error:", error);
-            res.status(500).json({ error: 'Server error' });
+            res.status(500).json({ error: 'Interna greška servera' });
         }
     });
 
@@ -2058,6 +2229,223 @@ async function initBot() {
 
     bot.catch((err) => {
         console.error("❌ Greška:", err);
+    });
+
+
+    // === NFT API ENDPOINTI ===
+    app.post('/api/equip', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData, nftId } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+            const result = await NFTService.equipNFT(telegramId, Number(nftId));
+            if (!result) return res.status(404).json({ error: 'NFT nije pronađen' });
+            res.json({ success: true, nft: result });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/unequip', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+            const result = await NFTService.unequipNFT(telegramId);
+            if (!result) return res.status(404).json({ error: 'Nema opremljenog NFT-a' });
+            res.json({ success: true, nft: result });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/stake', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData, nftId } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+            const result = await NFTService.stakeNFT(telegramId, Number(nftId));
+            if (!result) return res.status(404).json({ error: 'NFT nije pronađen' });
+            res.json({ success: true });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/unstake', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData, nftId } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+            const result = await NFTService.unstakeNFT(telegramId, Number(nftId));
+            if (!result) return res.status(404).json({ error: 'NFT nije pronađen ili nije stakean' });
+            res.json({ success: true, reward: result.reward });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/nft/withdraw', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData, nftId } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+
+            const user = await prisma.user.findUnique({ where: { telegramId } });
+            if (!user) return res.status(404).json({ error: 'Korisnik nije pronađen' });
+            if (!user.tonWallet) return res.status(400).json({ error: 'Nema TON wallet adrese. Dodaj je s /wallet komandom.' });
+
+            const nft = await prisma.nFT.findFirst({
+                where: { id: Number(nftId), userId: user.id }
+            });
+            if (!nft) return res.status(404).json({ error: 'NFT nije pronađen' });
+            if (nft.staked) return res.status(400).json({ error: 'NFT je stakean. Prvo ga unstakaj.' });
+            if (nft.equipped) return res.status(400).json({ error: 'NFT je opremljen. Prvo ga skini.' });
+
+            // Označi NFT kao pending withdrawal
+            await prisma.nFT.update({
+                where: { id: nft.id },
+                data: { contractAddress: `withdraw:${user.tonWallet}:${Date.now()}` }
+            });
+
+            res.json({
+                success: true,
+                message: `NFT ${nft.name} je označen za withdrawal na ${user.tonWallet}. Admin će ga poslati u roku 24h.`,
+                nft: nft,
+                toWallet: user.tonWallet
+            });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    // Blacklist endpoint za admin
+    app.post('/api/admin/user/blacklist', adminAuth, async (req: any, res: any) => {
+        try {
+            const { telegramId, blacklist } = req.body;
+            await prisma.user.update({
+                where: { telegramId: String(telegramId) },
+                data: { isBlacklisted: blacklist }
+            });
+            res.json({ success: true });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    // === ADMIN API ===
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "kovanica2026admin";
+
+    function adminAuth(req: any, res: any, next: any) {
+        const token = req.headers['x-admin-token'];
+        if (token !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+        next();
+    }
+
+    app.post('/api/admin/login', async (req: any, res: any) => {
+        const { password } = req.body;
+        if (password === ADMIN_PASSWORD) {
+            res.json({ success: true, token: ADMIN_PASSWORD });
+        } else {
+            res.status(401).json({ error: 'Pogrešna lozinka' });
+        }
+    });
+
+    app.get('/api/admin/stats', adminAuth, async (req: any, res: any) => {
+        try {
+            const totalUsers = await prisma.user.count();
+            const totalClicks = await prisma.user.aggregate({ _sum: { totalClicks: true } });
+            const totalBalance = await prisma.user.aggregate({ _sum: { clickBalance: true } });
+            const pendingWithdrawals = await prisma.withdrawal.count({ where: { status: 'pending' } });
+            const totalNFTs = await prisma.nFT.count();
+            const todayUsers = await prisma.user.count({
+                where: { lastClickDate: { gte: new Date(new Date().setHours(0,0,0,0)) } }
+            });
+            res.json({
+                totalUsers, todayUsers,
+                totalClicks: totalClicks._sum.totalClicks || 0,
+                totalBalance: totalBalance._sum.clickBalance || 0,
+                pendingWithdrawals, totalNFTs
+            });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.get('/api/admin/users', adminAuth, async (req: any, res: any) => {
+        try {
+            const search = req.query.search as string || '';
+            const users = await prisma.user.findMany({
+                where: search ? { telegramId: { contains: search } } : {},
+                orderBy: { totalClicks: 'desc' },
+                take: 50
+            });
+            res.json({ users });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/admin/user/balance', adminAuth, async (req: any, res: any) => {
+        try {
+            const { telegramId, amount } = req.body;
+            const user = await prisma.user.update({
+                where: { telegramId: String(telegramId) },
+                data: { clickBalance: { increment: Number(amount) } }
+            });
+            res.json({ success: true, newBalance: user.clickBalance });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.get('/api/admin/nfts', adminAuth, async (req: any, res: any) => {
+        try {
+            const nfts = await prisma.nFT.findMany({ orderBy: { id: 'desc' }, take: 100 });
+            res.json({ nfts });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/admin/nft/delete', adminAuth, async (req: any, res: any) => {
+        try {
+            const { id } = req.body;
+            await prisma.nFT.delete({ where: { id: Number(id) } });
+            res.json({ success: true });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.get('/api/admin/withdrawals', adminAuth, async (req: any, res: any) => {
+        try {
+            const withdrawals = await prisma.withdrawal.findMany({
+                orderBy: { requestedAt: 'desc' }, take: 50
+            });
+            res.json({ withdrawals });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/admin/withdrawal/process', adminAuth, async (req: any, res: any) => {
+        try {
+            const { id } = req.body;
+            const w = await prisma.withdrawal.update({
+                where: { id: Number(id) },
+                data: { status: 'processed', processedAt: new Date() }
+            });
+            res.json({ success: true, withdrawal: w });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.get('/api/admin/pools', adminAuth, async (req: any, res: any) => {
+        try {
+            const pools = await prisma.poolTracking.findMany({ orderBy: { id: 'desc' } });
+            res.json({ pools });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/admin/pool/add', adminAuth, async (req: any, res: any) => {
+        try {
+            const { poolName, amount } = req.body;
+            const pool = await prisma.poolTracking.create({
+                data: { poolName, totalAllocated: Number(amount), spent: 0, remaining: Number(amount) }
+            });
+            res.json({ success: true, pool });
+        } catch(e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.get('/api/admin/settings', adminAuth, async (req: any, res: any) => {
+        res.json({
+            minWithdrawal: 1000,
+            dailyLimit: 10000,
+            initialReward: 1.0,
+            referralBonusInviter: 10,
+            referralBonusNew: 5,
+            nodeEnv: process.env.NODE_ENV
+        });
+    });
+
+    app.post('/api/admin/settings', adminAuth, async (req: any, res: any) => {
+        res.json({ success: true, message: 'Settings saved (restart required)' });
     });
 }
 

@@ -18,7 +18,7 @@ export function validateAndExtractId(initData: string, botToken: string): string
         const authDate = params.get("auth_date");
         if (authDate) {
             const ageSeconds = Math.floor(Date.now() / 1000) - parseInt(authDate);
-            if (ageSeconds > 300) { console.warn("initData istekao"); return null; }
+            if (ageSeconds > 3600) { console.warn("initData istekao"); return null; }
         }
         const userStr = params.get("user");
         if (!userStr) return null;

@@ -20,6 +20,9 @@ model User {
   referredBy     Int?          @map("referred_by")
   referralCount  Int           @default(0) @map("referral_count")
   lastBonusDate  DateTime?     @map("last_bonus_date")
+  energy         Int           @default(1000) @map("energy")
+  lastEnergyUpdate DateTime?   @map("last_energy_update")
+  isBlacklisted  Boolean       @default(false) @map("is_blacklisted")
   achievements   Achievement[]
   boosts         Boost[]
   nfts           NFT[]
@@ -29,6 +32,7 @@ model User {
   referrals      User[]        @relation("UserReferrals")
   vips           VIP[]
   withdrawals    Withdrawal[]
+  transactions   Transaction[]
 
   @@map("users")
 }
@@ -142,4 +146,27 @@ model VIP {
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("vips")
+}
+
+model HalvingEvent {
+  id          Int      @id @default(autoincrement())
+  epoch       Int
+  totalClicks Int      @map("total_clicks")
+  oldReward   Float    @map("old_reward")
+  newReward   Float    @map("new_reward")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("halving_events")
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String
+  amount    Float
+  meta      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("transactions")
 }
