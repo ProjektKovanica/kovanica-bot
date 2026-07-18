@@ -1,3 +1,5 @@
+import cron from "node-cron";
+import { PriceService } from "./services/priceService.js";
 import { Bot, Context } from "grammy";
 import { PrismaClient } from "@prisma/client";
 import * as dotenv from "dotenv";
@@ -17,7 +19,6 @@ import { NFTService } from "./services/nftService.js";
 import { PoolService, POOLS } from "./services/poolService.js";
 import { DexService } from "./services/dexService.js";
 import { GameService } from "./services/gameService.js";
-import { QuestService } from "./services/questService.js";
 import { getNextNFT, getStakingReward } from "./nft/rarity.js";
 import { validateAndExtractId, extractTelegramIdDev } from "./utils/auth.js";
 
@@ -44,7 +45,13 @@ const analytics = new AnalyticsService(bot);
 const antiBot = new AntiBotService();
 const pushService = new PushService(bot);
 
-
+// === ZAMJENA ZA QUEST SERVICE (ISKLJUČEN) ===
+const QuestService = {
+    createDailyQuests: async () => {},
+    updateQuestProgress: async () => {},
+    getTodayQuests: async () => [],
+    getCompletedQuests: async () => []
+};
 
 // === FUNKCIJE ===
 function getRank(totalClicks: number): string {
@@ -101,9 +108,6 @@ async function regenerateEnergy(user: any): Promise<number> {
 async function initBot() {
     console.log("🚀 Pokrećem Kovanica bot...");
 
-    // ============================================
-    // BOT KOMANDE
-    // ============================================
     
     bot.command("start", async (ctx: Context) => {
         if (!ctx.from) return ctx.reply("Nema korisnika!");
@@ -1483,9 +1487,6 @@ async function initBot() {
         await ctx.reply(message);
     });
 
-    // ============================================
-    // CALLBACK QUERY
-    // ============================================
     bot.callbackQuery("tap", async (ctx) => {
         if (!ctx.from) {
             await ctx.answerCallbackQuery("Nema korisnika!");
@@ -1600,10 +1601,33 @@ async function initBot() {
         );
     });
 
-    // ============================================
-    // SERVER
-    // ============================================
     const app = express();
+app.get('/api/price', async (req: any, res: any) => {
+    try {
+        const price = await PriceService.getLivePrice();
+        res.json(price);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/pool-status', async (req: any, res: any) => {
+    try {
+        const status = await PriceService.getPoolStatus();
+        res.json(status);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/price/format', async (req: any, res: any) => {
+    try {
+        const message = await PriceService.getFormattedPrice();
+        res.json({ message });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
     app.set("trust proxy", 1);
     app.use(cors());
     app.use(express.json());
@@ -1648,9 +1672,6 @@ async function initBot() {
     });
 
 
-    // === RATE LIMITING ===
-    // === WEBHOOK HANDLER ===
-
     app.post('/api/me', async (req, res) => {
         try {
             const { initData, rawUser } = req.body;
@@ -1665,11 +1686,6 @@ async function initBot() {
             
             const bonusAvailable = !dbUser.lastBonusDate || !isToday(dbUser.lastBonusDate);
             
-            // Kreiraj dnevne questove
-            await QuestService.createDailyQuests(telegramId);
-
-            const quests = await QuestService.getTodayQuests(telegramId);
-
             res.json({
                 clickBalance: dbUser.clickBalance,
                 totalClicks: dbUser.totalClicks,
@@ -1678,7 +1694,6 @@ async function initBot() {
                 referralCount: dbUser.referralCount || 0,
                 rank: getRank(dbUser.totalClicks),
                 bonusAvailable,
-                quests,
             });
         } catch (error) {
             console.error("❌ /api/me error:", error);
@@ -1764,9 +1779,6 @@ async function initBot() {
                 console.log(`⛏️ HALVING! Epoch ${newEpoch}, nova nagrada: ${newReward} KVNC`);
             }
 
-            // Update quest progresa
-            await QuestService.updateQuestProgress(telegramId, 'clicks', 1);
-
             res.json({
                 clickBalance: updatedUser.clickBalance,
                 totalClicks: updatedUser.totalClicks,
@@ -1787,7 +1799,7 @@ async function initBot() {
         }
     });
 
-    app.post('/api/nftcount', async (req, res) => {
+    app.post('/api/nftcount', async (req: any, res: any) => {
         try {
             const { initData, rawUser } = req.body;
             const telegramId = extractTelegramId(initData, rawUser);
@@ -1797,9 +1809,26 @@ async function initBot() {
                 where: { telegramId },
                 include: { nfts: true }
             });
-            if (!user) return res.json({ count: 0 });
+            if (!user) return res.json({ count: 0, nfts: [], equippedNftId: null });
 
-            res.json({ count: user.nfts.length });
+            const equippedNFT = user.nfts.find((n: any) => n.equipped);
+
+            res.json({
+                count: user.nfts.length,
+                nfts: user.nfts.map((n: any) => ({
+                    id: n.id,
+                    name: n.name,
+                    rarity: n.rarity,
+                    bonusMultiplier: n.bonusMultiplier,
+                    stakingReward: n.stakingReward,
+                    equipped: n.equipped,
+                    staked: n.staked,
+                    stakedAt: n.stakeStartDate,
+                    image: n.image,
+                    mintReward: n.mintReward,
+                })),
+                equippedNftId: equippedNFT ? equippedNFT.id : null
+            });
         } catch (error) {
             console.error('❌ /api/nftcount error:', error);
             res.status(500).json({ error: 'Server error' });
@@ -2198,9 +2227,6 @@ async function initBot() {
         }
     });
 
-    // ============================================
-    // POKRENI SERVER
-    // ============================================
     const PORT = process.env.PORT || 3000;
     const server = createServer(app);
     const wsService = new WebSocketService(server);
@@ -2216,9 +2242,6 @@ async function initBot() {
     console.log('✅ Daily reminder pokrenut!');
     console.log('✅ Push service spreman!');
 
-    // ============================================
-    // START BOT (TEK NAKON SERVERA!)
-    // ============================================
     if (process.env.NODE_ENV === "production") {
         await bot.init();
         console.log(`✅ Bot ${bot.botInfo.username} je živ!`);
@@ -2235,6 +2258,27 @@ async function initBot() {
         console.error("❌ Greška:", err);
     });
 
+
+
+    app.post('/api/wallet', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData, wallet } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+            if (!wallet) return res.status(400).json({ error: 'Wallet adresa je obavezna' });
+
+            await prisma.user.update({
+                where: { telegramId },
+                data: { tonWallet: wallet }
+            });
+
+            res.json({ success: true, wallet });
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+;
 
     // === NFT API ENDPOINTI ===
     app.post('/api/equip', async (req: any, res: any) => {
@@ -2454,3 +2498,238 @@ async function initBot() {
 }
 
 initBot().catch(console.error);
+
+
+
+
+// Ažuriraj cijenu svakih 5 minuta
+cron.schedule('*/5 * * * *', async () => {
+    console.log('🔄 Ažuriranje cijene KVNC...');
+    try {
+        await PriceService.getLivePrice();
+        console.log('✅ Cijena ažurirana');
+    } catch (error) {
+        console.error('❌ Greška pri ažuriranju cijene:', error);
+    }
+});
+
+console.log('✅ Cron job za cijenu pokrenut (svakih 5 minuta)');
+
+
+// Pregled pending NFT withdrawala
+app.get('/api/admin/nft-withdrawals', adminAuth, async (req: any, res: any) => {
+  try {
+    const pendingNFTs = await prisma.nFT.findMany({
+      where: {
+        contractAddress: {
+          startsWith: 'withdraw:',
+        },
+      },
+      include: { user: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    res.json({
+      withdrawals: pendingNFTs.map(nft => ({
+        id: nft.id,
+        name: nft.name,
+        rarity: nft.rarity,
+        userId: nft.user.telegramId,
+        tonWallet: nft.user.tonWallet,
+        requestDate: nft.updatedAt,
+        status: 'pending',
+      })),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Potvrda da je NFT poslan
+app.post('/api/admin/nft-withdrawal/confirm', adminAuth, async (req: any, res: any) => {
+  try {
+    const { nftId, txHash } = req.body;
+    if (!nftId) return res.status(400).json({ error: 'NFT ID je obavezan' });
+
+    const nft = await prisma.nFT.findUnique({
+      where: { id: Number(nftId) },
+      include: { user: true },
+    });
+
+    if (!nft) return res.status(404).json({ error: 'NFT nije pronađen' });
+    if (!nft.contractAddress?.startsWith('withdraw:')) {
+      return res.status(400).json({ error: 'NFT nije u pending withdrawal statusu' });
+    }
+
+    await prisma.nFT.update({
+      where: { id: nft.id },
+      data: {
+        contractAddress: `sent:${txHash || 'manual'}:${Date.now()}`,
+      },
+    });
+
+    // Notifikacija korisniku
+    try {
+      await bot.api.sendMessage(
+        parseInt(nft.user.telegramId),
+        `✅ **NFT poslan!** ✅\n\n` +
+        `**${nft.name}** (${nft.rarity})\n` +
+        `📤 Poslan na: ${nft.user.tonWallet}\n` +
+        `${txHash ? `🆔 TX: ${txHash.slice(0, 20)}...` : ''}\n\n` +
+        `💎 Hvala što rudariš s Kovanicom!`,
+        { parse_mode: 'Markdown' }
+      );
+    } catch (e) {}
+
+    res.json({ success: true, message: `NFT ${nft.name} označen kao poslan` });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Odbij NFT withdrawal
+app.post('/api/admin/nft-withdrawal/reject', adminAuth, async (req: any, res: any) => {
+  try {
+    const { nftId, reason } = req.body;
+    if (!nftId) return res.status(400).json({ error: 'NFT ID je obavezan' });
+
+    const nft = await prisma.nFT.findUnique({
+      where: { id: Number(nftId) },
+      include: { user: true },
+    });
+
+    if (!nft) return res.status(404).json({ error: 'NFT nije pronađen' });
+    if (!nft.contractAddress?.startsWith('withdraw:')) {
+      return res.status(400).json({ error: 'NFT nije u pending withdrawal statusu' });
+    }
+
+    await prisma.nFT.update({
+      where: { id: nft.id },
+      data: {
+        contractAddress: `rejected:${Date.now()}`,
+      },
+    });
+
+    try {
+      await bot.api.sendMessage(
+        parseInt(nft.user.telegramId),
+        `❌ **NFT withdrawal odbijen** ❌\n\n` +
+        `**${nft.name}** (${nft.rarity})\n` +
+        `${reason ? `📝 Razlog: ${reason}` : ''}\n\n` +
+        `💡 Pokušaj ponovno ili kontaktiraj admina.`,
+        { parse_mode: 'Markdown' }
+      );
+    } catch (e) {}
+
+    res.json({ success: true, message: `NFT ${nft.name} vraćen korisniku` });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================
+// ADMIN AUTH (DODANO)
+// ============================================
+function adminAuth(req: any, res: any, next: any) {
+    const token = req.headers['x-admin-token'];
+    const adminPassword = process.env.ADMIN_PASSWORD || 'kovanica2026admin';
+    if (token !== adminPassword) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+}
+
+// ============================================
+// ADMIN NFT WITHDRAWAL ENDPOINTI (DODANO)
+// ============================================
+
+app.get('/api/admin/nft-withdrawals', adminAuth, async (req: any, res: any) => {
+    try {
+        const pendingNFTs = await prisma.nFT.findMany({
+            where: { contractAddress: { startsWith: 'withdraw:' } },
+            include: { user: true },
+            orderBy: { updatedAt: 'desc' },
+        });
+        res.json({
+            withdrawals: pendingNFTs.map((nft: any) => ({
+                id: nft.id,
+                name: nft.name,
+                rarity: nft.rarity,
+                userId: nft.user.telegramId,
+                tonWallet: nft.user.tonWallet,
+                requestDate: nft.updatedAt,
+                status: 'pending',
+            })),
+        });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/admin/nft-withdrawal/confirm', adminAuth, async (req: any, res: any) => {
+    try {
+        const { nftId, txHash } = req.body;
+        if (!nftId) return res.status(400).json({ error: 'NFT ID je obavezan' });
+
+        const nft = await prisma.nFT.findUnique({
+            where: { id: Number(nftId) },
+            include: { user: true },
+        });
+
+        if (!nft) return res.status(404).json({ error: 'NFT nije pronađen' });
+        if (!nft.contractAddress?.startsWith('withdraw:')) {
+            return res.status(400).json({ error: 'NFT nije u pending withdrawal statusu' });
+        }
+
+        await prisma.nFT.update({
+            where: { id: nft.id },
+            data: { contractAddress: `sent:${txHash || 'manual'}:${Date.now()}` },
+        });
+
+        try {
+            await bot.api.sendMessage(
+                parseInt(nft.user.telegramId),
+                `✅ **NFT poslan!** ✅\n\n**${nft.name}** (${nft.rarity})\n📤 Poslan na: ${nft.user.tonWallet}`,
+                { parse_mode: 'Markdown' }
+            );
+        } catch (e) {}
+
+        res.json({ success: true, message: `NFT ${nft.name} označen kao poslan` });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/admin/nft-withdrawal/reject', adminAuth, async (req: any, res: any) => {
+    try {
+        const { nftId, reason } = req.body;
+        if (!nftId) return res.status(400).json({ error: 'NFT ID je obavezan' });
+
+        const nft = await prisma.nFT.findUnique({
+            where: { id: Number(nftId) },
+            include: { user: true },
+        });
+
+        if (!nft) return res.status(404).json({ error: 'NFT nije pronađen' });
+        if (!nft.contractAddress?.startsWith('withdraw:')) {
+            return res.status(400).json({ error: 'NFT nije u pending withdrawal statusu' });
+        }
+
+        await prisma.nFT.update({
+            where: { id: nft.id },
+            data: { contractAddress: `rejected:${Date.now()}` },
+        });
+
+        try {
+            await bot.api.sendMessage(
+                parseInt(nft.user.telegramId),
+                `❌ **NFT withdrawal odbijen** ❌\n\n**${nft.name}** (${nft.rarity})\n${reason ? `📝 Razlog: ${reason}` : ''}`,
+                { parse_mode: 'Markdown' }
+            );
+        } catch (e) {}
+
+        res.json({ success: true, message: `NFT ${nft.name} vraćen korisniku` });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});

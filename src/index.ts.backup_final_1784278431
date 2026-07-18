@@ -1,0 +1,396 @@
+import { Bot, Context } from "grammy";
+import { PrismaClient } from "@prisma/client";
+import * as dotenv from "dotenv";
+import express from "express";
+import cors from "cors";
+import cron from "node-cron";
+import { fileURLToPath } from "url";
+import path from "path";
+
+dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const prisma = new PrismaClient();
+const bot = new Bot(process.env.BOT_TOKEN!);
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+import { PriceService } from "./services/priceService.js";
+import { ReminderService } from "./services/reminderService.js";
+import { NFTService } from "./services/nftService.js";
+
+function getRank(totalClicks: number): string {
+    if (totalClicks >= 100000) return "👑 Kralj rudara";
+    if (totalClicks >= 50000) return "💎 Dijamantni rudar";
+    if (totalClicks >= 20000) return "🔹 Platinasti rudar";
+    if (totalClicks >= 10000) return "🥇 Zlatni rudar";
+    if (totalClicks >= 5000) return "🥈 Srebrni rudar";
+    if (totalClicks >= 2000) return "🥉 Brončani rudar";
+    if (totalClicks >= 500) return "⛏️ Napredni rudar";
+    if (totalClicks >= 100) return "⛏️ Početnik";
+    return "🪨 Novi rudar";
+}
+
+function isToday(date: Date): boolean {
+    const now = new Date();
+    return date.getFullYear() === now.getFullYear() &&
+           date.getMonth() === now.getMonth() &&
+           date.getDate() === now.getDate();
+}
+
+function extractTelegramId(initData: string, rawUser?: any): string | null {
+    try {
+        if (initData && initData.length > 0) {
+            const params = new URLSearchParams(initData);
+            const userStr = params.get('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                return String(user.id);
+            }
+        }
+        if (rawUser && rawUser.id) {
+            return String(rawUser.id);
+        }
+        return null;
+    } catch { return null; }
+}
+
+const INITIAL_REWARD = 1.0;
+const DAILY_LIMIT = 10000;
+const MAX_ENERGY = 1000;
+const ENERGY_REGEN_PER_SEC = 2;
+
+async function getCurrentReward(): Promise<number> {
+    const result = await prisma.user.aggregate({ _sum: { totalClicks: true } });
+    const totalClicks = result._sum.totalClicks || 0;
+    const epoch = Math.floor(totalClicks / 1000000);
+    return INITIAL_REWARD / Math.pow(2, epoch);
+}
+
+async function regenerateEnergy(user: any): Promise<number> {
+    if (!user.lastEnergyUpdate) return user.energy || MAX_ENERGY;
+    const now = new Date();
+    const lastUpdate = new Date(user.lastEnergyUpdate);
+    const secondsElapsed = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
+    const regenAmount = secondsElapsed * ENERGY_REGEN_PER_SEC;
+    return Math.min(MAX_ENERGY, (user.energy || 0) + regenAmount);
+}
+
+bot.command("start", async (ctx: Context) => {
+    if (!ctx.from) {
+        await ctx.reply("Nema korisnika!");
+        return;
+    }
+    const telegramId = String(ctx.from.id);
+    const user = await prisma.user.upsert({
+        where: { telegramId },
+        update: {},
+        create: { telegramId },
+    });
+    await ctx.reply(
+        `🪙 Kovanica (KVNC) Tap Miner\n\n` +
+        `👑 Rang: ${getRank(user.totalClicks)}\n` +
+        `💰 Balans: ${user.clickBalance} KVNC\n` +
+        `👆 Klikni za rudarenje!\n\n` +
+        `💰 /price - Cijena KVNC\n` +
+        `💧 /poolstatus - Status pool-ova\n` +
+        `🚀 /mine - Otvori rudnik`,
+        {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🔨 Klikni za rudarenje", callback_data: "tap" }]
+                ]
+            }
+        }
+    );
+});
+
+bot.command("price", async (ctx: Context) => {
+    try {
+        await ctx.reply("🔄 Dohvaćam cijenu...");
+        const message = await PriceService.getFormattedPrice();
+        await ctx.reply(message, { parse_mode: 'Markdown' });
+    } catch (error: any) {
+        await ctx.reply(`❌ Greška: ${error.message}`);
+    }
+});
+
+bot.command("poolstatus", async (ctx: Context) => {
+    try {
+        const status = await PriceService.getPoolStatus();
+        if (status.length === 0) {
+            await ctx.reply("📦 Nema pool-ova.");
+            return;
+        }
+        let message = "📊 **Pool status:**\n\n";
+        for (const p of status) {
+            const emoji = p.name === 'tap_base' ? '⛏️' :
+                          p.name === 'nft_mint_rewards' ? '🎨' :
+                          p.name === 'referral_pool' ? '👥' :
+                          p.name === 'dex_kvnc_gram' ? '💧' :
+                          p.name === 'dex_kvnc_usdt' ? '💧' : '📦';
+            message += `${emoji} **${p.name}**: ${p.usedPercent}% (${p.remaining.toLocaleString()} KVNC)\n`;
+        }
+        await ctx.reply(message, { parse_mode: 'Markdown' });
+    } catch (error: any) {
+        await ctx.reply(`❌ Greška: ${error.message}`);
+    }
+});
+
+bot.command("mine", async (ctx: Context) => {
+    if (!ctx.from) return ctx.reply("Nema korisnika!");
+    const url = process.env.MINI_APP_URL || "https://kovanica.online";
+    await ctx.reply(
+        `🪙 Otvori rudnik i kreni s rudarenjem!`,
+        {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🚀 Otvori rudnik", web_app: { url } }]
+                ]
+            }
+        }
+    );
+});
+
+bot.callbackQuery("tap", async (ctx: Context) => {
+    if (!ctx.from) {
+        await ctx.answerCallbackQuery("Nema korisnika!");
+        return;
+    }
+    await ctx.answerCallbackQuery("⛏️ Rudarenje!");
+});
+
+// ============================================
+// API RUTE ZA MINI APP
+// ============================================
+
+app.post('/api/me', async (req: any, res: any) => {
+    try {
+        const { initData, rawUser } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'No user ID' });
+        
+        const dbUser = await prisma.user.upsert({
+            where: { telegramId },
+            update: {},
+            create: { telegramId },
+        });
+        
+        const bonusAvailable = !dbUser.lastBonusDate || !isToday(dbUser.lastBonusDate);
+        res.json({
+            clickBalance: dbUser.clickBalance,
+            totalClicks: dbUser.totalClicks,
+            dailyClicks: dbUser.dailyClicks,
+            dailyLimit: DAILY_LIMIT,
+            referralCount: dbUser.referralCount || 0,
+            rank: getRank(dbUser.totalClicks),
+            bonusAvailable,
+            energy: dbUser.energy || MAX_ENERGY,
+            maxEnergy: MAX_ENERGY,
+        });
+    } catch (error) {
+        console.error("❌ /api/me error:", error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/api/tap', async (req: any, res: any) => {
+    try {
+        const { rawUser, initData } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return res.status(404).json({ error: 'Korisnik nije pronađen' });
+        if (user.isBlacklisted) return res.status(403).json({ error: 'Blokiran' });
+
+        const currentEnergy = await regenerateEnergy(user);
+        if (currentEnergy <= 0) {
+            return res.status(400).json({ error: 'Nema energije!', energy: 0, maxEnergy: MAX_ENERGY });
+        }
+
+        const baseReward = await getCurrentReward();
+        const equippedNFT = await NFTService.getEquippedNFT(telegramId);
+        const multiplier = equippedNFT ? equippedNFT.bonusMultiplier : 1;
+        const totalReward = baseReward * multiplier;
+
+        const isNewDay = !isToday(user.lastClickDate);
+        const dailyClicks = isNewDay ? 1 : user.dailyClicks + 1;
+
+        const updatedUser = await prisma.user.update({
+            where: { telegramId },
+            data: {
+                clickBalance: { increment: totalReward },
+                totalClicks: { increment: 1 },
+                dailyClicks: dailyClicks,
+                lastClickDate: new Date(),
+                energy: currentEnergy - 1,
+                lastEnergyUpdate: new Date()
+            }
+        });
+
+        res.json({
+            clickBalance: updatedUser.clickBalance,
+            totalClicks: updatedUser.totalClicks,
+            dailyClicks: updatedUser.dailyClicks,
+            energy: updatedUser.energy,
+            maxEnergy: MAX_ENERGY,
+            reward: totalReward,
+            baseReward,
+            multiplier,
+            rank: getRank(updatedUser.totalClicks)
+        });
+    } catch (error: any) {
+        console.error("❌ /api/tap error:", error);
+        res.status(500).json({ error: 'Interna greška' });
+    }
+});
+
+app.post('/api/nftcount', async (req: any, res: any) => {
+    try {
+        const { initData, rawUser } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'No user ID' });
+        const user = await prisma.user.findUnique({
+            where: { telegramId },
+            include: { nfts: true }
+        });
+        if (!user) return res.json({ count: 0, nfts: [], equippedNftId: null });
+        const equipped = user.nfts.find(n => n.equipped);
+        res.json({ count: user.nfts.length, nfts: user.nfts, equippedNftId: equipped?.id || null });
+    } catch (error) {
+        console.error('❌ /api/nftcount error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.get('/api/leaderboard', async (req: any, res: any) => {
+    try {
+        const topUsers = await prisma.user.findMany({
+            orderBy: { totalClicks: "desc" },
+            take: 10,
+            select: { telegramId: true, totalClicks: true, clickBalance: true }
+        });
+        res.json(topUsers);
+    } catch (error) {
+        console.error('❌ /api/leaderboard error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/api/equip', async (req: any, res: any) => {
+    try {
+        const { rawUser, initData, nftId } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+        const result = await NFTService.equipNFT(telegramId, Number(nftId));
+        if (!result) return res.status(404).json({ error: 'NFT nije pronađen' });
+        res.json({ success: true, nft: result });
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/unequip', async (req: any, res: any) => {
+    try {
+        const { rawUser, initData } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+        const result = await NFTService.unequipNFT(telegramId);
+        if (!result) return res.status(404).json({ error: 'Nema opremljenog NFT-a' });
+        res.json({ success: true, nft: result });
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/stake', async (req: any, res: any) => {
+    try {
+        const { rawUser, initData, nftId } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+        const result = await NFTService.stakeNFT(telegramId, Number(nftId));
+        if (!result) return res.status(404).json({ error: 'NFT nije pronađen' });
+        res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/unstake', async (req: any, res: any) => {
+    try {
+        const { rawUser, initData, nftId } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+        const result = await NFTService.unstakeNFT(telegramId, Number(nftId));
+        if (!result) return res.status(404).json({ error: 'NFT nije pronađen' });
+        res.json({ success: true, reward: result.reward });
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/nft/withdraw', async (req: any, res: any) => {
+    try {
+        const { rawUser, initData, nftId } = req.body;
+        const telegramId = extractTelegramId(initData, rawUser);
+        if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+        const user = await prisma.user.findUnique({ where: { telegramId } });
+        if (!user) return res.status(404).json({ error: 'Korisnik nije pronađen' });
+        if (!user.tonWallet) return res.status(400).json({ error: 'Nema TON wallet adrese' });
+        const nft = await prisma.nFT.findFirst({
+            where: { id: Number(nftId), userId: user.id }
+        });
+        if (!nft) return res.status(404).json({ error: 'NFT nije pronađen' });
+        if (nft.staked) return res.status(400).json({ error: 'NFT je stakean' });
+        if (nft.equipped) return res.status(400).json({ error: 'NFT je opremljen' });
+        await prisma.nFT.update({
+            where: { id: nft.id },
+            data: { contractAddress: `withdraw:${user.tonWallet}:${Date.now()}` }
+        });
+        res.json({ success: true, message: `NFT ${nft.name} označen za withdrawal` });
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/price', async (req: any, res: any) => {
+    try {
+        const price = await PriceService.getLivePrice();
+        res.json(price);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/pool-status', async (req: any, res: any) => {
+    try {
+        const status = await PriceService.getPoolStatus();
+        res.json(status);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================
+// POKRENI SERVER
+// ============================================
+
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server running on http://0.0.0.0:${PORT}`);
+});
+
+cron.schedule('*/5 * * * *', async () => {
+    try {
+        await PriceService.getLivePrice();
+    } catch (e) {}
+});
+
+const reminder = new ReminderService(bot);
+reminder.start();
+
+bot.start({
+    onStart: (botInfo) => {
+        console.log(`✅ Bot ${botInfo.username} je živ!`);
+    },
+});
+
+bot.catch((err) => {
+    console.error("❌ Bot greška:", err);
+});
+
+console.log('🚀 Kovanica bot pokrenut!');
