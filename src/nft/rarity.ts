@@ -20,7 +20,7 @@ export const NFT_COLLECTION: NFTMetadata[] = [
     {
         rarity: 'Common',
         name: 'Brončani pijuk',
-        image: 'https://github.com/ProjektKovanica/kovanica/raw/main/common.png',
+        image: 'https://raw.githubusercontent.com/ProjektKovanica/kovanica/main/common.png',
         bonusMultiplier: 1.2,
         requiredClicks: 100,
         maxSupply: 1000,
@@ -33,7 +33,7 @@ export const NFT_COLLECTION: NFTMetadata[] = [
     {
         rarity: 'Rare',
         name: 'Srebrni pijuk',
-        image: 'https://github.com/ProjektKovanica/kovanica/raw/main/rare.png',
+        image: 'https://raw.githubusercontent.com/ProjektKovanica/kovanica/main/rare.png',
         bonusMultiplier: 1.5,
         requiredClicks: 500,
         maxSupply: 500,
@@ -46,7 +46,7 @@ export const NFT_COLLECTION: NFTMetadata[] = [
     {
         rarity: 'Epic',
         name: 'Zlatni pijuk',
-        image: 'https://github.com/ProjektKovanica/kovanica/raw/main/epic.png',
+        image: 'https://raw.githubusercontent.com/ProjektKovanica/kovanica/main/epic.png',
         bonusMultiplier: 2.0,
         requiredClicks: 2000,
         maxSupply: 300,
@@ -59,7 +59,7 @@ export const NFT_COLLECTION: NFTMetadata[] = [
     {
         rarity: 'Legendary',
         name: 'Dijamantni pijuk',
-        image: 'https://github.com/ProjektKovanica/kovanica/raw/main/legendary.png',
+        image: 'https://raw.githubusercontent.com/ProjektKovanica/kovanica/main/legendary.png',
         bonusMultiplier: 3.0,
         requiredClicks: 10000,
         maxSupply: 150,
@@ -72,7 +72,7 @@ export const NFT_COLLECTION: NFTMetadata[] = [
     {
         rarity: 'Mythic',
         name: 'Vatreni pijuk',
-        image: 'https://github.com/ProjektKovanica/kovanica/raw/main/mythic.png',
+        image: 'https://raw.githubusercontent.com/ProjektKovanica/kovanica/main/mythic.png',
         bonusMultiplier: 5.0,
         requiredClicks: 50000,
         maxSupply: 50,

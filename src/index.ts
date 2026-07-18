@@ -1797,9 +1797,9 @@ async function initBot() {
                 where: { telegramId },
                 include: { nfts: true }
             });
-            if (!user) return res.json({ count: 0 });
+            if (!user) return res.json({ count: 0, nfts: [], tonWallet: null });
 
-            res.json({ count: user.nfts.length });
+            res.json({ count: user.nfts.length, nfts: user.nfts, tonWallet: user.tonWallet });
         } catch (error) {
             console.error('❌ /api/nftcount error:', error);
             res.status(500).json({ error: 'Server error' });

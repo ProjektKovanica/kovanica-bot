@@ -469,27 +469,47 @@ async function loadNFTs() {
             grid.innerHTML = `<div class="nft-loading" style="grid-column:1/-1">Nemaš NFT-ova.<br><span style="font-size:11px">Rudarenjem otključavaš NFT-ove!</span></div>`;
             return;
         }
-        const equippedId = data.equippedNftId;
-        const equippedNFT = nfts.find(n => n.id === equippedId);
+        const equippedNFT = nfts.find(n => n.equipped === true);
+        const equippedId = equippedNFT ? equippedNFT.id : null;
         if (equippedNFT) {
             document.getElementById('nftEqEmpty').style.display = 'none';
             document.getElementById('nftEqCard').style.display = 'flex';
-            document.getElementById('nftEqIcon').textContent = getNFTIcon(equippedNFT.rarity);
+            const eqIconEl = document.getElementById('nftEqIcon');
+            if (equippedNFT.image) {
+                eqIconEl.innerHTML = '<img src="' + equippedNFT.image + '" style="width:40px;height:40px;object-fit:contain" onerror="this.outerHTML=getNFTIcon(equippedNFT.rarity)" />';
+            } else {
+                eqIconEl.textContent = getNFTIcon(equippedNFT.rarity);
+            }
             document.getElementById('nftEqName').textContent = equippedNFT.name;
             document.getElementById('nftEqBonus').textContent = `${equippedNFT.bonusMultiplier}x bonus`;
         }
-        grid.innerHTML = nfts.map(nft => `
-            <div class="nft-card ${nft.id === equippedId ? 'equipped' : ''}">
-                <span class="nft-card-icon">${getNFTIcon(nft.rarity)}</span>
+        const hasWallet = data.tonWallet;
+        grid.innerHTML = nfts.map(nft => {
+            const isPending = nft.contractAddress && nft.contractAddress.startsWith('withdraw:');
+            const withdrawBtn = isPending
+                ? `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">⏳ Pending</button>`
+                : !hasWallet
+                ? `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">🔒 Nema walleta</button>`
+                : nft.staked || nft.equipped
+                ? `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">📤 N/A</button>`
+                : `<button class="nft-action-btn" onclick="withdrawNFT(${nft.id})" style="color:var(--boost);border-color:rgba(255,107,53,0.2);background:rgba(255,107,53,0.1)">📤 Withdraw</button>`;
+            return `
+            <div class="nft-card ${nft.id === equippedId ? 'equipped' : ''} ${isPending ? 'nft-pending' : ''}">
+                <div class="nft-card-icon"><img src="${nft.image}" style="width:64px;height:64px;object-fit:cover;border-radius:8px" onerror="this.style.display='none';this.parentNode.textContent='${getNFTIcon(nft.rarity)}'" /></div>
                 <span class="nft-card-name">${nft.name}</span>
                 <span class="nft-card-bonus">${nft.bonusMultiplier}x bonus</span>
                 <span class="nft-card-rarity">${nft.rarity}</span>
+                ${isPending ? '<span class="nft-pending-label">⏳ Withdrawal u obradi</span>' : ''}
                 <div class="nft-card-actions">
                     <button class="nft-action-btn" onclick="equipNFT(${nft.id})">${nft.id === equippedId ? '✅' : 'Opremi'}</button>
                     <button class="nft-action-btn" onclick="stakeNFT(${nft.id})" style="color:var(--energy);border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.1)">${nft.staked ? '🔒 Unstake' : 'Stake'}</button>
-                    <button class="nft-action-btn" onclick="withdrawNFT(${nft.id})" style="color:var(--boost);border-color:rgba(255,107,53,0.2);background:rgba(255,107,53,0.1)">📤 Withdraw</button>
+                    ${withdrawBtn}
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
+        if (!hasWallet) {
+            grid.innerHTML += '<div class="nft-wallet-warning">⚠️ Dodaj TON wallet adresu s /wallet komandom za withdrawal</div>';
+        }
     } catch (e) { grid.innerHTML = '<div class="nft-loading">Greška pri učitavanju NFT-ova</div>'; }
 }
 
@@ -502,10 +522,16 @@ async function equipNFT(nftId) {
     try {
         const user = tg.initDataUnsafe?.user || null;
         if (!user) return;
-        await fetch('/api/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId }) });
-        tg.HapticFeedback.notificationOccurred('success');
+        const res = await fetch('/api/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId }) });
+        const data = await res.json();
+        if (res.ok) {
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.showAlert('✅ NFT opremljen!');
+        } else {
+            tg.showAlert('❌ ' + (data.error || 'Greška'));
+        }
         loadNFTs();
-    } catch (e) { console.error(e); }
+    } catch (e) { tg.showAlert('❌ Greška pri opremanju'); }
 }
 
 async function stakeNFT(nftId) {

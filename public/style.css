@@ -284,3 +284,12 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; display: fl
 .ref-lb-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
 
 .ref-lb-list { display: flex; flex-direction: column; gap: 6px; }
+
+.nft-pending { opacity: 0.75; border: 1px solid rgba(255,193,7,0.3) !important; }
+.nft-pending-label { font-size: 10px; color: #ffc107; text-align: center; margin: 2px 0; }
+.nft-wallet-warning { grid-column: 1/-1; text-align: center; color: #ffc107; font-size: 12px; padding: 10px; background: rgba(255,193,7,0.1); border-radius: 8px; margin-top: 8px; }
+
+
+
+.nft-card-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto 8px; }
+.nft-card-icon img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
