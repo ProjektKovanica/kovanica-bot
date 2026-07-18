@@ -2221,8 +2221,10 @@ async function initBot() {
     // ============================================
     if (process.env.NODE_ENV === "production") {
         await bot.init();
+        const webhookUrl = `https://${process.env.DOMAIN}/webhook`;
+        await bot.api.setWebhook(webhookUrl);
         console.log(`✅ Bot ${bot.botInfo.username} je živ!`);
-        console.log("✅ Bot radi u webhook modu!");
+        console.log(`✅ Webhook registriran: ${webhookUrl}`);
     } else {
         bot.start({
             onStart: (botInfo) => {
