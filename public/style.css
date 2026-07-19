@@ -103,7 +103,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; display: fl
 .energy-countdown { font-size: 10px; color: var(--muted); text-align: right; }
 
 /* TABS */
-.tabs { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+.tabs { display: grid; grid-template-columns: repeat(6, 1fr); background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
 
 .tab { background: none; border: none; color: var(--muted); padding: 9px 2px; font-size: 10px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
 
@@ -293,3 +293,14 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; display: fl
 
 .nft-card-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto 8px; }
 .nft-card-icon img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
+
+/* WALLET TAB */
+.wallet-card { background: var(--surface2); border-radius: 16px; padding: 16px; border: 1px solid var(--border); text-align: center; }
+.wallet-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.wallet-desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+#tonconnect-button { display: flex; justify-content: center; margin-bottom: 14px; }
+.wallet-status { display: flex; justify-content: center; gap: 6px; font-size: 13px; margin-bottom: 8px; }
+.wallet-status-label { color: var(--muted); }
+.wallet-status-value { color: var(--gold); font-weight: 700; }
+.wallet-address-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--muted); word-break: break-all; }
+.wallet-address-label { color: var(--muted); margin-right: 4px; }

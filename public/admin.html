@@ -175,6 +175,7 @@
         }
         .badge-pending { background: rgba(255, 170, 0, 0.2); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
         .badge-processed { background: rgba(0, 204, 102, 0.2); color: #00cc66; border: 1px solid rgba(0,204,102,0.3); }
+        .badge-failed { background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); }
         .badge-blacklisted { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
         .nft-equipped { color: #ffd700; }
         .nft-staked { color: #00d4ff; }
@@ -691,11 +692,14 @@ async function loadWithdrawals() {
             return;
         }
         tbody.innerHTML = withdrawals.map(w => {
-            const isPending = w.status === 'pending';
             const addrShort = w.tonAddress
                 ? w.tonAddress.slice(0, 8) + '…' + w.tonAddress.slice(-6)
                 : '—';
             const date = new Date(w.requestedAt).toLocaleString('hr-HR');
+            const badgeClass = w.status === 'processed' ? 'badge-processed' : w.status === 'failed' ? 'badge-failed' : 'badge-pending';
+            const badgeText = w.status === 'processed' ? '✅ Obrađeno' : w.status === 'failed' ? '❌ Neuspjelo' : '⏳ Pending';
+            const canSend = w.status === 'pending' || w.status === 'failed';
+            const btnLabel = w.status === 'failed' ? '🔁 Pokušaj ponovno' : '📤 Pošalji sada';
             return `
             <tr>
                 <td>#${w.id}</td>
@@ -708,13 +712,11 @@ async function loadWithdrawals() {
                 </td>
                 <td style="font-size:12px">${date}</td>
                 <td>
-                    <span class="badge ${isPending ? 'badge-pending' : 'badge-processed'}">
-                        ${isPending ? '⏳ Pending' : '✅ Obrađeno'}
-                    </span>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
                 </td>
                 <td>
-                    ${isPending
-                        ? `<button class="btn btn-success" onclick="processWithdrawal(${w.id})">✅ Označi obrađeno</button>`
+                    ${canSend
+                        ? `<button class="btn btn-success" onclick="processWithdrawal(${w.id})">${btnLabel}</button>`
                         : '<span style="color:#555;font-size:12px">—</span>'}
                 </td>
             </tr>`;
@@ -726,17 +728,20 @@ async function loadWithdrawals() {
 }
 
 async function processWithdrawal(id) {
-    if (!confirm(`Označiti isplatu #${id} kao obrađenu?\n\nProvjeri je li TON transfer zaista poslan!`)) return;
+    if (!confirm(`Poslati isplatu #${id} on-chain SADA?\n\nOvo šalje pravi KVNC jetton transfer i ne može se poništiti.`)) return;
     try {
         const data = await apiCall('/api/admin/withdrawal/process', 'POST', { id });
         if (data.success) {
-            showToast('✅ Isplata označena kao obrađena!', 'success');
-            loadWithdrawals();
-            loadStats();
+            showToast('✅ Isplata poslana on-chain i označena kao obrađena!', 'success');
         } else {
-            showToast('❌ ' + (data.error || 'Greška'), 'error');
+            showToast('❌ Slanje nije uspjelo: ' + (data.error || 'Greška'), 'error');
         }
-    } catch (e) { showToast('❌ Greška', 'error'); }
+    } catch (e) {
+        showToast('❌ Greška pri slanju', 'error');
+    } finally {
+        loadWithdrawals();
+        loadStats();
+    }
 }
 
 function copyToClipboard(text) {

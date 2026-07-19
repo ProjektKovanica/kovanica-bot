@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Kovanica Rudnik</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=4" />
+    <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
     <div id="particleContainer"></div>
@@ -65,6 +65,7 @@
             <button class="tab" data-tab="quests" onclick="switchTab('quests')">📋 Zadaci</button>
             <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 Top</button>
             <button class="tab" data-tab="referral" onclick="switchTab('referral')">👥 Ref</button>
+            <button class="tab" data-tab="wallet" onclick="switchTab('wallet')">💳 Wallet</button>
         </div>
 
         <!-- TAB: MINE -->
@@ -179,7 +180,25 @@
             </div>
         </div>
 
+        <!-- TAB: WALLET -->
+        <div class="tab-content" id="tab-wallet">
+            <div class="wallet-card">
+                <div class="wallet-title">💳 TON Wallet</div>
+                <div class="wallet-desc">Poveži svoj TON wallet za automatske KVNC isplate — bez ručnog upisivanja adrese.</div>
+                <div id="tonconnect-button"></div>
+                <div class="wallet-status" id="walletStatus">
+                    <span class="wallet-status-label">Status:</span>
+                    <span class="wallet-status-value" id="walletStatusValue">Nije povezan</span>
+                </div>
+                <div class="wallet-address-box" id="walletAddressBox" style="display:none">
+                    <span class="wallet-address-label">Adresa:</span>
+                    <span class="wallet-address-value" id="walletAddressValue">-</span>
+                </div>
+            </div>
+        </div>
+
     </div>
-    <script src="app.js?v=4"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
+    <script src="app.js?v=5"></script>
 </body>
 </html>

@@ -9,6 +9,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { WebSocketService } from "./services/websocketService.js";
 import { TonPaymentService } from "./services/tonPaymentService.js";
+import { Address } from "@ton/core";
+import cron from "node-cron";
 import { ReminderService } from "./services/reminderService.js";
 import { PushService } from "./services/pushService.js";
 import { AnalyticsService } from "./services/analyticsService.js";
@@ -126,10 +128,11 @@ async function initBot() {
         });
 
         if (referrerId && user.referredBy === referrerId) {
-            await prisma.user.update({
+            const referrerUser = await prisma.user.update({
                 where: { id: referrerId },
                 data: { clickBalance: { increment: REFERRAL_BONUS_INVITER }, referralCount: { increment: 1 } },
             });
+            await QuestService.updateQuestProgress(referrerUser.telegramId, 'referrals', 1);
             await prisma.user.update({
                 where: { id: user.id },
                 data: { clickBalance: { increment: REFERRAL_BONUS_NEW } },
@@ -1723,6 +1726,12 @@ async function initBot() {
             
             const totalReward = baseReward * multiplier * boostMultiplier;
 
+            // Provjera dostupnosti sredstava u pool-u (usklađeno s bot /mine handlerom)
+            const hasFunds = await PoolService.hasSufficientFunds(POOLS.TAP_BASE, totalReward);
+            if (!hasFunds) {
+                return res.status(400).json({ error: 'Pool je prazan! Pokušaj kasnije.' });
+            }
+
             // Daily limit provjera
             const isNewDay = !isToday(user.lastClickDate);
             const dailyClicks = isNewDay ? 1 : user.dailyClicks + 1;
@@ -1750,6 +1759,9 @@ async function initBot() {
                 }
             });
 
+            // Skini iznos iz pool-a (usklađeno s bot /mine handlerom)
+            await PoolService.spendFromPool(POOLS.TAP_BASE, totalReward);
+
             // Provjeri halving
             const newTotalClicks = await prisma.user.aggregate({ _sum: { totalClicks: true } });
             const totalGlobal = newTotalClicks._sum.totalClicks || 0;
@@ -1767,6 +1779,20 @@ async function initBot() {
             // Update quest progresa
             await QuestService.updateQuestProgress(telegramId, 'clicks', 1);
 
+            // NFT auto-mint provjera (usklađeno s bot /mine handlerom — prije je nedostajalo u Mini App tapu)
+            let mintedNFT = null;
+            try {
+                const nftResult = await NFTService.checkAndMintNFT(telegramId, updatedUser.totalClicks);
+                if (nftResult) {
+                    mintedNFT = nftResult.nft;
+                    await QuestService.updateQuestProgress(telegramId, 'nft', 1);
+                }
+            } catch (nftErr) {
+                console.error('❌ NFT mint check error (api/tap):', nftErr);
+            }
+
+            const quests = await QuestService.getTodayQuests(telegramId);
+
             res.json({
                 clickBalance: updatedUser.clickBalance,
                 totalClicks: updatedUser.totalClicks,
@@ -1778,7 +1804,9 @@ async function initBot() {
                 multiplier,
                 boostActive: !!activeBoost,
                 boostEndsAt: activeBoost?.expiresAt || null,
-                rank: getRank(updatedUser.totalClicks)
+                rank: getRank(updatedUser.totalClicks),
+                mintedNFT,
+                quests
             });
 
         } catch (error: any) {
@@ -2315,6 +2343,45 @@ async function initBot() {
         } catch (e: any) { res.status(500).json({ error: e.message }); }
     });
 
+    // === TONCONNECT WALLET API ===
+    app.post('/api/wallet/connect', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData, address } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+            if (!address) return res.status(400).json({ error: 'Nedostaje adresa' });
+
+            let normalized: string;
+            try {
+                normalized = Address.parse(address).toString();
+            } catch {
+                return res.status(400).json({ error: 'Neispravna TON adresa' });
+            }
+
+            const user = await prisma.user.update({
+                where: { telegramId },
+                data: { tonWallet: normalized }
+            });
+
+            res.json({ success: true, tonWallet: user.tonWallet });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/wallet/disconnect', async (req: any, res: any) => {
+        try {
+            const { rawUser, initData } = req.body;
+            const telegramId = extractTelegramId(initData, rawUser);
+            if (!telegramId) return res.status(401).json({ error: 'Neautoriziran' });
+
+            await prisma.user.update({
+                where: { telegramId },
+                data: { tonWallet: null }
+            });
+
+            res.json({ success: true });
+        } catch (e: any) { res.status(500).json({ error: e.message }); }
+    });
+
     // Blacklist endpoint za admin
     app.post('/api/admin/user/blacklist', adminAuth, async (req: any, res: any) => {
         try {
@@ -2414,11 +2481,38 @@ async function initBot() {
     app.post('/api/admin/withdrawal/process', adminAuth, async (req: any, res: any) => {
         try {
             const { id } = req.body;
-            const w = await prisma.withdrawal.update({
-                where: { id: Number(id) },
-                data: { status: 'processed', processedAt: new Date() }
-            });
-            res.json({ success: true, withdrawal: w });
+            const w = await prisma.withdrawal.findUnique({ where: { id: Number(id) } });
+            if (!w) return res.status(404).json({ error: 'Isplata nije pronađena' });
+            if (w.status !== 'pending' && w.status !== 'failed') {
+                return res.status(400).json({ error: `Isplata je već u statusu "${w.status}"` });
+            }
+
+            const result = await TonPaymentService.sendJetton(
+                w.tonAddress,
+                w.amount,
+                process.env.KVNC_JETTON_MASTER!
+            );
+
+            if (!result.success) {
+                await prisma.withdrawal.update({
+                    where: { id: w.id },
+                    data: { status: 'failed' }
+                });
+                return res.status(502).json({ error: result.error || 'Slanje nije uspjelo', status: 'failed' });
+            }
+
+            const [updated] = await prisma.$transaction([
+                prisma.withdrawal.update({
+                    where: { id: w.id },
+                    data: { status: 'processed', processedAt: new Date() }
+                }),
+                prisma.user.update({
+                    where: { id: w.userId },
+                    data: { clickBalance: { decrement: w.amount } }
+                })
+            ]);
+
+            res.json({ success: true, withdrawal: updated });
         } catch(e: any) { res.status(500).json({ error: e.message }); }
     });
 
@@ -2432,10 +2526,23 @@ async function initBot() {
     app.post('/api/admin/pool/add', adminAuth, async (req: any, res: any) => {
         try {
             const { poolName, amount } = req.body;
-            const pool = await prisma.poolTracking.create({
-                data: { poolName, totalAllocated: Number(amount), spent: 0, remaining: Number(amount) }
+            const addAmount = Number(amount);
+            const existing = await prisma.poolTracking.findUnique({ where: { poolName } });
+            const pool = await prisma.poolTracking.upsert({
+                where: { poolName },
+                update: {
+                    totalAllocated: { increment: addAmount },
+                    remaining: { increment: addAmount },
+                    lastUpdated: new Date()
+                },
+                create: {
+                    poolName,
+                    totalAllocated: addAmount,
+                    spent: 0,
+                    remaining: addAmount
+                }
             });
-            res.json({ success: true, pool });
+            res.json({ success: true, pool, wasNew: !existing });
         } catch(e: any) { res.status(500).json({ error: e.message }); }
     });
 
@@ -2452,6 +2559,15 @@ async function initBot() {
 
     app.post('/api/admin/settings', adminAuth, async (req: any, res: any) => {
         res.json({ success: true, message: 'Settings saved (restart required)' });
+    });
+
+    cron.schedule('*/10 * * * *', async () => {
+        console.log('⏳ [cron] Automatska obrada isplata...');
+        try {
+            await TonPaymentService.processPendingWithdrawals();
+        } catch (err) {
+            console.error('❌ [cron] Greška:', err);
+        }
     });
 }
 

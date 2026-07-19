@@ -1,7 +1,7 @@
 {
   "url": "https://kovanica.online",
-  "name": "Kovanica TAP",
-  "iconUrl": "https://kovanica.online/icon.png",
+  "name":	 "Kovanica TAP",
+  "iconUrl": "https://raw.githubusercontent.com/ProjektKovanica/kovanica-bot/main/public/kvnc-logo192.png"
   "termsOfUseUrl": "https://kovanica.online/terms",
   "privacyPolicyUrl": "https://kovanica.online/privacy"
 }

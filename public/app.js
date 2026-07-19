@@ -5,6 +5,7 @@ tg.setBackgroundColor('#080818');
 
 // === STATE ===
 let userData = null;
+let tonConnectUI = null;
 let isProcessing = false;
 let energy = 1000;
 let maxEnergy = 1000;
@@ -117,10 +118,64 @@ async function init() {
         if (refEarnedEl) refEarnedEl.textContent = ((userData.referralCount || 0) * 10).toFixed(0);
 
         tg.HapticFeedback.impactOccurred('light');
+        initTonConnect();
     } catch (error) {
         console.error('Init error:', error);
         tg.showAlert('Greška pri učitavanju. Pokušaj ponovo.');
     }
+}
+
+// === TONCONNECT ===
+function initTonConnect() {
+    if (typeof TON_CONNECT_UI === 'undefined') {
+        console.error('TonConnect UI script nije učitan.');
+        return;
+    }
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: `${window.location.origin}/tonconnect-manifest.json`,
+        buttonRootId: 'tonconnect-button'
+    });
+
+    tonConnectUI.onStatusChange(async (wallet) => {
+        const statusEl = document.getElementById('walletStatusValue');
+        const addressBox = document.getElementById('walletAddressBox');
+        const addressEl = document.getElementById('walletAddressValue');
+
+        if (wallet) {
+            const address = wallet.account.address;
+            if (statusEl) statusEl.textContent = '✅ Povezan';
+            if (addressBox) addressBox.style.display = 'block';
+            if (addressEl) addressEl.textContent = address;
+
+            try {
+                const user = tg.initDataUnsafe?.user || null;
+                if (!user) return;
+                await fetch('/api/wallet/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rawUser: user, initData: tg.initData || '', address })
+                });
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (e) {
+                console.error('Wallet connect sync error:', e);
+            }
+        } else {
+            if (statusEl) statusEl.textContent = 'Nije povezan';
+            if (addressBox) addressBox.style.display = 'none';
+
+            try {
+                const user = tg.initDataUnsafe?.user || null;
+                if (!user) return;
+                await fetch('/api/wallet/disconnect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+                });
+            } catch (e) {
+                console.error('Wallet disconnect sync error:', e);
+            }
+        }
+    });
 }
 
 // === UPDATE UI ===
@@ -372,6 +427,12 @@ async function handleMine(event) {
         // Floating reward — data.reward je ukupna (s multiplier), data.baseReward je osnovna
         const reward = data.reward || data.baseReward || 1;
         showFloatingCounter(`+${reward.toFixed(4)}`);
+
+        // NFT mint notifikacija (backend sada mint-a NFT-ove i preko Mini App tapa, ne samo bot komande)
+        if (data.mintedNFT) {
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.showAlert(`🎉 Iskopao si NFT: ${data.mintedNFT.name} (${data.mintedNFT.rarity})!`);
+        }
 
     } catch (error) {
         console.error('Tap error:', error);
@@ -682,48 +743,43 @@ async function handleUnequip() {
 }
 
 // === QUESTS ===
-// Backend QuestService je isključen (stub koji vraća [])
-// Prikazujemo lokalne quest-ove bazirane na userData koji dolazi iz /api/me
+// Backend QuestService je potpuno implementiran (Quest model + stvarno praćenje progresa).
+// /api/me i /api/tap sada vraćaju stvarne questove u userData.quests — koristimo njih direktno.
+const QUEST_META = {
+    clicks:    { icon: '⛏️', title: 'Rudarski dan',      desc: (t) => `Klikni ${t.toLocaleString()} puta danas` },
+    referrals: { icon: '👥', title: 'Pozovi prijatelje', desc: (t) => `Pozovi ${t.toLocaleString()} korisnika danas` },
+    nft:       { icon: '🎨', title: 'Iskopaj NFT',       desc: (t) => `Iskopaj ${t.toLocaleString()} NFT danas` },
+};
+
 async function loadQuests() {
     const list = document.getElementById('questList');
     if (!list) return;
     list.innerHTML = '<div class="lb-loading">Učitavanje zadataka...</div>';
 
-    // Lokalni quest-ovi — usklađeni s poljima koja /api/me vraća
-    const quests = [
-        { id: 'daily_clicks', title: '⛏️ Rudarski dan', desc: 'Klikni 100 puta danas', target: 100, reward: 50, type: 'daily' },
-        { id: 'daily_500', title: '⚡ Turbo dan', desc: 'Klikni 500 puta danas', target: 500, reward: 200, type: 'daily' },
-        { id: 'total_clicks', title: '💎 Iskusni rudar', desc: 'Ukupno 1000 klikova', target: 1000, reward: 100, type: 'total' },
-        { id: 'total_10k', title: '👑 Veteranski rudar', desc: 'Ukupno 10.000 klikova', target: 10000, reward: 500, type: 'total' },
-        { id: 'referral', title: '👥 Pozovi prijatelja', desc: 'Pozovi 1 korisnika', target: 1, reward: 200, type: 'referral' },
-        { id: 'referral_5', title: '🤝 Ekipa', desc: 'Pozovi 5 korisnika', target: 5, reward: 1000, type: 'referral' },
-    ];
+    // Stvarni questovi s backenda (/api/me → userData.quests, osvježeno nakon svakog /api/tap)
+    const quests = userData?.quests || [];
 
-    // Ovi podaci dolaze iz /api/me response koji smo pohranili u userData
-    const totalClicks = userData?.totalClicks || 0;
-    const dailyClicks = userData?.dailyClicks || 0;
-    const referralCount = userData?.referralCount || 0;
+    if (!quests.length) {
+        list.innerHTML = '<div class="lb-loading">Nema aktivnih zadataka</div>';
+        return;
+    }
 
     list.innerHTML = quests.map(q => {
-        let current = 0;
-        if (q.type === 'daily') current = Math.min(q.target, dailyClicks);
-        if (q.type === 'total') current = Math.min(q.target, totalClicks);
-        if (q.type === 'referral') current = Math.min(q.target, referralCount);
-        const pct = Math.min(100, (current / q.target) * 100);
-        const done = current >= q.target;
+        const meta = QUEST_META[q.type] || { icon: '📋', title: q.type, desc: (t) => `Cilj: ${t}` };
+        const pct = Math.min(100, (q.progress / q.target) * 100);
         return `
-            <div class="quest-item ${done ? 'done' : ''}">
+            <div class="quest-item ${q.completed ? 'done' : ''}">
                 <div class="quest-header">
-                    <span class="quest-title">${q.title}</span>
+                    <span class="quest-title">${meta.icon} ${meta.title}</span>
                     <span class="quest-reward">+${q.reward} KVNC</span>
                 </div>
-                <div class="quest-desc">${q.desc}</div>
+                <div class="quest-desc">${meta.desc(q.target)}</div>
                 <div class="quest-progress-wrap">
                     <div class="quest-progress-fill" style="width:${pct}%"></div>
                 </div>
                 <div class="quest-footer">
-                    <span class="quest-count">${current.toLocaleString()} / ${q.target.toLocaleString()}</span>
-                    ${done ? '<span class="quest-done-badge">✅ Završeno</span>' : ''}
+                    <span class="quest-count">${q.progress.toLocaleString()} / ${q.target.toLocaleString()}</span>
+                    ${q.completed ? '<span class="quest-done-badge">✅ Završeno</span>' : ''}
                 </div>
             </div>`;
     }).join('');
