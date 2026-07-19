@@ -231,14 +231,21 @@ async function initBot() {
     bot.callbackQuery("menu_price", async (ctx) => {
         await ctx.answerCallbackQuery();
         try {
-            const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
+            const resp = await fetch(
+                'https://api.dyor.io/v1/jettons/EQDKKFRJU5uar87OdtvLb8gynFF1fJj40xyYfhUgvc914I5S/markets/EQDaPt-caUdBWLhF2In1P4x2-S7MOw79aganZ58PqMFqxR8S/price',
+                { signal: AbortSignal.timeout(5000) }
+            );
+            if (!resp.ok) throw new Error('DYOR ' + resp.status);
+            const data: any = await resp.json();
+            const usdPrice = Number(data.usd.value) / Math.pow(10, data.usd.decimals);
+            const tonPrice = Number(data.ton.value) / Math.pow(10, data.ton.decimals);
+            const updated = new Date(data.changedAt).toLocaleTimeString('hr-HR');
             await ctx.reply(
                 `💰 LIVE CIJENA KVNC\n\n` +
-                `💵 USDT: ${price.usdt.toFixed(6)}\n` +
-                `🪙 GRAM: ${price.gram.toFixed(6)}\n` +
-                `📈 24h: ${price.change24h > 0 ? "+" : ""}${price.change24h.toFixed(2)}%\n` +
-                `💧 Likvidnost: $${price.liquidity.toFixed(2)}\n\n` +
-                `📊 Izvor: STON.fi`
+                `💵 USD: $${usdPrice.toFixed(8)}\n` +
+                `🪙 TON: ${tonPrice.toFixed(9)}\n` +
+                `🕐 Ažurirano: ${updated}\n\n` +
+                `📊 Izvor: DYOR.io`
             );
         } catch (e) {
             await ctx.reply("❌ Nije moguće dohvatiti cijenu.");
@@ -1071,8 +1078,8 @@ async function initBot() {
             const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
             
             let message = "💰 **LIVE CIJENA KVNC** 💰\n\n";
-            message += `💵 **USDT:** ${price.usdt.toFixed(6)}\n`;
-            message += `🪙 **GRAM:** ${price.gram.toFixed(6)}\n`;
+            message += `💵 **USDT:** ${price.usdt.toFixed(8)}\n`;
+            message += `🪙 **GRAM:** ${price.gram.toFixed(9)}\n`;
             message += `📈 **24h High:** $${price.high24h.toFixed(6)}\n`;
             message += `📉 **24h Low:** $${price.low24h.toFixed(6)}\n`;
             message += `📊 **Promjena 24h:** ${price.change24h > 0 ? '+' : ''}${price.change24h.toFixed(2)}%\n`;
@@ -1080,7 +1087,7 @@ async function initBot() {
             message += `💧 **Likvidnost:** $${price.liquidity.toFixed(2)}\n`;
             message += `🏦 **Market Cap:** $${price.marketCap.toFixed(2)}\n\n`;
             message += `⏱️ ${new Date().toLocaleString()}\n`;
-            message += `📊 Izvor: STON.fi V2`;
+            message += `📊 Izvor: DYOR.io`;
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
         } catch (error: any) {
@@ -1109,8 +1116,8 @@ async function initBot() {
         
         try {
             const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
-            message += `  💵 USDT: ${price.usdt.toFixed(6)}\n`;
-            message += `  🪙 GRAM: ${price.gram.toFixed(6)}\n\n`;
+            message += `  💵 USDT: ${price.usdt.toFixed(8)}\n`;
+            message += `  🪙 GRAM: ${price.gram.toFixed(9)}\n\n`;
         } catch (e) {
             message += `  ⏳ Učitavanje cijene...\n\n`;
         }
@@ -1449,14 +1456,28 @@ async function initBot() {
             return ctx.reply(`✅ Zahtjev već ima status: ${withdrawal.status}`);
         }
 
-        await prisma.withdrawal.update({
-            where: { id },
-            data: { status: "processed", processedAt: new Date() }
-        });
-
+        await prisma.$transaction([
+            prisma.withdrawal.update({
+                where: { id },
+                data: { status: "processed", processedAt: new Date() }
+            }),
+            prisma.user.update({
+                where: { id: withdrawal.userId },
+                data: { clickBalance: { decrement: withdrawal.amount } }
+            })
+        ]);
+        try {
+            await bot.api.sendMessage(
+                withdrawal.user.telegramId,
+                `✅ Tvoja isplata je obrađena!\n\n` +
+                `💰 Iznos: ${withdrawal.amount} KVNC\n` +
+                `📤 Poslano na: ${withdrawal.tonAddress}\n` +
+                `🆔 ID: ${withdrawal.id}`
+            );
+        } catch (e) {}
         await ctx.reply(
             `✅ Zahtjev **#${id}** označen kao processed!\n\n` +
-            `💰 Iznos: ${withdrawal.amount} KVNC\n` +
+            `💰 Iznos oduzet: ${withdrawal.amount} KVNC\n` +
             `👤 Korisnik: ${withdrawal.user.telegramId}\n` +
             `📤 Adresa: ${withdrawal.tonAddress}`
         );
@@ -2192,12 +2213,26 @@ async function initBot() {
     });
 
     // === DEX API ===
+    let _priceCache: any = null;
+    let _priceCacheTime = 0;
     app.get('/api/price', async (req, res) => {
         try {
-            const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
-            res.json(price);
+            const now = Date.now();
+            if (_priceCache && now - _priceCacheTime < 60000) return res.json(_priceCache);
+            const resp = await fetch(
+                'https://api.dyor.io/v1/jettons/EQDKKFRJU5uar87OdtvLb8gynFF1fJj40xyYfhUgvc914I5S/markets/EQDaPt-caUdBWLhF2In1P4x2-S7MOw79aganZ58PqMFqxR8S/price',
+                { signal: AbortSignal.timeout(5000) }
+            );
+            if (!resp.ok) throw new Error('DYOR ' + resp.status);
+            const data: any = await resp.json();
+            const tonPrice = Number(data.ton.value) / Math.pow(10, data.ton.decimals);
+            const usdPrice = Number(data.usd.value) / Math.pow(10, data.usd.decimals);
+            _priceCache = { usdt: usdPrice, usd: usdPrice, gram: tonPrice, ton: tonPrice, change24h: 0, liquidity: 0, changedAt: data.changedAt };
+            _priceCacheTime = now;
+            res.json(_priceCache);
         } catch (error) {
             console.error('❌ /api/price error:', error);
+            if (_priceCache) return res.json(_priceCache);
             res.status(500).json({ error: 'Server error' });
         }
     });
