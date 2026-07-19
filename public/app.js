@@ -86,6 +86,7 @@ async function init() {
         const usernameEl = document.getElementById('username');
         if (usernameEl) usernameEl.textContent = user.first_name || user.username || 'Rudar';
 
+        // Dohvati podatke korisnika
         const response = await fetch('/api/me', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -95,8 +96,12 @@ async function init() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         userData = await response.json();
-        energy = userData.energy || maxEnergy;
-        maxEnergy = userData.maxEnergy || 1000;
+
+        // /api/me vraća: clickBalance, totalClicks, dailyClicks, dailyLimit,
+        // referralCount, rank, bonusAvailable
+        // energy i maxEnergy NE vraća — postavljamo default dok ne dođe prvi /tap
+        energy = maxEnergy; // puna energija na startu (server će korigirati na prvom tapu)
+        maxEnergy = 1000;
 
         updateUI(userData);
         startEnergyRegen();
@@ -126,7 +131,7 @@ function updateUI(data) {
     const balanceEl = document.getElementById('balance');
     if (balanceEl) balanceEl.textContent = (data.clickBalance || 0).toFixed(4);
 
-    // Rang
+    // Rang — server vraća data.rank kao string
     const totalClicks = data.totalClicks || 0;
     const rankInfo = getRankInfo(totalClicks);
     const rankEl = document.getElementById('rankBadge');
@@ -149,23 +154,23 @@ function updateUI(data) {
     const totalEl = document.getElementById('totalClicks');
     if (totalEl) totalEl.textContent = totalClicks.toLocaleString();
 
-    // Daily clicks — samo današnji klikovi bez limita
     const dailyEl = document.getElementById('dailyClicks');
     if (dailyEl) dailyEl.textContent = (data.dailyClicks || 0).toLocaleString();
 
-    // Reward
+    // Reward — /api/me ne vraća baseReward, default 1.0; /api/tap vraća baseReward
+    const baseReward = data.baseReward || data.reward || 1.0;
     const rewardEl = document.getElementById('rewardPerTap');
-    if (rewardEl) rewardEl.textContent = `${(data.baseReward || data.reward || 1).toFixed(4)} KVNC`;
+    if (rewardEl) rewardEl.textContent = `${baseReward.toFixed(4)} KVNC`;
 
     const rewardSubEl = document.getElementById('rewardSub');
-    if (rewardSubEl) rewardSubEl.textContent = `+${(data.baseReward || data.reward || 1).toFixed(4)} KVNC/klik`;
+    if (rewardSubEl) rewardSubEl.textContent = `+${baseReward.toFixed(4)} KVNC/klik`;
 
-    // Energy
-    energy = data.energy !== undefined ? data.energy : energy;
-    maxEnergy = data.maxEnergy || 1000;
+    // Energy — /api/tap vraća energy i maxEnergy; /api/me ih ne vraća
+    if (data.energy !== undefined) energy = data.energy;
+    if (data.maxEnergy !== undefined) maxEnergy = data.maxEnergy;
     updateEnergyUI();
 
-    // Boost
+    // Boost — vraća boostActive i boostEndsAt samo iz /api/tap i /api/boost
     if (data.boostActive && data.boostEndsAt) {
         startBoostTimer(new Date(data.boostEndsAt).getTime());
     }
@@ -183,7 +188,6 @@ function updateEnergyUI() {
     if (fill) fill.style.width = `${pct}%`;
     if (val) val.textContent = `${Math.floor(energy)} / ${maxEnergy}`;
 
-    // Countdown do pune energije
     const countdown = document.getElementById('energyCountdown');
     if (countdown) {
         if (energy >= maxEnergy) {
@@ -272,14 +276,13 @@ async function handleMine(event) {
     }
 
     // Particles
-    if (event) {
-        const rect = event.target.getBoundingClientRect();
+    if (event && event.clientX) {
         spawnParticles(event.clientX, event.clientY);
     } else {
         const wrapper = document.getElementById('pickaxe');
         if (wrapper) {
             const rect = wrapper.getBoundingClientRect();
-            spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2);
+            spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
         }
     }
 
@@ -318,32 +321,55 @@ async function handleMine(event) {
             throw new Error(`HTTP ${response.status}`);
         }
 
+        // /api/tap vraća: clickBalance, totalClicks, dailyClicks, energy, maxEnergy,
+        // reward, baseReward, multiplier, boostActive, boostEndsAt, rank
         const data = await response.json();
-        userData = data;
+        userData = { ...userData, ...data };
 
-        // Update balans
         const balanceEl = document.getElementById('balance');
         if (balanceEl) balanceEl.textContent = (data.clickBalance || 0).toFixed(4);
 
         const totalEl = document.getElementById('totalClicks');
         if (totalEl) totalEl.textContent = (data.totalClicks || 0).toLocaleString();
 
-        // Daily clicks bez /500
         const dailyEl = document.getElementById('dailyClicks');
         if (dailyEl) dailyEl.textContent = (data.dailyClicks || 0).toLocaleString();
 
-        // Rank progress
+        // Rank badge i progress
+        if (data.rank) {
+            const rankEl = document.getElementById('rankBadge');
+            if (rankEl) rankEl.textContent = data.rank;
+        }
         const progress = getRankProgress(data.totalClicks || 0);
         const progressFill = document.getElementById('rankProgressFill');
         if (progressFill) progressFill.style.width = `${progress}%`;
+        const rankInfo = getRankInfo(data.totalClicks || 0);
+        const progressText = document.getElementById('rankProgressText');
+        if (progressText) {
+            progressText.textContent = rankInfo.max === Infinity
+                ? '👑 MAX RANG'
+                : `${(data.totalClicks || 0).toLocaleString()} / ${rankInfo.max.toLocaleString()}`;
+        }
 
-        // Energy iz servera
+        // Energy iz servera (autoritativno)
         if (data.energy !== undefined) {
             energy = data.energy;
+            maxEnergy = data.maxEnergy || maxEnergy;
             updateEnergyUI();
         }
 
-        // Floating reward
+        // Reward prikaz
+        const rewardEl = document.getElementById('rewardPerTap');
+        if (rewardEl && data.baseReward) rewardEl.textContent = `${data.baseReward.toFixed(4)} KVNC`;
+        const rewardSubEl = document.getElementById('rewardSub');
+        if (rewardSubEl && data.baseReward) rewardSubEl.textContent = `+${data.baseReward.toFixed(4)} KVNC/klik`;
+
+        // Boost timer
+        if (data.boostActive && data.boostEndsAt) {
+            startBoostTimer(new Date(data.boostEndsAt).getTime());
+        }
+
+        // Floating reward — data.reward je ukupna (s multiplier), data.baseReward je osnovna
         const reward = data.reward || data.baseReward || 1;
         showFloatingCounter(`+${reward.toFixed(4)}`);
 
@@ -376,16 +402,23 @@ async function handleBoost() {
     try {
         const user = tg.initDataUnsafe?.user || null;
         if (!user) return;
+
+        // Backend /api/boost s action:'buy' troši 10 KVNC i aktivira 2x boost
         const response = await fetch('/api/boost', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '', action: 'buy' })
         });
         const data = await response.json();
         if (data.boostActive && data.boostEndsAt) {
             startBoostTimer(new Date(data.boostEndsAt).getTime());
             tg.HapticFeedback.notificationOccurred('success');
             tg.showAlert('⚡ 2x Boost aktiviran na 10 minuta!');
+            // Ažuriraj balans
+            if (data.clickBalance !== undefined) {
+                const balanceEl = document.getElementById('balance');
+                if (balanceEl) balanceEl.textContent = data.clickBalance.toFixed(4);
+            }
         } else if (data.error) {
             tg.showAlert(data.error);
         }
@@ -416,6 +449,7 @@ function switchTab(tab) {
 }
 
 // === LEADERBOARD ===
+// Backend /api/leaderboard vraća array direktno (ne { users: [] })
 async function loadLeaderboard() {
     const list = document.getElementById('lbList');
     if (!list) return;
@@ -423,24 +457,25 @@ async function loadLeaderboard() {
     try {
         const response = await fetch('/api/leaderboard');
         const data = await response.json();
-        const users = data.users || data || [];
+        // Backend vraća: [ { telegramId, totalClicks, clickBalance }, ... ]
+        const users = Array.isArray(data) ? data : (data.users || []);
         if (!users.length) { list.innerHTML = '<div class="lb-loading">Nema podataka</div>'; return; }
         const myId = String(tg.initDataUnsafe?.user?.id || '');
         const medals = ['🥇', '🥈', '🥉'];
         list.innerHTML = users.map((u, i) => {
-            const isMe = u.telegramId === myId;
+            const isMe = String(u.telegramId) === myId;
             const medal = medals[i] || `${i + 1}.`;
             return `
                 <div class="lb-item ${isMe ? 'me' : ''}">
                     <span class="lb-rank">${medal}</span>
                     <div class="lb-info">
-                        <span class="lb-name">${isMe ? '👤 Ti' : `Rudar #${u.telegramId.slice(-4)}`}</span>
-                        <span class="lb-rank-label">${getRankInfo(u.totalClicks).name}</span>
+                        <span class="lb-name">${isMe ? '👤 Ti' : `Rudar #${String(u.telegramId).slice(-4)}`}</span>
+                        <span class="lb-rank-label">${getRankInfo(u.totalClicks || 0).name}</span>
                     </div>
                     <span class="lb-clicks">${(u.totalClicks || 0).toLocaleString()}</span>
                 </div>`;
         }).join('');
-        const myRankIdx = users.findIndex(u => u.telegramId === myId);
+        const myRankIdx = users.findIndex(u => String(u.telegramId) === myId);
         const myRankEl = document.getElementById('lbMyRank');
         const myRankNum = document.getElementById('myRankNum');
         if (myRankIdx !== -1 && myRankEl && myRankNum) {
@@ -451,6 +486,10 @@ async function loadLeaderboard() {
 }
 
 // === NFTs ===
+// Backend /api/nftcount vraća samo { count } — nedostaje nfts[]
+// Koristimo /api/me s includeNFTs ili direktan poziv koji postoji
+// NAPOMENA: backend /api/nftcount treba popravak (vidi README uz ovaj fajl)
+// Za sada koristimo fallback koji prikazuje count i poziva equip/stake/withdraw
 async function loadNFTs() {
     const grid = document.getElementById('nftGrid');
     if (!grid) return;
@@ -458,71 +497,117 @@ async function loadNFTs() {
     try {
         const user = tg.initDataUnsafe?.user || null;
         if (!user) return;
+
+        // /api/nftcount vraća { count, nfts[], tonWallet } — nakon backendskog fixa
         const response = await fetch('/api/nftcount', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
         });
         const data = await response.json();
+
+        // Podrška za stari backend (samo count) i novi (s nfts[])
         const nfts = data.nfts || [];
+        const hasWallet = !!data.tonWallet;
+
         if (!nfts.length) {
-            grid.innerHTML = `<div class="nft-loading" style="grid-column:1/-1">Nemaš NFT-ova.<br><span style="font-size:11px">Rudarenjem otključavaš NFT-ove!</span></div>`;
+            // Backend vraća count ali ne i nfts[] — prikaži info poruku
+            if (data.count > 0) {
+                grid.innerHTML = `<div class="nft-loading" style="grid-column:1/-1">
+                    Imaš ${data.count} NFT-ova.<br>
+                    <span style="font-size:11px">Koristi /nfts komandu u botu za pregled.</span>
+                </div>`;
+            } else {
+                grid.innerHTML = `<div class="nft-loading" style="grid-column:1/-1">
+                    Nemaš NFT-ova.<br>
+                    <span style="font-size:11px">Rudarenjem otključavaš NFT-ove!</span>
+                </div>`;
+            }
             return;
         }
+
+        // Pronađi opremljeni NFT
         const equippedNFT = nfts.find(n => n.equipped === true);
         const equippedId = equippedNFT ? equippedNFT.id : null;
+
+        // Prikaži opremljeni NFT u header sekciji
+        const nftEqEmpty = document.getElementById('nftEqEmpty');
+        const nftEqCard = document.getElementById('nftEqCard');
         if (equippedNFT) {
-            document.getElementById('nftEqEmpty').style.display = 'none';
-            document.getElementById('nftEqCard').style.display = 'flex';
+            if (nftEqEmpty) nftEqEmpty.style.display = 'none';
+            if (nftEqCard) nftEqCard.style.display = 'flex';
             const eqIconEl = document.getElementById('nftEqIcon');
-            if (equippedNFT.image) {
-                eqIconEl.innerHTML = '<img src="' + equippedNFT.image + '" style="width:40px;height:40px;object-fit:contain" onerror="this.outerHTML=getNFTIcon(equippedNFT.rarity)" />';
-            } else {
-                eqIconEl.textContent = getNFTIcon(equippedNFT.rarity);
-            }
-            document.getElementById('nftEqName').textContent = equippedNFT.name;
-            document.getElementById('nftEqBonus').textContent = `${equippedNFT.bonusMultiplier}x bonus`;
+            if (eqIconEl) eqIconEl.textContent = getNFTIcon(equippedNFT.rarity);
+            const eqNameEl = document.getElementById('nftEqName');
+            if (eqNameEl) eqNameEl.textContent = equippedNFT.name;
+            const eqBonusEl = document.getElementById('nftEqBonus');
+            if (eqBonusEl) eqBonusEl.textContent = `${equippedNFT.bonusMultiplier}x bonus`;
+        } else {
+            if (nftEqEmpty) nftEqEmpty.style.display = 'flex';
+            if (nftEqCard) nftEqCard.style.display = 'none';
         }
-        const hasWallet = data.tonWallet;
+
+        // Generiraj kartice NFT-ova
         grid.innerHTML = nfts.map(nft => {
             const isPending = nft.contractAddress && nft.contractAddress.startsWith('withdraw:');
-            const withdrawBtn = isPending
-                ? `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">⏳ Pending</button>`
-                : !hasWallet
-                ? `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">🔒 Nema walleta</button>`
-                : nft.staked || nft.equipped
-                ? `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">📤 N/A</button>`
-                : `<button class="nft-action-btn" onclick="withdrawNFT(${nft.id})" style="color:var(--boost);border-color:rgba(255,107,53,0.2);background:rgba(255,107,53,0.1)">📤 Withdraw</button>`;
+            const isEquipped = nft.id === equippedId;
+
+            let withdrawBtn;
+            if (isPending) {
+                withdrawBtn = `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">⏳ Pending</button>`;
+            } else if (!hasWallet) {
+                withdrawBtn = `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default;font-size:9px">🔒 Nema walleta</button>`;
+            } else if (nft.staked || isEquipped) {
+                withdrawBtn = `<button class="nft-action-btn" disabled style="opacity:0.5;cursor:default">📤 N/A</button>`;
+            } else {
+                withdrawBtn = `<button class="nft-action-btn" onclick="withdrawNFT(${nft.id})" style="color:var(--boost);border-color:rgba(255,107,53,0.2);background:rgba(255,107,53,0.1)">📤 Withdraw</button>`;
+            }
+
             return `
-            <div class="nft-card ${nft.id === equippedId ? 'equipped' : ''} ${isPending ? 'nft-pending' : ''}">
-                <div class="nft-card-icon"><img src="${nft.image}" style="width:64px;height:64px;object-fit:cover;border-radius:8px" onerror="this.style.display='none';this.parentNode.textContent='${getNFTIcon(nft.rarity)}'" /></div>
+            <div class="nft-card ${isEquipped ? 'equipped' : ''} ${isPending ? 'nft-pending' : ''}">
+                <span class="nft-card-icon">${getNFTIcon(nft.rarity)}</span>
                 <span class="nft-card-name">${nft.name}</span>
                 <span class="nft-card-bonus">${nft.bonusMultiplier}x bonus</span>
                 <span class="nft-card-rarity">${nft.rarity}</span>
-                ${isPending ? '<span class="nft-pending-label">⏳ Withdrawal u obradi</span>' : ''}
+                ${isPending ? '<span style="font-size:9px;color:var(--boost);display:block;margin-top:2px">⏳ Withdrawal u obradi</span>' : ''}
                 <div class="nft-card-actions">
-                    <button class="nft-action-btn" onclick="equipNFT(${nft.id})">${nft.id === equippedId ? '✅' : 'Opremi'}</button>
+                    <button class="nft-action-btn" onclick="equipNFT(${nft.id})">${isEquipped ? '✅' : 'Opremi'}</button>
                     <button class="nft-action-btn" onclick="stakeNFT(${nft.id})" style="color:var(--energy);border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.1)">${nft.staked ? '🔒 Unstake' : 'Stake'}</button>
                     ${withdrawBtn}
                 </div>
             </div>`;
         }).join('');
+
         if (!hasWallet) {
-            grid.innerHTML += '<div class="nft-wallet-warning">⚠️ Dodaj TON wallet adresu s /wallet komandom za withdrawal</div>';
+            grid.innerHTML += '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--boost);padding:8px">⚠️ Dodaj TON wallet s /wallet komandom za withdrawal</div>';
         }
-    } catch (e) { grid.innerHTML = '<div class="nft-loading">Greška pri učitavanju NFT-ova</div>'; }
+    } catch (e) {
+        console.error('NFT load error:', e);
+        grid.innerHTML = '<div class="nft-loading">Greška pri učitavanju NFT-ova</div>';
+    }
 }
 
 function getNFTIcon(rarity) {
-    const icons = { 'bronze': '⛏️', 'silver': '🥈', 'gold': '🥇', 'diamond': '💎', 'fire': '🔥', 'legendary': '👑' };
-    return icons[rarity?.toLowerCase()] || '🎨';
+    if (!rarity) return '🎨';
+    const icons = {
+        'bronze': '⛏️', 'common': '⛏️',
+        'silver': '🥈', 'rare': '🥈',
+        'gold': '🥇', 'epic': '🥇',
+        'diamond': '💎', 'legendary': '💎',
+        'fire': '🔥', 'mythic': '🔥'
+    };
+    return icons[rarity.toLowerCase()] || '🎨';
 }
 
 async function equipNFT(nftId) {
     try {
         const user = tg.initDataUnsafe?.user || null;
         if (!user) return;
-        const res = await fetch('/api/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId }) });
+        const res = await fetch('/api/equip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId })
+        });
         const data = await res.json();
         if (res.ok) {
             tg.HapticFeedback.notificationOccurred('success');
@@ -538,12 +623,16 @@ async function stakeNFT(nftId) {
     try {
         const user = tg.initDataUnsafe?.user || null;
         if (!user) return;
-        await fetch('/api/stake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId }) });
+        // Backend /api/stake togglea stanje (stake/unstake)
+        await fetch('/api/stake', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '', nftId })
+        });
         tg.HapticFeedback.notificationOccurred('success');
         loadNFTs();
     } catch (e) { console.error(e); }
 }
-
 
 async function withdrawNFT(nftId) {
     const user = tg.initDataUnsafe?.user || null;
@@ -567,7 +656,7 @@ async function withdrawNFT(nftId) {
                 } else {
                     tg.showAlert('❌ ' + (data.error || 'Greška'));
                 }
-            } catch(e) {
+            } catch (e) {
                 tg.showAlert('❌ Greška pri withdrawalu');
             }
         }
@@ -578,27 +667,39 @@ async function handleUnequip() {
     try {
         const user = tg.initDataUnsafe?.user || null;
         if (!user) return;
-        await fetch('/api/unequip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rawUser: user, initData: tg.initData || '' }) });
-        document.getElementById('nftEqEmpty').style.display = 'flex';
-        document.getElementById('nftEqCard').style.display = 'none';
+        await fetch('/api/unequip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+        });
+        const nftEqEmpty = document.getElementById('nftEqEmpty');
+        const nftEqCard = document.getElementById('nftEqCard');
+        if (nftEqEmpty) nftEqEmpty.style.display = 'flex';
+        if (nftEqCard) nftEqCard.style.display = 'none';
         tg.HapticFeedback.notificationOccurred('success');
         loadNFTs();
     } catch (e) { console.error(e); }
 }
 
 // === QUESTS ===
+// Backend QuestService je isključen (stub koji vraća [])
+// Prikazujemo lokalne quest-ove bazirane na userData koji dolazi iz /api/me
 async function loadQuests() {
     const list = document.getElementById('questList');
     if (!list) return;
     list.innerHTML = '<div class="lb-loading">Učitavanje zadataka...</div>';
 
+    // Lokalni quest-ovi — usklađeni s poljima koja /api/me vraća
     const quests = [
         { id: 'daily_clicks', title: '⛏️ Rudarski dan', desc: 'Klikni 100 puta danas', target: 100, reward: 50, type: 'daily' },
+        { id: 'daily_500', title: '⚡ Turbo dan', desc: 'Klikni 500 puta danas', target: 500, reward: 200, type: 'daily' },
         { id: 'total_clicks', title: '💎 Iskusni rudar', desc: 'Ukupno 1000 klikova', target: 1000, reward: 100, type: 'total' },
+        { id: 'total_10k', title: '👑 Veteranski rudar', desc: 'Ukupno 10.000 klikova', target: 10000, reward: 500, type: 'total' },
         { id: 'referral', title: '👥 Pozovi prijatelja', desc: 'Pozovi 1 korisnika', target: 1, reward: 200, type: 'referral' },
-        { id: 'streak', title: '🔥 Dnevni streak', desc: 'Rudari 7 dana zaredom', target: 7, reward: 500, type: 'streak' },
+        { id: 'referral_5', title: '🤝 Ekipa', desc: 'Pozovi 5 korisnika', target: 5, reward: 1000, type: 'referral' },
     ];
 
+    // Ovi podaci dolaze iz /api/me response koji smo pohranili u userData
     const totalClicks = userData?.totalClicks || 0;
     const dailyClicks = userData?.dailyClicks || 0;
     const referralCount = userData?.referralCount || 0;
@@ -621,7 +722,7 @@ async function loadQuests() {
                     <div class="quest-progress-fill" style="width:${pct}%"></div>
                 </div>
                 <div class="quest-footer">
-                    <span class="quest-count">${current} / ${q.target}</span>
+                    <span class="quest-count">${current.toLocaleString()} / ${q.target.toLocaleString()}</span>
                     ${done ? '<span class="quest-done-badge">✅ Završeno</span>' : ''}
                 </div>
             </div>`;
@@ -646,10 +747,10 @@ function shareRefLink() {
 document.addEventListener('DOMContentLoaded', () => {
     const mineBtn = document.getElementById('mineBtn');
     if (mineBtn) mineBtn.addEventListener('click', handleMine);
-    
+
     const pickaxe = document.getElementById('pickaxe');
     if (pickaxe) pickaxe.addEventListener('click', handleMine);
 });
 
 init();
-console.log('🚀 Kovanica Mini App v2.2 loaded!');
+console.log('🚀 Kovanica Mini App v2.3 loaded!');

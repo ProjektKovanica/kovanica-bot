@@ -5,21 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard – Kovanica Bot</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #0f0f1a;
             color: #e0e0e0;
             padding: 20px;
         }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1400px; margin: 0 auto; }
         header {
             display: flex;
             justify-content: space-between;
@@ -28,14 +21,8 @@
             border-bottom: 2px solid #2a2a4a;
             margin-bottom: 30px;
         }
-        header h1 {
-            color: #ffd700;
-            font-size: 28px;
-        }
-        header .status {
-            color: #00ff88;
-            font-size: 14px;
-        }
+        header h1 { color: #ffd700; font-size: 28px; }
+        header .status { color: #00ff88; font-size: 14px; }
         .login-box {
             max-width: 400px;
             margin: 100px auto;
@@ -44,10 +31,7 @@
             border-radius: 16px;
             border: 1px solid #2a2a4a;
         }
-        .login-box h2 {
-            color: #ffd700;
-            margin-bottom: 20px;
-        }
+        .login-box h2 { color: #ffd700; margin-bottom: 20px; }
         .login-box input {
             width: 100%;
             padding: 12px 16px;
@@ -69,18 +53,12 @@
             font-weight: bold;
             cursor: pointer;
         }
-        .login-box button:hover {
-            background: #ffed4a;
-        }
-        .error {
-            color: #ff4444;
-            margin-bottom: 12px;
-            text-align: center;
-        }
+        .login-box button:hover { background: #ffed4a; }
+        .error { color: #ff4444; margin-bottom: 12px; text-align: center; }
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
             margin-bottom: 30px;
         }
         .stat-card {
@@ -90,16 +68,8 @@
             border: 1px solid #2a2a4a;
             text-align: center;
         }
-        .stat-card .number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-        .stat-card .label {
-            color: #8888aa;
-            font-size: 14px;
-            margin-top: 4px;
-        }
+        .stat-card .number { font-size: 28px; font-weight: bold; color: #ffd700; }
+        .stat-card .label { color: #8888aa; font-size: 13px; margin-top: 4px; }
         .section {
             background: #1a1a2e;
             border-radius: 12px;
@@ -107,56 +77,23 @@
             padding: 20px;
             margin-bottom: 20px;
         }
-        .section h2 {
-            color: #ffd700;
-            margin-bottom: 16px;
-            font-size: 20px;
-        }
-        .section table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        .section h2 { color: #ffd700; margin-bottom: 16px; font-size: 20px; }
+        .section table { width: 100%; border-collapse: collapse; }
         .section table th,
         .section table td {
             padding: 10px 12px;
             text-align: left;
             border-bottom: 1px solid #2a2a4a;
         }
-        .section table th {
-            color: #8888aa;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-        }
-        .section table td {
-            font-size: 14px;
-        }
-        .btn {
-            padding: 6px 14px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .btn-success {
-            background: #00cc66;
-            color: #fff;
-        }
-        .btn-danger {
-            background: #ff4444;
-            color: #fff;
-        }
-        .btn-warning {
-            background: #ffaa00;
-            color: #0f0f1a;
-        }
-        .btn-primary {
-            background: #4488ff;
-            color: #fff;
-        }
-        .hidden {
-            display: none !important;
-        }
+        .section table th { color: #8888aa; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+        .section table td { font-size: 14px; }
+        .btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-success { background: #00cc66; color: #fff; }
+        .btn-danger { background: #ff4444; color: #fff; }
+        .btn-warning { background: #ffaa00; color: #0f0f1a; }
+        .btn-primary { background: #4488ff; color: #fff; }
+        .btn-info { background: #6644ff; color: #fff; }
+        .hidden { display: none !important; }
         .tab-bar {
             display: flex;
             gap: 4px;
@@ -164,7 +101,7 @@
             flex-wrap: wrap;
         }
         .tab-bar button {
-            padding: 10px 24px;
+            padding: 10px 20px;
             background: #1a1a2e;
             border: 1px solid #2a2a4a;
             border-bottom: none;
@@ -173,26 +110,17 @@
             cursor: pointer;
             font-size: 14px;
         }
-        .tab-bar button.active {
-            background: #2a2a4a;
-            color: #ffd700;
-        }
-        .tab-bar button:hover {
-            background: #2a2a4a;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
+        .tab-bar button.active { background: #2a2a4a; color: #ffd700; }
+        .tab-bar button:hover { background: #2a2a4a; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .search-input {
             padding: 8px 12px;
             background: #0f0f1a;
             border: 1px solid #2a2a4a;
             border-radius: 6px;
             color: #fff;
-            width: 200px;
+            width: 220px;
             margin-bottom: 12px;
         }
         .toast {
@@ -206,33 +134,24 @@
             color: #fff;
             display: none;
             z-index: 1000;
+            font-size: 15px;
         }
-        .toast.success {
-            border-color: #00cc66;
-        }
-        .toast.error {
-            border-color: #ff4444;
-        }
-        .toast.show {
-            display: block;
-            animation: slideUp 0.3s ease;
-        }
+        .toast.success { border-color: #00cc66; }
+        .toast.error { border-color: #ff4444; }
+        .toast.show { display: block; animation: slideUp 0.3s ease; }
         @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         .pool-bar {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 4px 0;
+            margin: 8px 0;
+            font-size: 13px;
         }
+        .pool-bar .pool-name { width: 140px; color: #e0e0e0; font-weight: 600; }
+        .pool-bar .pool-pct { width: 45px; color: #ffd700; text-align: right; }
         .pool-bar .fill {
             height: 8px;
             border-radius: 4px;
@@ -243,479 +162,697 @@
         .pool-bar .fill .progress {
             height: 100%;
             border-radius: 4px;
-            background: #ffd700;
+            background: linear-gradient(90deg, #b36b00, #ffd700);
             transition: width 0.5s ease;
         }
+        .pool-bar .pool-remaining { width: 120px; color: #8888aa; text-align: right; font-size: 12px; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-pending { background: rgba(255, 170, 0, 0.2); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
+        .badge-processed { background: rgba(0, 204, 102, 0.2); color: #00cc66; border: 1px solid rgba(0,204,102,0.3); }
+        .badge-blacklisted { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+        .nft-equipped { color: #ffd700; }
+        .nft-staked { color: #00d4ff; }
+        .loading-row td { text-align: center; color: #8888aa; padding: 20px; }
+        .settings-grid { display: grid; gap: 16px; max-width: 500px; }
+        .settings-grid label { display: block; color: #8888aa; font-size: 13px; margin-bottom: 4px; }
+        .settings-grid input { width: 100%; }
         @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .section table {
-                font-size: 12px;
-            }
-            .section table th,
-            .section table td {
-                padding: 6px 8px;
-            }
-            header h1 {
-                font-size: 20px;
-            }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .section table { font-size: 12px; }
+            .section table th, .section table td { padding: 6px 8px; }
+            header h1 { font-size: 20px; }
         }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <header>
-            <h1>⚙️ Admin Dashboard</h1>
-            <div>
-                <span class="status" id="statusDot">● Online</span>
-                <button onclick="logout()" class="btn btn-danger" style="margin-left:12px;">Odjava</button>
-            </div>
-        </header>
-
-        <!-- Login Box -->
-        <div id="loginBox" class="login-box">
-            <h2>🔐 Admin Login</h2>
-            <div id="loginError" class="error hidden"></div>
-            <input type="password" id="passwordInput" placeholder="Unesite lozinku..." onkeydown="if(event.key==='Enter') login()" />
-            <button onclick="login()">Prijava</button>
+<div class="container">
+    <header>
+        <h1>⚙️ Admin Dashboard</h1>
+        <div>
+            <span class="status" id="statusDot">● Online</span>
+            <button onclick="logout()" class="btn btn-danger" style="margin-left:12px;">Odjava</button>
         </div>
+    </header>
 
-        <!-- Dashboard (hidden until login) -->
-        <div id="dashboard" class="hidden">
-
-            <!-- Tab Bar -->
-            <div class="tab-bar">
-                <button class="active" data-tab="stats">📊 Statistike</button>
-                <button data-tab="users">👥 Korisnici</button>
-                <button data-tab="nfts">🎨 NFT-ovi</button>
-                <button data-tab="pools">💧 Pool-ovi</button>
-                <button data-tab="withdrawals">💸 Isplate</button>
-                <button data-tab="settings">⚙️ Postavke</button>
-            </div>
-
-            <!-- Tab: Statistike -->
-            <div id="tab-stats" class="tab-content active">
-                <div class="stats-grid" id="statsGrid">
-                    <div class="stat-card"><div class="number" id="statUsers">-</div><div class="label">👥 Korisnika</div></div>
-                    <div class="stat-card"><div class="number" id="statActive">-</div><div class="label">✅ Aktivni danas</div></div>
-                    <div class="stat-card"><div class="number" id="statClicks">-</div><div class="label">👆 Ukupno klikova</div></div>
-                    <div class="stat-card"><div class="number" id="statNFTs">-</div><div class="label">🎨 Iskopano NFT</div></div>
-                    <div class="stat-card"><div class="number" id="statPending">-</div><div class="label">💸 Pending isplate</div></div>
-                    <div class="stat-card"><div class="number" id="statTotalKVNC">-</div><div class="label">💰 Ukupno KVNC</div></div>
-                </div>
-                <div class="section">
-                    <h2>📊 Pool-ovi</h2>
-                    <div id="poolList"></div>
-                </div>
-            </div>
-
-            <!-- Tab: Korisnici -->
-            <div id="tab-users" class="tab-content">
-                <div class="section">
-                    <h2>👥 Korisnici</h2>
-                    <input class="search-input" id="userSearch" placeholder="🔍 Pretraži po ID..." oninput="loadUsers()" />
-                    <div style="overflow-x:auto;">
-                        <table>
-                            <thead><tr><th>ID</th><th>Balans</th><th>Klikovi</th><th>NFT</th><th>Akcije</th></tr></thead>
-                            <tbody id="usersTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab: NFT-ovi -->
-            <div id="tab-nfts" class="tab-content">
-                <div class="section">
-                    <h2>🎨 NFT-ovi</h2>
-                    <div style="overflow-x:auto;">
-                        <table>
-                            <thead><tr><th>ID</th><th>Ime</th><th>Rarity</th><th>Korisnik</th><th>Status</th><th>Akcije</th></tr></thead>
-                            <tbody id="nftsTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab: Pool-ovi -->
-            <div id="tab-pools" class="tab-content">
-                <div class="section">
-                    <h2>💧 Upravljanje Pool-ovima</h2>
-                    <div id="poolManagement"></div>
-                </div>
-            </div>
-
-            <!-- Tab: Isplate -->
-            <div id="tab-withdrawals" class="tab-content">
-                <div class="section">
-                    <h2>💸 Pending Isplate</h2>
-                    <div style="overflow-x:auto;">
-                        <table>
-                            <thead><tr><th>ID</th><th>Korisnik</th><th>Iznos</th><th>Adresa</th><th>Zatraženo</th><th>Akcija</th></tr></thead>
-                            <tbody id="withdrawalsTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab: Postavke -->
-            <div id="tab-settings" class="tab-content">
-                <div class="section">
-                    <h2>⚙️ Postavke</h2>
-                    <div style="display:grid; gap:16px; max-width:400px;">
-                        <div>
-                            <label style="color:#8888aa;">Daily Limit klikova</label>
-                            <input type="number" id="settingDailyLimit" class="search-input" style="width:100%;" />
-                        </div>
-                        <div>
-                            <label style="color:#8888aa;">Početna nagrada po kliku (KVNC)</label>
-                            <input type="number" step="0.1" id="settingInitialReward" class="search-input" style="width:100%;" />
-                        </div>
-                        <div>
-                            <label style="color:#8888aa;">Minimalna isplata (KVNC)</label>
-                            <input type="number" id="settingMinWithdrawal" class="search-input" style="width:100%;" />
-                        </div>
-                        <button class="btn btn-success" onclick="saveSettings()">💾 Spremi postavke</button>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+    <!-- Login Box -->
+    <div id="loginBox" class="login-box">
+        <h2>🔐 Admin Login</h2>
+        <div id="loginError" class="error hidden"></div>
+        <input type="password" id="passwordInput" placeholder="Unesite lozinku..."
+               onkeydown="if(event.key==='Enter') login()" />
+        <button onclick="login()">Prijava</button>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" class="toast"></div>
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
 
-    <script>
-        // ============================================================
-        // ADMIN DASHBOARD – kompletan JavaScript
-        // ============================================================
+        <div class="tab-bar">
+            <button class="active" data-tab="stats">📊 Statistike</button>
+            <button data-tab="users">👥 Korisnici</button>
+            <button data-tab="nfts">🎨 NFT-ovi</button>
+            <button data-tab="pools">💧 Pool-ovi</button>
+            <button data-tab="withdrawals">💸 Isplate</button>
+            <button data-tab="settings">⚙️ Postavke</button>
+        </div>
 
-        let token = null;
+        <!-- Tab: Statistike -->
+        <div id="tab-stats" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="number" id="statUsers">-</div><div class="label">👥 Ukupno korisnika</div></div>
+                <div class="stat-card"><div class="number" id="statActive">-</div><div class="label">✅ Aktivni danas</div></div>
+                <div class="stat-card"><div class="number" id="statClicks">-</div><div class="label">👆 Ukupno klikova</div></div>
+                <div class="stat-card"><div class="number" id="statNFTs">-</div><div class="label">🎨 NFT-ova</div></div>
+                <div class="stat-card"><div class="number" id="statPending">-</div><div class="label">💸 Pending isplate</div></div>
+                <div class="stat-card"><div class="number" id="statTotalKVNC">-</div><div class="label">💰 Ukupno KVNC</div></div>
+            </div>
+            <div class="section">
+                <h2>💧 Pool-ovi</h2>
+                <div id="poolListStats">
+                    <div style="color:#8888aa;font-size:13px">Učitavanje pool-ova...</div>
+                </div>
+            </div>
+        </div>
 
-        // --- LOGIN ---
-        function login() {
-            const password = document.getElementById('passwordInput').value;
-            const errorEl = document.getElementById('loginError');
+        <!-- Tab: Korisnici -->
+        <div id="tab-users" class="tab-content">
+            <div class="section">
+                <h2>👥 Korisnici</h2>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                    <input class="search-input" id="userSearch" placeholder="🔍 Pretraži po Telegram ID..."
+                           oninput="loadUsers()" style="margin-bottom:0;" />
+                    <button class="btn btn-primary" onclick="loadUsers()">Osvježi</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Telegram ID</th>
+                                <th>Balans (KVNC)</th>
+                                <th>Ukupno klikova</th>
+                                <th>Dnevno</th>
+                                <th>NFT-ovi</th>
+                                <th>Referali</th>
+                                <th>Wallet</th>
+                                <th>Status</th>
+                                <th>Akcije</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <tr class="loading-row"><td colspan="9">Učitavanje...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-            fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        token = data.token;
-                        document.getElementById('loginBox').classList.add('hidden');
-                        document.getElementById('dashboard').classList.remove('hidden');
-                        loadAll();
-                        showToast('✅ Prijava uspješna!', 'success');
-                    } else {
-                        errorEl.textContent = '❌ ' + data.error;
-                        errorEl.classList.remove('hidden');
-                    }
-                })
-                .catch(() => {
-                    errorEl.textContent = '❌ Greška pri povezivanju!';
-                    errorEl.classList.remove('hidden');
-                });
+        <!-- Tab: NFT-ovi -->
+        <div id="tab-nfts" class="tab-content">
+            <div class="section">
+                <h2>🎨 NFT-ovi</h2>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ime</th>
+                                <th>Rarity</th>
+                                <th>Bonus</th>
+                                <th>Vlasnik (Telegram ID)</th>
+                                <th>Status</th>
+                                <th>Akcije</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nftsTable">
+                            <tr class="loading-row"><td colspan="7">Učitavanje...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Pool-ovi -->
+        <div id="tab-pools" class="tab-content">
+            <div class="section">
+                <h2>💧 Upravljanje Pool-ovima</h2>
+                <p style="color:#8888aa;font-size:13px;margin-bottom:16px;">
+                    Pool-ovi se koriste za isplate rudarskih nagrada, NFT nagrada i referalnih bonusa.
+                </p>
+                <div id="poolManagement">
+                    <div style="color:#8888aa;font-size:13px">Učitavanje...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Isplate -->
+        <div id="tab-withdrawals" class="tab-content">
+            <div class="section">
+                <h2>💸 Pending Isplate</h2>
+                <button class="btn btn-primary" onclick="loadWithdrawals()" style="margin-bottom:12px;">Osvježi</button>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Telegram ID</th>
+                                <th>Iznos (KVNC)</th>
+                                <th>TON Adresa</th>
+                                <th>Zatraženo</th>
+                                <th>Status</th>
+                                <th>Akcija</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawalsTable">
+                            <tr class="loading-row"><td colspan="7">Učitavanje...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Postavke -->
+        <div id="tab-settings" class="tab-content">
+            <div class="section">
+                <h2>⚙️ Postavke</h2>
+                <div class="settings-grid">
+                    <div>
+                        <label>Dnevni limit klikova po korisniku</label>
+                        <input type="number" id="settingDailyLimit" class="search-input" style="width:100%;" />
+                    </div>
+                    <div>
+                        <label>Početna nagrada po kliku (KVNC)</label>
+                        <input type="number" step="0.1" id="settingInitialReward" class="search-input" style="width:100%;" />
+                    </div>
+                    <div>
+                        <label>Minimalna isplata (KVNC)</label>
+                        <input type="number" id="settingMinWithdrawal" class="search-input" style="width:100%;" />
+                    </div>
+                    <div>
+                        <label>Referral bonus – pozivatelj (KVNC)</label>
+                        <input type="number" id="settingRefInviter" class="search-input" style="width:100%;" />
+                    </div>
+                    <div>
+                        <label>Referral bonus – novi korisnik (KVNC)</label>
+                        <input type="number" id="settingRefNew" class="search-input" style="width:100%;" />
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+                        <button class="btn btn-success" onclick="saveSettings()">💾 Spremi postavke</button>
+                        <span id="settingsNote" style="font-size:12px;color:#8888aa;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /dashboard -->
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+// ============================================================
+// ADMIN DASHBOARD — usklađen s backend API-jem
+//
+// KLJUČNA RAZLIKA OD STAROG KODA:
+// Backend čita auth token iz headera "x-admin-token", NE "Authorization: Bearer"
+// Backend /api/admin/login vraća { success, token } gdje token === ADMIN_PASSWORD
+// ============================================================
+
+let token = null;
+
+// --- LOGIN ---
+function login() {
+    const password = document.getElementById('passwordInput').value;
+    const errorEl = document.getElementById('loginError');
+    errorEl.classList.add('hidden');
+
+    fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.token) {
+            // Backend vraća token koji je jednak ADMIN_PASSWORD
+            token = data.token;
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            loadAll();
+            showToast('✅ Prijava uspješna!', 'success');
+        } else {
+            errorEl.textContent = '❌ ' + (data.error || 'Neispravna lozinka');
+            errorEl.classList.remove('hidden');
         }
+    })
+    .catch(() => {
+        errorEl.textContent = '❌ Greška pri povezivanju!';
+        errorEl.classList.remove('hidden');
+    });
+}
 
-        function logout() {
-            token = null;
-            document.getElementById('loginBox').classList.remove('hidden');
-            document.getElementById('dashboard').classList.add('hidden');
+function logout() {
+    token = null;
+    document.getElementById('loginBox').classList.remove('hidden');
+    document.getElementById('dashboard').classList.add('hidden');
+}
+
+// --- API HELPER ---
+// Backend koristi header "x-admin-token" (NE Authorization Bearer!)
+async function apiCall(endpoint, method = 'GET', body = null) {
+    const opts = {
+        method,
+        headers: {
+            'x-admin-token': token,          // ← ispravno za ovaj backend
+            'Content-Type': 'application/json'
         }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(endpoint, opts);
+    if (!res.ok && res.status === 401) {
+        showToast('❌ Sesija istekla, prijavi se ponovo.', 'error');
+        logout();
+        return {};
+    }
+    return res.json();
+}
 
-        // --- API HELPER ---
-        async function apiCall(endpoint, method = 'GET', body = null) {
-            const opts = {
-                method,
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            };
-            if (body) opts.body = JSON.stringify(body);
-            const res = await fetch(endpoint, opts);
-            return res.json();
+// --- TOAST ---
+function showToast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + type + ' show';
+    clearTimeout(el._timeout);
+    el._timeout = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// --- TABS ---
+document.querySelectorAll('.tab-bar button').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const tab = this.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        if (tab === 'users') loadUsers();
+        if (tab === 'nfts') loadNFTs();
+        if (tab === 'withdrawals') loadWithdrawals();
+        if (tab === 'pools') loadPools();
+        if (tab === 'stats') loadStats();
+        if (tab === 'settings') loadSettings();
+    });
+});
+
+// --- LOAD ALL ---
+function loadAll() {
+    loadStats();
+    loadUsers();
+    loadNFTs();
+    loadWithdrawals();
+    loadPools();
+    loadSettings();
+}
+
+// --- STATS ---
+// Backend /api/admin/stats vraća:
+// { totalUsers, todayUsers, totalClicks, totalBalance, pendingWithdrawals, totalNFTs }
+// NE vraća pools[] niti activeToday niti totalKVNC — dohvaćamo pools odvojeno
+async function loadStats() {
+    try {
+        const [statsData, poolsData] = await Promise.all([
+            apiCall('/api/admin/stats'),
+            apiCall('/api/admin/pools')
+        ]);
+
+        // totalUsers ✓, todayUsers (admin html koristio activeToday — FIX)
+        document.getElementById('statUsers').textContent =
+            (statsData.totalUsers || 0).toLocaleString();
+        document.getElementById('statActive').textContent =
+            (statsData.todayUsers || 0).toLocaleString(); // backend šalje todayUsers
+
+        document.getElementById('statClicks').textContent =
+            (statsData.totalClicks || 0).toLocaleString();
+        document.getElementById('statNFTs').textContent =
+            (statsData.totalNFTs || 0).toLocaleString();
+        document.getElementById('statPending').textContent =
+            (statsData.pendingWithdrawals || 0).toLocaleString();
+
+        // totalBalance umjesto totalKVNC (backend šalje totalBalance)
+        document.getElementById('statTotalKVNC').textContent =
+            (statsData.totalBalance || 0).toFixed(2);
+
+        // Pools na stats tabu
+        const pools = poolsData.pools || [];
+        const poolListStats = document.getElementById('poolListStats');
+        if (pools.length) {
+            poolListStats.innerHTML = pools.map(p => {
+                const used = p.totalAllocated > 0
+                    ? ((p.spent / p.totalAllocated) * 100).toFixed(1)
+                    : 0;
+                const emoji = {
+                    tap_base: '⛏️',
+                    nft_mint_rewards: '🎨',
+                    referral_pool: '👥',
+                    dex_kvnc_gram: '💧',
+                    dex_kvnc_usdt: '💧'
+                }[p.poolName] || '📦';
+                return `<div class="pool-bar">
+                    <span class="pool-name">${emoji} ${p.poolName}</span>
+                    <span class="pool-pct">${used}%</span>
+                    <div class="fill"><div class="progress" style="width:${used}%"></div></div>
+                    <span class="pool-remaining">${(p.remaining || 0).toLocaleString()} KVNC</span>
+                </div>`;
+            }).join('');
+        } else {
+            poolListStats.innerHTML = '<div style="color:#8888aa;font-size:13px">Nema pool-ova u bazi.</div>';
         }
+    } catch (e) {
+        console.error('Stats load error:', e);
+        showToast('❌ Greška pri učitavanju statistika', 'error');
+    }
+}
 
-        // --- TOAST ---
-        function showToast(msg, type = 'info') {
-            const el = document.getElementById('toast');
-            el.textContent = msg;
-            el.className = 'toast ' + type + ' show';
-            clearTimeout(el._timeout);
-            el._timeout = setTimeout(() => el.classList.remove('show'), 3000);
+// --- USERS ---
+// Backend /api/admin/users vraća { users: [...] }
+// Svaki user: { id, telegramId, clickBalance, totalClicks, dailyClicks,
+//              referralCount, tonWallet, isBlacklisted, _count? }
+// NE vraća nftCount — dohvaćamo ga s include-om ako backend podržava,
+// inače prikazujemo NFT tab za provjeru
+async function loadUsers() {
+    const tbody = document.getElementById('usersTable');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Učitavanje...</td></tr>';
+    try {
+        const search = document.getElementById('userSearch').value.trim();
+        const data = await apiCall('/api/admin/users?search=' + encodeURIComponent(search));
+        const users = data.users || [];
+        if (!users.length) {
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Nema korisnika</td></tr>';
+            return;
         }
+        tbody.innerHTML = users.map(u => {
+            const walletShort = u.tonWallet
+                ? u.tonWallet.slice(0, 6) + '…' + u.tonWallet.slice(-4)
+                : '<span style="color:#555">—</span>';
+            const blacklistBtn = u.isBlacklisted
+                ? `<button class="btn btn-success" style="font-size:11px" onclick="setBlacklist('${u.telegramId}', false)">✅ Unblock</button>`
+                : `<button class="btn btn-danger" style="font-size:11px" onclick="setBlacklist('${u.telegramId}', true)">🚫 Block</button>`;
+            return `
+            <tr>
+                <td style="font-family:monospace">${u.telegramId}</td>
+                <td style="color:#ffd700;font-weight:600">${(u.clickBalance || 0).toFixed(2)}</td>
+                <td>${(u.totalClicks || 0).toLocaleString()}</td>
+                <td>${(u.dailyClicks || 0).toLocaleString()}</td>
+                <td>—</td>
+                <td>${u.referralCount || 0}</td>
+                <td style="font-size:12px">${walletShort}</td>
+                <td>
+                    ${u.isBlacklisted
+                        ? '<span class="badge badge-blacklisted">🚫 Blokiran</span>'
+                        : '<span style="color:#00cc66;font-size:12px">✅ OK</span>'}
+                </td>
+                <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
+                    <button class="btn btn-success" onclick="addBalance('${u.telegramId}', 100)">+100</button>
+                    <button class="btn btn-warning" onclick="addBalance('${u.telegramId}', 1000)">+1K</button>
+                    <button class="btn btn-danger" onclick="addBalance('${u.telegramId}', -100)">-100</button>
+                    ${blacklistBtn}
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error('Users load error:', e);
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Greška pri učitavanju</td></tr>';
+    }
+}
 
-        // --- TABS ---
-        document.querySelectorAll('.tab-bar button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const tab = this.dataset.tab;
-                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-                document.getElementById('tab-' + tab).classList.add('active');
-                // Reload data for tab
-                if (tab === 'users') loadUsers();
-                if (tab === 'nfts') loadNFTs();
-                if (tab === 'withdrawals') loadWithdrawals();
-                if (tab === 'pools') loadPools();
-                if (tab === 'stats') loadStats();
-                if (tab === 'settings') loadSettings();
-            });
-        });
-
-        // --- LOAD ALL ---
-        function loadAll() {
-            loadStats();
+async function addBalance(telegramId, amount) {
+    const action = amount > 0 ? `dodati ${amount}` : `oduzeti ${Math.abs(amount)}`;
+    if (!confirm(`${action} KVNC korisniku ${telegramId}?`)) return;
+    try {
+        const data = await apiCall('/api/admin/user/balance', 'POST', { telegramId, amount });
+        if (data.success) {
+            showToast(`✅ Stanje ažurirano! Novi balans: ${data.newBalance.toFixed(2)} KVNC`, 'success');
             loadUsers();
+            loadStats();
+        } else {
+            showToast('❌ ' + (data.error || 'Greška'), 'error');
+        }
+    } catch (e) { showToast('❌ Greška', 'error'); }
+}
+
+async function setBlacklist(telegramId, blacklist) {
+    const action = blacklist ? 'blokirati' : 'odblokirati';
+    if (!confirm(`Sigurno želiš ${action} korisnika ${telegramId}?`)) return;
+    try {
+        const data = await apiCall('/api/admin/user/blacklist', 'POST', { telegramId, blacklist });
+        if (data.success) {
+            showToast(`✅ Korisnik ${blacklist ? 'blokiran' : 'odblokan'}!`, 'success');
+            loadUsers();
+        } else {
+            showToast('❌ ' + (data.error || 'Greška'), 'error');
+        }
+    } catch (e) { showToast('❌ Greška', 'error'); }
+}
+
+// --- NFTS ---
+// Backend /api/admin/nfts vraća { nfts: [...] }
+// NE uključuje user.telegramId (nema include) — prikazujemo userId
+async function loadNFTs() {
+    const tbody = document.getElementById('nftsTable');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Učitavanje...</td></tr>';
+    try {
+        const data = await apiCall('/api/admin/nfts');
+        const nfts = data.nfts || [];
+        if (!nfts.length) {
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Nema NFT-ova</td></tr>';
+            return;
+        }
+        tbody.innerHTML = nfts.map(n => {
+            const statusText = n.equipped
+                ? '<span class="nft-equipped">✅ Opremljen</span>'
+                : n.staked
+                ? '<span class="nft-staked">🔒 Stake-an</span>'
+                : n.contractAddress && n.contractAddress.startsWith('withdraw:')
+                ? '<span style="color:#ff6b35">⏳ Withdrawal</span>'
+                : '<span style="color:#8888aa">📦 U torbi</span>';
+            const rarityColor = {
+                'Mythic': '#ff6b35', 'Legendary': '#a855f7',
+                'Epic': '#ffd700', 'Rare': '#00d4ff', 'Common': '#8888aa'
+            }[n.rarity] || '#e0e0e0';
+            return `
+            <tr>
+                <td>#${n.id}</td>
+                <td>${n.name || '—'}</td>
+                <td style="color:${rarityColor};font-weight:600">${n.rarity || '—'}</td>
+                <td>${n.bonusMultiplier || 1}x</td>
+                <td style="font-family:monospace;font-size:12px">user #${n.userId}</td>
+                <td>${statusText}</td>
+                <td>
+                    <button class="btn btn-danger" onclick="deleteNFT(${n.id})">🗑️ Briši</button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error('NFTs load error:', e);
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Greška pri učitavanju</td></tr>';
+    }
+}
+
+async function deleteNFT(id) {
+    if (!confirm(`Trajno izbrisati NFT #${id}? Ova akcija se ne može poništiti.`)) return;
+    try {
+        const data = await apiCall('/api/admin/nft/delete', 'POST', { id });
+        if (data.success) {
+            showToast('✅ NFT izbrisan!', 'success');
             loadNFTs();
+            loadStats();
+        } else {
+            showToast('❌ ' + (data.error || 'Greška'), 'error');
+        }
+    } catch (e) { showToast('❌ Greška', 'error'); }
+}
+
+// --- WITHDRAWALS ---
+// Backend /api/admin/withdrawals vraća { withdrawals: [...] }
+// Svaki: { id, userId, amount, status, tonAddress, requestedAt, processedAt }
+// NE uključuje user.telegramId (nema include) — prikazujemo userId
+async function loadWithdrawals() {
+    const tbody = document.getElementById('withdrawalsTable');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Učitavanje...</td></tr>';
+    try {
+        const data = await apiCall('/api/admin/withdrawals');
+        const withdrawals = data.withdrawals || [];
+        if (!withdrawals.length) {
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Nema pending isplata ✅</td></tr>';
+            return;
+        }
+        tbody.innerHTML = withdrawals.map(w => {
+            const isPending = w.status === 'pending';
+            const addrShort = w.tonAddress
+                ? w.tonAddress.slice(0, 8) + '…' + w.tonAddress.slice(-6)
+                : '—';
+            const date = new Date(w.requestedAt).toLocaleString('hr-HR');
+            return `
+            <tr>
+                <td>#${w.id}</td>
+                <td style="font-family:monospace;font-size:12px">user #${w.userId}</td>
+                <td style="color:#ffd700;font-weight:600">${(w.amount || 0).toFixed(2)}</td>
+                <td>
+                    <span style="font-family:monospace;font-size:11px">${addrShort}</span>
+                    <button class="btn btn-primary" style="font-size:10px;padding:2px 6px;margin-left:4px"
+                        onclick="copyToClipboard('${w.tonAddress}')">📋</button>
+                </td>
+                <td style="font-size:12px">${date}</td>
+                <td>
+                    <span class="badge ${isPending ? 'badge-pending' : 'badge-processed'}">
+                        ${isPending ? '⏳ Pending' : '✅ Obrađeno'}
+                    </span>
+                </td>
+                <td>
+                    ${isPending
+                        ? `<button class="btn btn-success" onclick="processWithdrawal(${w.id})">✅ Označi obrađeno</button>`
+                        : '<span style="color:#555;font-size:12px">—</span>'}
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error('Withdrawals load error:', e);
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Greška pri učitavanju</td></tr>';
+    }
+}
+
+async function processWithdrawal(id) {
+    if (!confirm(`Označiti isplatu #${id} kao obrađenu?\n\nProvjeri je li TON transfer zaista poslan!`)) return;
+    try {
+        const data = await apiCall('/api/admin/withdrawal/process', 'POST', { id });
+        if (data.success) {
+            showToast('✅ Isplata označena kao obrađena!', 'success');
             loadWithdrawals();
+            loadStats();
+        } else {
+            showToast('❌ ' + (data.error || 'Greška'), 'error');
+        }
+    } catch (e) { showToast('❌ Greška', 'error'); }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard?.writeText(text)
+        .then(() => showToast('📋 Adresa kopirana!', 'success'))
+        .catch(() => showToast('❌ Kopiranje nije uspjelo', 'error'));
+}
+
+// --- POOLS ---
+// Backend /api/admin/pools vraća { pools: [...] }
+// Svaki: { id, poolName, totalAllocated, spent, remaining, lastUpdated }
+// /api/admin/pool/add kreira NOVI pool record (ne ažurira existing!) — backend bug
+// Za sada prikazujemo samo existing pools i dodajemo fond u postojeći
+async function loadPools() {
+    const container = document.getElementById('poolManagement');
+    container.innerHTML = '<div style="color:#8888aa;font-size:13px">Učitavanje...</div>';
+    try {
+        const data = await apiCall('/api/admin/pools');
+        const pools = data.pools || [];
+        if (!pools.length) {
+            container.innerHTML = '<div style="color:#8888aa">Nema pool-ova u bazi. Pokreni initPools skriptu.</div>';
+            return;
+        }
+        container.innerHTML = pools.map(p => {
+            const used = p.totalAllocated > 0
+                ? ((p.spent / p.totalAllocated) * 100).toFixed(1)
+                : 0;
+            const emoji = {
+                tap_base: '⛏️', nft_mint_rewards: '🎨',
+                referral_pool: '👥', dex_kvnc_gram: '💧', dex_kvnc_usdt: '💧'
+            }[p.poolName] || '📦';
+            return `
+            <div style="padding:12px 0;border-bottom:1px solid #2a2a4a;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="font-weight:600;color:#e0e0e0">${emoji} ${p.poolName}</span>
+                    <span style="font-size:12px;color:#8888aa">
+                        Ukupno: ${(p.totalAllocated || 0).toLocaleString()} KVNC
+                    </span>
+                </div>
+                <div class="pool-bar" style="margin:0 0 8px 0">
+                    <span class="pool-pct" style="width:auto;margin-right:8px">${used}% iskorišteno</span>
+                    <div class="fill"><div class="progress" style="width:${used}%"></div></div>
+                    <span class="pool-remaining">${(p.remaining || 0).toLocaleString()} KVNC ostalo</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="addPoolFunds('${p.poolName}', 1000)">+1.000 KVNC</button>
+                    <button class="btn btn-warning" onclick="addPoolFunds('${p.poolName}', 10000)">+10.000 KVNC</button>
+                    <button class="btn btn-info" onclick="addPoolFunds('${p.poolName}', 100000)">+100.000 KVNC</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        console.error('Pools load error:', e);
+        container.innerHTML = '<div style="color:#ff4444">Greška pri učitavanju pool-ova</div>';
+    }
+}
+
+// NAPOMENA: backend /api/admin/pool/add kreira NOVI pool zapis umjesto da ažurira
+// Ovo je backend bug — za pravi fix pool add treba upsert, ne create
+// Ovdje šaljemo zahtjev i prikazujemo odgovarajuću poruku
+async function addPoolFunds(poolName, amount) {
+    if (!confirm(`Dodati ${amount.toLocaleString()} KVNC u pool "${poolName}"?`)) return;
+    try {
+        const data = await apiCall('/api/admin/pool/add', 'POST', { poolName, amount });
+        if (data.success) {
+            showToast(`✅ ${amount.toLocaleString()} KVNC dodano u ${poolName}!`, 'success');
             loadPools();
-            loadSettings();
+            loadStats();
+        } else {
+            showToast('❌ ' + (data.error || 'Greška'), 'error');
         }
+    } catch (e) { showToast('❌ Greška', 'error'); }
+}
 
-        // --- STATS ---
-        async function loadStats() {
-            try {
-                const data = await apiCall('/api/admin/stats');
-                document.getElementById('statUsers').textContent = data.totalUsers || 0;
-                document.getElementById('statActive').textContent = data.activeToday || 0;
-                document.getElementById('statClicks').textContent = (data.totalClicks || 0).toLocaleString();
-                document.getElementById('statNFTs').textContent = data.totalNFTs || 0;
-                document.getElementById('statPending').textContent = data.pendingWithdrawals || 0;
-                document.getElementById('statTotalKVNC').textContent = (data.totalKVNC || 0).toFixed(2);
+// --- SETTINGS ---
+// Backend /api/admin/settings GET vraća:
+// { minWithdrawal, dailyLimit, initialReward, referralBonusInviter, referralBonusNew, nodeEnv }
+// POST vraća: { success, message: 'Settings saved (restart required)' }
+async function loadSettings() {
+    try {
+        const data = await apiCall('/api/admin/settings');
+        document.getElementById('settingDailyLimit').value = data.dailyLimit || 10000;
+        document.getElementById('settingInitialReward').value = data.initialReward || 1.0;
+        document.getElementById('settingMinWithdrawal').value = data.minWithdrawal || 1000;
+        document.getElementById('settingRefInviter').value = data.referralBonusInviter || 10;
+        document.getElementById('settingRefNew').value = data.referralBonusNew || 5;
 
-                // Pool-ovi
-                const poolList = document.getElementById('poolList');
-                if (data.pools && data.pools.length) {
-                    poolList.innerHTML = data.pools.map(p => `
-                        <div class="pool-bar">
-                            <span style="width:120px;">${p.name}</span>
-                            <span>${p.usedPercent || 0}%</span>
-                            <div class="fill">
-                                <div class="progress" style="width:${p.usedPercent || 0}%;"></div>
-                            </div>
-                            <span>${p.remaining || 0} KVNC</span>
-                        </div>
-                    `).join('');
-                }
-            } catch (e) {
-                console.error('Stats load error:', e);
-            }
+        const note = document.getElementById('settingsNote');
+        if (note) note.textContent = `ENV: ${data.nodeEnv || '—'}`;
+    } catch (e) {
+        console.error('Settings load error:', e);
+    }
+}
+
+async function saveSettings() {
+    const settings = {
+        dailyLimit: parseInt(document.getElementById('settingDailyLimit').value),
+        initialReward: parseFloat(document.getElementById('settingInitialReward').value),
+        minWithdrawal: parseInt(document.getElementById('settingMinWithdrawal').value),
+        referralBonusInviter: parseInt(document.getElementById('settingRefInviter').value),
+        referralBonusNew: parseInt(document.getElementById('settingRefNew').value)
+    };
+    try {
+        const data = await apiCall('/api/admin/settings', 'POST', settings);
+        if (data.success) {
+            showToast('✅ ' + (data.message || 'Postavke spremljene!'), 'success');
+        } else {
+            showToast('❌ ' + (data.error || 'Greška'), 'error');
         }
+    } catch (e) { showToast('❌ Greška pri spremanju', 'error'); }
+}
 
-        // --- USERS ---
-        async function loadUsers() {
-            try {
-                const search = document.getElementById('userSearch').value;
-                const data = await apiCall('/api/admin/users?search=' + encodeURIComponent(search));
-                const tbody = document.getElementById('usersTable');
-                if (data.users && data.users.length) {
-                    tbody.innerHTML = data.users.map(u => `
-                        <tr>
-                            <td>${u.telegramId}</td>
-                            <td>${u.clickBalance.toFixed(2)}</td>
-                            <td>${u.totalClicks}</td>
-                            <td>${u.nftCount || 0}</td>
-                            <td>
-                                <button class="btn btn-success" onclick="addBalance('${u.telegramId}', 100)">+100</button>
-                                <button class="btn btn-danger" onclick="addBalance('${u.telegramId}', -100)">-100</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5">Nema korisnika</td></tr>';
-                }
-            } catch (e) {
-                console.error('Users load error:', e);
-            }
-        }
-
-        async function addBalance(telegramId, amount) {
-            if (!confirm(`Dodati ${amount} KVNC korisniku ${telegramId}?`)) return;
-            try {
-                const data = await apiCall('/api/admin/user/balance', 'POST', { telegramId, amount });
-                if (data.success) {
-                    showToast('✅ Stanje ažurirano!', 'success');
-                    loadUsers();
-                    loadStats();
-                } else {
-                    showToast('❌ ' + data.error, 'error');
-                }
-            } catch (e) {
-                showToast('❌ Greška', 'error');
-            }
-        }
-
-        // --- NFTS ---
-        async function loadNFTs() {
-            try {
-                const data = await apiCall('/api/admin/nfts');
-                const tbody = document.getElementById('nftsTable');
-                if (data.nfts && data.nfts.length) {
-                    tbody.innerHTML = data.nfts.map(n => `
-                        <tr>
-                            <td>${n.id}</td>
-                            <td>${n.name}</td>
-                            <td>${n.rarity}</td>
-                            <td>${n.user?.telegramId || '—'}</td>
-                            <td>${n.equipped ? '✅ Opremljen' : n.staked ? '🔒 Stake-an' : '📦 U torbi'}</td>
-                            <td>
-                                <button class="btn btn-danger" onclick="deleteNFT(${n.id})">🗑️</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6">Nema NFT-ova</td></tr>';
-                }
-            } catch (e) {
-                console.error('NFTs load error:', e);
-            }
-        }
-
-        async function deleteNFT(id) {
-            if (!confirm(`Izbrisati NFT #${id}?`)) return;
-            try {
-                const data = await apiCall('/api/admin/nft/delete', 'POST', { id });
-                if (data.success) {
-                    showToast('✅ NFT izbrisan!', 'success');
-                    loadNFTs();
-                    loadStats();
-                } else {
-                    showToast('❌ ' + data.error, 'error');
-                }
-            } catch (e) {
-                showToast('❌ Greška', 'error');
-            }
-        }
-
-        // --- WITHDRAWALS ---
-        async function loadWithdrawals() {
-            try {
-                const data = await apiCall('/api/admin/withdrawals');
-                const tbody = document.getElementById('withdrawalsTable');
-                if (data.withdrawals && data.withdrawals.length) {
-                    tbody.innerHTML = data.withdrawals.map(w => `
-                        <tr>
-                            <td>${w.id}</td>
-                            <td>${w.user?.telegramId || '—'}</td>
-                            <td>${w.amount}</td>
-                            <td style="font-size:12px;word-break:break-all;">${w.tonAddress}</td>
-                            <td>${new Date(w.requestedAt).toLocaleString()}</td>
-                            <td>
-                                <button class="btn btn-success" onclick="processWithdrawal(${w.id})">✅ Process</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6">Nema pending isplata</td></tr>';
-                }
-            } catch (e) {
-                console.error('Withdrawals load error:', e);
-            }
-        }
-
-        async function processWithdrawal(id) {
-            if (!confirm(`Označiti isplatu #${id} kao processed?`)) return;
-            try {
-                const data = await apiCall('/api/admin/withdrawal/process', 'POST', { id });
-                if (data.success) {
-                    showToast('✅ Isplata obrađena!', 'success');
-                    loadWithdrawals();
-                    loadStats();
-                } else {
-                    showToast('❌ ' + data.error, 'error');
-                }
-            } catch (e) {
-                showToast('❌ Greška', 'error');
-            }
-        }
-
-        // --- POOLS ---
-        async function loadPools() {
-            try {
-                const data = await apiCall('/api/admin/pools');
-                const container = document.getElementById('poolManagement');
-                if (data.pools && data.pools.length) {
-                    container.innerHTML = data.pools.map(p => `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #2a2a4a;">
-                            <span><strong>${p.name}</strong> — ${p.remaining.toLocaleString()} KVNC (${p.usedPercent || 0}% potrošeno)</span>
-                            <div>
-                                <button class="btn btn-primary" onclick="addPoolFunds('${p.name}', 1000)">+1000</button>
-                                <button class="btn btn-warning" onclick="addPoolFunds('${p.name}', 10000)">+10000</button>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            } catch (e) {
-                console.error('Pools load error:', e);
-            }
-        }
-
-        async function addPoolFunds(poolName, amount) {
-            if (!confirm(`Dodati ${amount} KVNC u pool "${poolName}"?`)) return;
-            try {
-                const data = await apiCall('/api/admin/pool/add', 'POST', { poolName, amount });
-                if (data.success) {
-                    showToast('✅ Sredstva dodana!', 'success');
-                    loadPools();
-                    loadStats();
-                } else {
-                    showToast('❌ ' + data.error, 'error');
-                }
-            } catch (e) {
-                showToast('❌ Greška', 'error');
-            }
-        }
-
-        // --- SETTINGS ---
-        async function loadSettings() {
-            try {
-                const data = await apiCall('/api/admin/settings');
-                document.getElementById('settingDailyLimit').value = data.dailyLimit || 10000;
-                document.getElementById('settingInitialReward').value = data.initialReward || 1.0;
-                document.getElementById('settingMinWithdrawal').value = data.minWithdrawal || 100000;
-            } catch (e) {
-                console.error('Settings load error:', e);
-            }
-        }
-
-        async function saveSettings() {
-            const settings = {
-                dailyLimit: parseInt(document.getElementById('settingDailyLimit').value),
-                initialReward: parseFloat(document.getElementById('settingInitialReward').value),
-                minWithdrawal: parseInt(document.getElementById('settingMinWithdrawal').value)
-            };
-            try {
-                const data = await apiCall('/api/admin/settings', 'POST', settings);
-                if (data.success) {
-                    showToast('✅ Postavke spremljene!', 'success');
-                } else {
-                    showToast('❌ ' + data.error, 'error');
-                }
-            } catch (e) {
-                showToast('❌ Greška', 'error');
-            }
-        }
-
-        // --- Auto-refresh ---
-        setInterval(() => {
-            if (token) {
-                loadStats();
-            }
-        }, 30000);
-
-        // --- Check login on load ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // If already logged in somehow
-        });
-    </script>
-
+// --- Auto-refresh statistika svakih 30s ---
+setInterval(() => {
+    if (token) loadStats();
+}, 30000);
+</script>
 </body>
 </html>
