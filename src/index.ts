@@ -137,40 +137,29 @@ async function initBot() {
                 where: { id: user.id },
                 data: { clickBalance: { increment: REFERRAL_BONUS_NEW } },
             });
-            await ctx.reply(`🎉 Dobrodošao! Dobio si ${REFERRAL_BONUS_NEW} KVNC bonus!\nYour referrer received ${REFERRAL_BONUS_INVITER} KVNC bonus.`);
+            await ctx.reply(`🎉 Dobrodošao! Dobio si ${REFERRAL_BONUS_NEW} KVNC bonus, a tvoj pozivatelj ${REFERRAL_BONUS_INVITER} KVNC!`);
         }
 
         const rank = getRank(user.totalClicks);
         const bonusAvailable = !user.lastBonusDate || !isToday(user.lastBonusDate);
 
         await ctx.reply(
-            `🪙 Kovanica (KVNC) Tap Miner\n` +
-            `Welcome to the Kovanica mining ecosystem!\n\n` +
-            `👑 Rang / Rank: ${rank}\n` +
-            `💰 Balans / Balance: ${user.clickBalance.toFixed(2)} KVNC\n` +
-            `⭐ Nagrada / Reward: ${INITIAL_REWARD} KVNC/klik\n` +
-            `${bonusAvailable ? "🔥 Daily bonus dostupan! / Available! (2x)" : "✅ Daily bonus iskorišten / used"}`,
+            `🪙 Kovanica (KVNC) Tap Miner\n\n` +
+            `👑 Rang: ${rank}\n` +
+            `💰 Balans: ${user.clickBalance.toFixed(2)} KVNC\n` +
+            `${bonusAvailable ? "🔥 Dnevni bonus dostupan (2x)!" : "✅ Dnevni bonus iskorišten"}`,
             {
                 reply_markup: {
                     inline_keyboard: [
-                        [{ text: "🚀 Otvori rudnik / Open Mine", web_app: { url: process.env.MINI_APP_URL || "https://kovanica.online" } }],
+                        [{ text: "🚀 Otvori rudnik", web_app: { url: process.env.MINI_APP_URL || "https://kovanica.online" } }],
                         [
-                            { text: "📊 Status profila", callback_data: "menu_status" },
-                            { text: "🏆 Ljestvica / Top", callback_data: "menu_leaderboard" },
+                            { text: "📊 Status", callback_data: "menu_status" },
+                            { text: "🏆 Top", callback_data: "menu_leaderboard" },
                         ],
                         [
-                            { text: "🎨 Moji NFT-ovi", callback_data: "menu_nfts" },
                             { text: "👥 Referral", callback_data: "menu_referral" },
+                            { text: "🎮 Igre", callback_data: "menu_games" },
                         ],
-                        [
-                            { text: "💰 Cijena KVNC", callback_data: "menu_price" },
-                            { text: "🔄 Swap", callback_data: "menu_swap" },
-                        ],
-                        [
-                            { text: "💸 Isplata / Withdraw", callback_data: "menu_withdraw" },
-                            { text: "💳 Wallet", callback_data: "menu_wallet" },
-                        ],
-                        [{ text: "🎮 Mini igre / Games", callback_data: "menu_games" }],
                     ],
                 },
             }
@@ -231,21 +220,14 @@ async function initBot() {
     bot.callbackQuery("menu_price", async (ctx) => {
         await ctx.answerCallbackQuery();
         try {
-            const resp = await fetch(
-                'https://api.dyor.io/v1/jettons/EQDKKFRJU5uar87OdtvLb8gynFF1fJj40xyYfhUgvc914I5S/markets/EQDaPt-caUdBWLhF2In1P4x2-S7MOw79aganZ58PqMFqxR8S/price',
-                { signal: AbortSignal.timeout(5000) }
-            );
-            if (!resp.ok) throw new Error('DYOR ' + resp.status);
-            const data: any = await resp.json();
-            const usdPrice = Number(data.usd.value) / Math.pow(10, data.usd.decimals);
-            const tonPrice = Number(data.ton.value) / Math.pow(10, data.ton.decimals);
-            const updated = new Date(data.changedAt).toLocaleTimeString('hr-HR');
+            const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
             await ctx.reply(
                 `💰 LIVE CIJENA KVNC\n\n` +
-                `💵 USD: $${usdPrice.toFixed(8)}\n` +
-                `🪙 TON: ${tonPrice.toFixed(9)}\n` +
-                `🕐 Ažurirano: ${updated}\n\n` +
-                `📊 Izvor: DYOR.io`
+                `💵 USDT: ${price.usdt.toFixed(6)}\n` +
+                `🪙 GRAM: ${price.gram.toFixed(6)}\n` +
+                `📈 24h: ${price.change24h > 0 ? "+" : ""}${price.change24h.toFixed(2)}%\n` +
+                `💧 Likvidnost: $${price.liquidity.toFixed(2)}\n\n` +
+                `📊 Izvor: STON.fi`
             );
         } catch (e) {
             await ctx.reply("❌ Nije moguće dohvatiti cijenu.");
@@ -1078,8 +1060,8 @@ async function initBot() {
             const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
             
             let message = "💰 **LIVE CIJENA KVNC** 💰\n\n";
-            message += `💵 **USDT:** ${price.usdt.toFixed(8)}\n`;
-            message += `🪙 **GRAM:** ${price.gram.toFixed(9)}\n`;
+            message += `💵 **USDT:** ${price.usdt.toFixed(6)}\n`;
+            message += `🪙 **GRAM:** ${price.gram.toFixed(6)}\n`;
             message += `📈 **24h High:** $${price.high24h.toFixed(6)}\n`;
             message += `📉 **24h Low:** $${price.low24h.toFixed(6)}\n`;
             message += `📊 **Promjena 24h:** ${price.change24h > 0 ? '+' : ''}${price.change24h.toFixed(2)}%\n`;
@@ -1087,7 +1069,7 @@ async function initBot() {
             message += `💧 **Likvidnost:** $${price.liquidity.toFixed(2)}\n`;
             message += `🏦 **Market Cap:** $${price.marketCap.toFixed(2)}\n\n`;
             message += `⏱️ ${new Date().toLocaleString()}\n`;
-            message += `📊 Izvor: DYOR.io`;
+            message += `📊 Izvor: STON.fi V2`;
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
         } catch (error: any) {
@@ -1116,8 +1098,8 @@ async function initBot() {
         
         try {
             const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
-            message += `  💵 USDT: ${price.usdt.toFixed(8)}\n`;
-            message += `  🪙 GRAM: ${price.gram.toFixed(9)}\n\n`;
+            message += `  💵 USDT: ${price.usdt.toFixed(6)}\n`;
+            message += `  🪙 GRAM: ${price.gram.toFixed(6)}\n\n`;
         } catch (e) {
             message += `  ⏳ Učitavanje cijene...\n\n`;
         }
@@ -1456,28 +1438,14 @@ async function initBot() {
             return ctx.reply(`✅ Zahtjev već ima status: ${withdrawal.status}`);
         }
 
-        await prisma.$transaction([
-            prisma.withdrawal.update({
-                where: { id },
-                data: { status: "processed", processedAt: new Date() }
-            }),
-            prisma.user.update({
-                where: { id: withdrawal.userId },
-                data: { clickBalance: { decrement: withdrawal.amount } }
-            })
-        ]);
-        try {
-            await bot.api.sendMessage(
-                withdrawal.user.telegramId,
-                `✅ Tvoja isplata je obrađena!\n\n` +
-                `💰 Iznos: ${withdrawal.amount} KVNC\n` +
-                `📤 Poslano na: ${withdrawal.tonAddress}\n` +
-                `🆔 ID: ${withdrawal.id}`
-            );
-        } catch (e) {}
+        await prisma.withdrawal.update({
+            where: { id },
+            data: { status: "processed", processedAt: new Date() }
+        });
+
         await ctx.reply(
             `✅ Zahtjev **#${id}** označen kao processed!\n\n` +
-            `💰 Iznos oduzet: ${withdrawal.amount} KVNC\n` +
+            `💰 Iznos: ${withdrawal.amount} KVNC\n` +
             `👤 Korisnik: ${withdrawal.user.telegramId}\n` +
             `📤 Adresa: ${withdrawal.tonAddress}`
         );
@@ -2213,26 +2181,12 @@ async function initBot() {
     });
 
     // === DEX API ===
-    let _priceCache: any = null;
-    let _priceCacheTime = 0;
     app.get('/api/price', async (req, res) => {
         try {
-            const now = Date.now();
-            if (_priceCache && now - _priceCacheTime < 60000) return res.json(_priceCache);
-            const resp = await fetch(
-                'https://api.dyor.io/v1/jettons/EQDKKFRJU5uar87OdtvLb8gynFF1fJj40xyYfhUgvc914I5S/markets/EQDaPt-caUdBWLhF2In1P4x2-S7MOw79aganZ58PqMFqxR8S/price',
-                { signal: AbortSignal.timeout(5000) }
-            );
-            if (!resp.ok) throw new Error('DYOR ' + resp.status);
-            const data: any = await resp.json();
-            const tonPrice = Number(data.ton.value) / Math.pow(10, data.ton.decimals);
-            const usdPrice = Number(data.usd.value) / Math.pow(10, data.usd.decimals);
-            _priceCache = { usdt: usdPrice, usd: usdPrice, gram: tonPrice, ton: tonPrice, change24h: 0, liquidity: 0, changedAt: data.changedAt };
-            _priceCacheTime = now;
-            res.json(_priceCache);
+            const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
+            res.json(price);
         } catch (error) {
             console.error('❌ /api/price error:', error);
-            if (_priceCache) return res.json(_priceCache);
             res.status(500).json({ error: 'Server error' });
         }
     });

@@ -1,7 +1,7 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
-tg.setHeaderColor('#0f0f28');
-tg.setBackgroundColor('#080818');
+tg.setHeaderColor('#060A04');
+tg.setBackgroundColor('#060A04');
 
 // === STATE ===
 let userData = null;
@@ -300,7 +300,7 @@ function startBoostTimer(endTimestamp) {
 function spawnParticles(x, y) {
     const container = document.getElementById('particleContainer');
     if (!container) return;
-    const colors = ['#ffd200', '#ff6b35', '#00d4ff', '#ffffff', '#fda085'];
+    const colors = ['#FFF2A0', '#ECC33D', '#B78F1F', '#ffffff', '#6CFF93'];
     for (let i = 0; i < 8; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
@@ -323,12 +323,11 @@ async function handleMine(event) {
     const btn = document.getElementById('mineBtn');
     if (btn) btn.disabled = true;
 
-    // Animacija
+    // Animacija - premium coin hit
+    const wrapper = document.getElementById('pickaxeWrapper');
     const pickaxe = document.getElementById('pickaxe');
-    if (pickaxe) {
-        pickaxe.classList.add('hit');
-        setTimeout(() => pickaxe.classList.remove('hit'), 150);
-    }
+    if (wrapper) { wrapper.classList.add('hit'); setTimeout(() => wrapper.classList.remove('hit'), 380); }
+    if (pickaxe) { pickaxe.classList.add('hit'); setTimeout(() => pickaxe.classList.remove('hit'), 150); }
 
     // Particles
     if (event && event.clientX) {
@@ -809,4 +808,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 init();
-console.log('🚀 Kovanica Mini App v2.3 loaded!');
+console.log('🚀 Kovanica Mini App v2.4 loaded!');
+
+// === PREMIUM COIN INTERACTIONS ===
+function initCoinTilt() {
+    const wrapper = document.getElementById('pickaxeWrapper');
+    const coin = document.getElementById('pickaxe');
+    if (!wrapper || !coin) return;
+    wrapper.addEventListener('pointermove', (e) => {
+        const rect = wrapper.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = (e.clientX - cx) / (rect.width / 2);
+        const dy = (e.clientY - cy) / (rect.height / 2);
+        coin.style.transform = `perspective(600px) rotateY(${dx * 12}deg) rotateX(${-dy * 12}deg) scale(1.04)`;
+    });
+    wrapper.addEventListener('pointerleave', () => {
+        coin.style.transform = '';
+    });
+}
+document.addEventListener('DOMContentLoaded', initCoinTilt);
+setTimeout(initCoinTilt, 800);

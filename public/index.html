@@ -4,138 +4,173 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Kovanica Rudnik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=5" />
+    <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
+    <div class="bg-mesh">
+        <div class="orb orb-gold"></div>
+        <div class="orb orb-green"></div>
+        <div class="orb orb-dark"></div>
+    </div>
     <div id="particleContainer"></div>
     <div id="app">
 
         <!-- HEADER -->
-        <div class="header">
+        <div class="header-glass">
             <div class="user-row">
                 <div class="user-left">
-                    <div class="avatar" id="avatar">R</div>
+                    <div class="avatar-ring"><div class="avatar" id="avatar">R</div></div>
                     <div class="user-info">
                         <span class="username" id="username">Rudar</span>
-                        <span class="rank-badge" id="rankBadge">🪨 Novi rudar</span>
+                        <span class="rank-pill" id="rankBadge">🪨 Novi rudar</span>
                     </div>
                 </div>
-                <div class="header-right">
-                    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
-                    <div class="balance-block">
+                <div class="header-actions">
+                    <button class="icon-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+                    <div class="balance-chip">
+                        <img class="chip-icon" src="coin.jpg" alt="KVNC" />
                         <span class="balance" id="balance">0.0000</span>
                         <span class="currency">KVNC</span>
                     </div>
                 </div>
             </div>
 
-            <!-- RANK PROGRESS -->
-            <div class="rank-progress-wrap">
-                <div class="rank-progress-fill" id="rankProgressFill" style="width:0%"></div>
-            </div>
-            <div class="rank-progress-text" id="rankProgressText">0 / 100</div>
+            <div class="progress-stack">
+                <!-- RANK PROGRESS -->
+                <div>
+                    <div class="rank-progress-header">
+                        <span>Napredak</span>
+                        <span id="rankProgressText">0 / 100</span>
+                    </div>
+                    <div class="rank-progress-track">
+                        <div class="rank-progress-fill" id="rankProgressFill" style="width:0%">
+                            <div class="rank-progress-shine"></div>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- BOOST TIMER -->
-            <div class="boost-bar" id="boostBar" style="display:none">
-                <span class="boost-label">⚡ 2x BOOST</span>
-                <div class="boost-progress-wrap">
-                    <div class="boost-progress" id="boostProgress"></div>
+                <!-- BOOST TIMER -->
+                <div class="boost-bar" id="boostBar" style="display:none">
+                    <div class="boost-left">
+                        <span class="boost-pulse"></span>
+                        <span class="boost-label">2x BOOST</span>
+                    </div>
+                    <div class="boost-track"><div class="boost-progress" id="boostProgress"></div></div>
+                    <span class="boost-time" id="boostTime">10:00</span>
                 </div>
-                <span class="boost-time" id="boostTime">10:00</span>
-            </div>
 
-            <!-- ENERGY BAR -->
-            <div class="energy-wrap">
-                <div class="energy-header">
-                    <span class="energy-label">⚡ Energija</span>
-                    <span class="energy-val" id="energyVal">1000 / 1000</span>
+                <!-- ENERGY BAR -->
+                <div class="energy-card">
+                    <div class="energy-header">
+                        <span class="energy-label"><span class="dot-energy"></span>Energija</span>
+                        <span class="energy-val" id="energyVal">1000 / 1000</span>
+                    </div>
+                    <div class="energy-bar-bg"><div class="energy-bar-fill" id="energyFill" style="width:100%"></div></div>
+                    <div class="energy-countdown" id="energyCountdown">⚡ Energija puna!</div>
                 </div>
-                <div class="energy-bar-bg">
-                    <div class="energy-bar-fill" id="energyFill" style="width:100%"></div>
-                </div>
-                <div class="energy-countdown" id="energyCountdown">⚡ Energija puna!</div>
             </div>
         </div>
 
         <!-- TAB NAVIGATION -->
-        <div class="tabs">
-            <button class="tab active" data-tab="mine" onclick="switchTab('mine')">⛏️ Rudnik</button>
-            <button class="tab" data-tab="nft" onclick="switchTab('nft')">🎨 NFT</button>
-            <button class="tab" data-tab="quests" onclick="switchTab('quests')">📋 Zadaci</button>
-            <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 Top</button>
-            <button class="tab" data-tab="referral" onclick="switchTab('referral')">👥 Ref</button>
-            <button class="tab" data-tab="wallet" onclick="switchTab('wallet')">💳 Wallet</button>
+        <div class="tabs-pill">
+            <div class="tabs-inner">
+                <button class="tab active" data-tab="mine" onclick="switchTab('mine')"><i>⛏️</i><span>Rudnik</span></button>
+                <button class="tab" data-tab="nft" onclick="switchTab('nft')"><i>💎</i><span>NFT</span></button>
+                <button class="tab" data-tab="quests" onclick="switchTab('quests')"><i>✓</i><span>Zadaci</span></button>
+                <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')"><i>🏆</i><span>Top</span></button>
+                <button class="tab" data-tab="referral" onclick="switchTab('referral')"><i>👥</i><span>Ref</span></button>
+                <button class="tab" data-tab="wallet" onclick="switchTab('wallet')"><i>💳</i><span>Wallet</span></button>
+            </div>
         </div>
 
         <!-- TAB: MINE -->
         <div class="tab-content active" id="tab-mine">
-            <div class="stats-row">
-                <div class="stat-item">
-                    <span class="stat-label">👆 Ukupno</span>
+            <div class="stats-bento">
+                <div class="stat-card">
+                    <span class="stat-icon">👆</span>
+                    <span class="stat-label">Ukupno</span>
                     <span class="stat-value" id="totalClicks">0</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">📅 Danas</span>
+                <div class="stat-card">
+                    <span class="stat-icon">📅</span>
+                    <span class="stat-label">Danas</span>
                     <span class="stat-value" id="dailyClicks">0</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">⭐ Nagrada</span>
-                    <span class="stat-value" id="rewardPerTap">1 KVNC</span>
+                <div class="stat-card highlight">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-label">Nagrada</span>
+                    <span class="stat-value gold-text" id="rewardPerTap">1 KVNC</span>
                 </div>
             </div>
 
-            <div class="mine-area">
+            <div class="mine-stage">
+                <div class="coin-glow"></div>
+                <div class="coin-shadow"></div>
                 <div class="pickaxe-wrapper" id="pickaxeWrapper">
-                    <div class="pickaxe-glow"></div>
-                    <div class="pickaxe" id="pickaxe">⛏️</div>
+                    <img class="coin-main" id="pickaxe" src="coin.jpg" alt="Kovanica" draggable="false" />
+                    <div class="tap-ring"></div>
+                    <div class="tap-ring delay"></div>
                 </div>
                 <div class="click-counter" id="clickCounter">+1</div>
-                <button class="mine-btn" id="mineBtn">
-                    <span class="btn-text">⛏️ RUDARI!</span>
-                    <span class="btn-sub" id="rewardSub">+1 KVNC po kliku</span>
-                </button>
-                <button class="boost-btn" id="boostBtn" onclick="handleBoost()">
-                    ⚡ Aktiviraj 2x Boost
-                </button>
+
+                <div class="mine-actions">
+                    <button class="mine-btn" id="mineBtn">
+                        <span class="btn-glow"></span>
+                        <span class="btn-content">
+                            <span class="btn-text">⛏️ RUDARI!</span>
+                            <span class="btn-sub" id="rewardSub">+1 KVNC po kliku</span>
+                        </span>
+                    </button>
+                    <button class="boost-btn" id="boostBtn" onclick="handleBoost()">⚡ Aktiviraj 2x Boost</button>
+                </div>
+
+                <div class="brand-mark">
+                    <img class="brand-mark-img" src="coin.jpg" alt="" />
+                    <span>KVNC Kovanica Rudnik</span>
+                </div>
             </div>
         </div>
 
         <!-- TAB: NFT -->
         <div class="tab-content" id="tab-nft">
-            <div class="nft-header">
-                <div class="nft-equipped" id="nftEquipped">
-                    <span class="nft-eq-label">Opremljeni NFT</span>
-                    <div class="nft-eq-empty" id="nftEqEmpty">
-                        <span>Nema opremljenog NFT-a</span>
-                        <span class="nft-eq-hint">Opremi NFT za bonus rudarenja!</span>
+            <div class="nft-equipped section-card">
+                <span class="nft-eq-label">Opremljeni NFT</span>
+                <div class="nft-eq-empty" id="nftEqEmpty">
+                    <div class="empty-icon">⛏️</div>
+                    <span>Nema opremljenog NFT-a</span>
+                    <span class="nft-eq-hint">Opremi NFT za bonus rudarenja!</span>
+                </div>
+                <div class="nft-eq-card" id="nftEqCard" style="display:none">
+                    <span class="nft-eq-icon" id="nftEqIcon">⛏️</span>
+                    <div>
+                        <span class="nft-eq-name" id="nftEqName">-</span>
+                        <span class="nft-eq-bonus" id="nftEqBonus">1x bonus</span>
                     </div>
-                    <div class="nft-eq-card" id="nftEqCard" style="display:none">
-                        <span class="nft-eq-icon" id="nftEqIcon">⛏️</span>
-                        <div>
-                            <span class="nft-eq-name" id="nftEqName">-</span>
-                            <span class="nft-eq-bonus" id="nftEqBonus">1x bonus</span>
-                        </div>
-                        <button class="nft-unequip-btn" onclick="handleUnequip()">Skini</button>
-                    </div>
+                    <button class="nft-unequip-btn" onclick="handleUnequip()">Skini</button>
                 </div>
             </div>
-            <div class="nft-section-label">Tvoji NFT-ovi</div>
+
+            <div class="section-title">Tvoji NFT-ovi</div>
             <div class="nft-grid" id="nftGrid">
                 <div class="nft-loading">Učitavanje NFT-ova...</div>
             </div>
-            <div class="nft-info">
-                <div class="nft-info-row"><span>⛏️ Brončani pijuk</span><span class="nft-bonus-tag">1.2x</span></div>
-                <div class="nft-info-row"><span>🥈 Srebrni pijuk</span><span class="nft-bonus-tag">1.5x</span></div>
-                <div class="nft-info-row"><span>🥇 Zlatni pijuk</span><span class="nft-bonus-tag">2.0x</span></div>
-                <div class="nft-info-row"><span>💎 Dijamantni pijuk</span><span class="nft-bonus-tag">3.0x</span></div>
-                <div class="nft-info-row"><span>🔥 Vatreni pijuk</span><span class="nft-bonus-tag">5.0x</span></div>
+
+            <div class="info-grid">
+                <div class="info-item"><span>⛏️ Brončani</span><b>1.2x</b></div>
+                <div class="info-item"><span>🥈 Srebrni</span><b>1.5x</b></div>
+                <div class="info-item"><span>🥇 Zlatni</span><b>2.0x</b></div>
+                <div class="info-item"><span>💎 Dijamantni</span><b>3.0x</b></div>
+                <div class="info-item full"><span>🔥 Vatreni</span><b>5.0x</b></div>
             </div>
         </div>
 
         <!-- TAB: QUESTS -->
         <div class="tab-content" id="tab-quests">
-            <div class="quest-title-main">📋 Dnevni zadaci</div>
+            <div class="section-title">📋 Dnevni zadaci</div>
             <div class="quest-list" id="questList">
                 <div class="lb-loading">Učitavanje zadataka...</div>
             </div>
@@ -143,7 +178,7 @@
 
         <!-- TAB: LEADERBOARD -->
         <div class="tab-content" id="tab-leaderboard">
-            <div class="lb-title">🏆 Top Rudari</div>
+            <div class="section-title">🏆 Top Rudari</div>
             <div class="lb-list" id="lbList">
                 <div class="lb-loading">Učitavanje...</div>
             </div>
@@ -154,7 +189,7 @@
 
         <!-- TAB: REFERRAL -->
         <div class="tab-content" id="tab-referral">
-            <div class="ref-card">
+            <div class="ref-card premium">
                 <div class="ref-title">👥 Pozovi prijatelje</div>
                 <div class="ref-desc">Za svakog novog korisnika dobit ćeš <strong>10 KVNC</strong>!</div>
                 <div class="ref-stats">
@@ -168,12 +203,15 @@
                     </div>
                 </div>
                 <div class="ref-link-wrap">
-                    <span class="ref-link-label">Tvoj link:</span>
+                    <span class="ref-link-label">Tvoj link</span>
                     <div class="ref-link-box" id="refLink">Učitavanje...</div>
                 </div>
-                <button class="ref-copy-btn" onclick="copyRefLink()">📋 Kopiraj link</button>
-                <button class="ref-share-btn" onclick="shareRefLink()">📤 Podijeli</button>
+                <div class="ref-actions">
+                    <button class="ref-copy-btn" onclick="copyRefLink()">📋 Kopiraj</button>
+                    <button class="ref-share-btn" onclick="shareRefLink()">📤 Podijeli</button>
+                </div>
             </div>
+
             <div class="ref-lb-title">🏆 Referral ljestvica</div>
             <div class="ref-lb-list" id="refLbList">
                 <div class="lb-loading">Učitavanje...</div>
@@ -182,7 +220,7 @@
 
         <!-- TAB: WALLET -->
         <div class="tab-content" id="tab-wallet">
-            <div class="wallet-card">
+            <div class="section-card" style="text-align:center">
                 <div class="wallet-title">💳 TON Wallet</div>
                 <div class="wallet-desc">Poveži svoj TON wallet za automatske KVNC isplate — bez ručnog upisivanja adrese.</div>
                 <div id="tonconnect-button"></div>
@@ -199,6 +237,6 @@
 
     </div>
     <script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=6"></script>
 </body>
 </html>

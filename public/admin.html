@@ -4,140 +4,225 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard – Kovanica Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f0f1a;
-            color: #e0e0e0;
-            padding: 20px;
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root{
+            --gold-1:#FFF2A0;
+            --gold-2:#ECC33D;
+            --gold-3:#B78F1F;
+            --gold-glow: rgba(236,195,61,0.35);
+            --gold-soft: rgba(236,195,61,0.12);
+            --bg:#060A04;
+            --bg-2:#0C1109;
+            --surface: rgba(255,255,255,0.06);
+            --surface-2: rgba(255,255,255,0.09);
+            --surface-3: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.08);
+            --border-gold: rgba(236,195,61,0.22);
+            --text:#F5F6EE;
+            --muted:#9AA495;
+            --muted-2:#6B7567;
+            --energy:#6CFF93;
+            --boost:#FF8A3D;
+            --danger:#FF6B6B;
+            --radius-xl:24px;
+            --radius-lg:18px;
+            --radius-md:12px;
+            --radius-pill:100px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        html,body{height:100%}
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before{
+            content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+            background: radial-gradient(120% 60% at 50% -10%, rgba(236,195,61,0.14) 0%, transparent 60%),
+                        radial-gradient(80% 50% at 100% 0%, rgba(108,255,147,0.06) 0%, transparent 50%),
+                        var(--bg);
+        }
+        .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 0;
-            border-bottom: 2px solid #2a2a4a;
-            margin-bottom: 30px;
+            padding: 18px 22px;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
         }
-        header h1 { color: #ffd700; font-size: 28px; }
-        header .status { color: #00ff88; font-size: 14px; }
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(90deg, var(--gold-1), var(--gold-2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 24px; font-weight: 800; letter-spacing: -0.3px;
+        }
+        header .status { color: var(--energy); font-size: 13px; font-weight: 700; }
         .login-box {
             max-width: 400px;
             margin: 100px auto;
-            background: #1a1a2e;
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid #2a2a4a;
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+            backdrop-filter: blur(16px);
+            padding: 36px;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
         }
-        .login-box h2 { color: #ffd700; margin-bottom: 20px; }
+        .login-box h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--gold-2); margin-bottom: 20px; font-size: 20px; font-weight: 800;
+        }
         .login-box input {
             width: 100%;
             padding: 12px 16px;
             margin-bottom: 16px;
-            background: #0f0f1a;
-            border: 1px solid #2a2a4a;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 16px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
         }
+        .login-box input:focus { outline: none; border-color: var(--border-gold); }
         .login-box button {
             width: 100%;
-            padding: 12px;
-            background: #ffd700;
+            padding: 13px;
+            background: linear-gradient(180deg, var(--gold-1) 0%, var(--gold-2) 50%, var(--gold-3) 100%);
             border: none;
-            border-radius: 8px;
-            color: #0f0f1a;
-            font-size: 18px;
-            font-weight: bold;
+            border-radius: var(--radius-pill);
+            color: #1A1A05;
+            font-size: 15px;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
             cursor: pointer;
+            box-shadow: 0 8px 24px rgba(236,195,61,0.3);
+            transition: 0.15s;
         }
-        .login-box button:hover { background: #ffed4a; }
-        .error { color: #ff4444; margin-bottom: 12px; text-align: center; }
+        .login-box button:active { transform: scale(0.97); }
+        .error { color: var(--danger); margin-bottom: 12px; text-align: center; font-size: 13px; font-weight: 600; }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
         .stat-card {
-            background: #1a1a2e;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #2a2a4a;
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+            padding: 18px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
             text-align: center;
         }
-        .stat-card .number { font-size: 28px; font-weight: bold; color: #ffd700; }
-        .stat-card .label { color: #8888aa; font-size: 13px; margin-top: 4px; }
+        .stat-card .number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 26px; font-weight: 800;
+            background: linear-gradient(90deg, var(--gold-1), var(--gold-2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-card .label { color: var(--muted); font-size: 11.5px; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
         .section {
-            background: #1a1a2e;
-            border-radius: 12px;
-            border: 1px solid #2a2a4a;
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+            backdrop-filter: blur(16px);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
             padding: 20px;
             margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
         }
-        .section h2 { color: #ffd700; margin-bottom: 16px; font-size: 20px; }
+        .section h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--gold-2); margin-bottom: 16px; font-size: 17px; font-weight: 700; letter-spacing: -0.2px;
+        }
         .section table { width: 100%; border-collapse: collapse; }
         .section table th,
         .section table td {
             padding: 10px 12px;
             text-align: left;
-            border-bottom: 1px solid #2a2a4a;
+            border-bottom: 1px solid var(--border);
         }
-        .section table th { color: #8888aa; font-weight: 600; font-size: 13px; text-transform: uppercase; }
-        .section table td { font-size: 14px; }
-        .btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-        .btn-success { background: #00cc66; color: #fff; }
-        .btn-danger { background: #ff4444; color: #fff; }
-        .btn-warning { background: #ffaa00; color: #0f0f1a; }
-        .btn-primary { background: #4488ff; color: #fff; }
-        .btn-info { background: #6644ff; color: #fff; }
+        .section table th { color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .section table td { font-size: 13.5px; }
+        .btn { padding: 6px 14px; border: none; border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.15s; font-family: inherit; }
+        .btn:active { transform: scale(0.95); }
+        .btn-success { background: rgba(108,255,147,0.15); color: var(--energy); border: 1px solid rgba(108,255,147,0.3); }
+        .btn-danger { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+        .btn-warning { background: rgba(255,138,61,0.15); color: var(--boost); border: 1px solid rgba(255,138,61,0.3); }
+        .btn-primary { background: var(--gold-soft); color: var(--gold-2); border: 1px solid var(--border-gold); }
+        .btn-info { background: rgba(108,180,255,0.15); color: #6CB4FF; border: 1px solid rgba(108,180,255,0.3); }
         .hidden { display: none !important; }
         .tab-bar {
             display: flex;
             gap: 4px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
+            padding: 5px;
+            width: fit-content;
         }
         .tab-bar button {
-            padding: 10px 20px;
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
-            border-bottom: none;
-            border-radius: 8px 8px 0 0;
-            color: #8888aa;
+            padding: 9px 18px;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-pill);
+            color: var(--muted);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: inherit;
+            transition: 0.2s;
         }
-        .tab-bar button.active { background: #2a2a4a; color: #ffd700; }
-        .tab-bar button:hover { background: #2a2a4a; }
+        .tab-bar button.active {
+            background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+            color: var(--gold-2);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .tab-bar button:hover { color: var(--text); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .search-input {
-            padding: 8px 12px;
-            background: #0f0f1a;
-            border: 1px solid #2a2a4a;
-            border-radius: 6px;
-            color: #fff;
+            padding: 9px 14px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text);
             width: 220px;
             margin-bottom: 12px;
+            font-family: inherit;
+            font-size: 13.5px;
         }
+        .search-input:focus { outline: none; border-color: var(--border-gold); }
         .toast {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            padding: 16px 24px;
-            border-radius: 10px;
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
-            color: #fff;
+            padding: 14px 22px;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(180deg, rgba(20,25,15,0.95), rgba(10,14,8,0.95));
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            color: var(--text);
             display: none;
             z-index: 1000;
-            font-size: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
-        .toast.success { border-color: #00cc66; }
-        .toast.error { border-color: #ff4444; }
+        .toast.success { border-color: rgba(108,255,147,0.4); }
+        .toast.error { border-color: rgba(255,107,107,0.4); }
         .toast.show { display: block; animation: slideUp 0.3s ease; }
         @keyframes slideUp {
             from { transform: translateY(20px); opacity: 0; }
@@ -150,44 +235,46 @@
             margin: 8px 0;
             font-size: 13px;
         }
-        .pool-bar .pool-name { width: 140px; color: #e0e0e0; font-weight: 600; }
-        .pool-bar .pool-pct { width: 45px; color: #ffd700; text-align: right; }
+        .pool-bar .pool-name { width: 140px; color: var(--text); font-weight: 700; }
+        .pool-bar .pool-pct { width: 45px; color: var(--gold-2); text-align: right; font-weight: 700; }
         .pool-bar .fill {
             height: 8px;
-            border-radius: 4px;
-            background: #2a2a4a;
+            border-radius: var(--radius-pill);
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
             flex: 1;
             overflow: hidden;
         }
         .pool-bar .fill .progress {
             height: 100%;
-            border-radius: 4px;
-            background: linear-gradient(90deg, #b36b00, #ffd700);
+            border-radius: var(--radius-pill);
+            background: linear-gradient(90deg, var(--gold-3), var(--gold-2), var(--gold-1));
+            box-shadow: 0 0 10px var(--gold-glow);
             transition: width 0.5s ease;
         }
-        .pool-bar .pool-remaining { width: 120px; color: #8888aa; text-align: right; font-size: 12px; }
+        .pool-bar .pool-remaining { width: 120px; color: var(--muted); text-align: right; font-size: 11.5px; }
         .badge {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: var(--radius-pill);
+            font-size: 10.5px;
+            font-weight: 700;
         }
-        .badge-pending { background: rgba(255, 170, 0, 0.2); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
-        .badge-processed { background: rgba(0, 204, 102, 0.2); color: #00cc66; border: 1px solid rgba(0,204,102,0.3); }
-        .badge-failed { background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); }
-        .badge-blacklisted { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
-        .nft-equipped { color: #ffd700; }
-        .nft-staked { color: #00d4ff; }
-        .loading-row td { text-align: center; color: #8888aa; padding: 20px; }
+        .badge-pending { background: rgba(255,138,61,0.15); color: var(--boost); border: 1px solid rgba(255,138,61,0.3); }
+        .badge-processed { background: rgba(108,255,147,0.15); color: var(--energy); border: 1px solid rgba(108,255,147,0.3); }
+        .badge-failed { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+        .badge-blacklisted { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+        .nft-equipped { color: var(--gold-2); font-weight: 700; }
+        .nft-staked { color: var(--energy); font-weight: 700; }
+        .loading-row td { text-align: center; color: var(--muted); padding: 20px; }
         .settings-grid { display: grid; gap: 16px; max-width: 500px; }
-        .settings-grid label { display: block; color: #8888aa; font-size: 13px; margin-bottom: 4px; }
+        .settings-grid label { display: block; color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
         .settings-grid input { width: 100%; }
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .section table { font-size: 12px; }
             .section table th, .section table td { padding: 6px 8px; }
-            header h1 { font-size: 20px; }
+            header h1 { font-size: 18px; }
         }
     </style>
 </head>
@@ -235,7 +322,7 @@
             <div class="section">
                 <h2>💧 Pool-ovi</h2>
                 <div id="poolListStats">
-                    <div style="color:#8888aa;font-size:13px">Učitavanje pool-ova...</div>
+                    <div style="color:#9AA495;font-size:13px">Učitavanje pool-ova...</div>
                 </div>
             </div>
         </div>
@@ -301,11 +388,11 @@
         <div id="tab-pools" class="tab-content">
             <div class="section">
                 <h2>💧 Upravljanje Pool-ovima</h2>
-                <p style="color:#8888aa;font-size:13px;margin-bottom:16px;">
+                <p style="color:#9AA495;font-size:13px;margin-bottom:16px;">
                     Pool-ovi se koriste za isplate rudarskih nagrada, NFT nagrada i referalnih bonusa.
                 </p>
                 <div id="poolManagement">
-                    <div style="color:#8888aa;font-size:13px">Učitavanje...</div>
+                    <div style="color:#9AA495;font-size:13px">Učitavanje...</div>
                 </div>
             </div>
         </div>
@@ -363,7 +450,7 @@
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
                         <button class="btn btn-success" onclick="saveSettings()">💾 Spremi postavke</button>
-                        <span id="settingsNote" style="font-size:12px;color:#8888aa;"></span>
+                        <span id="settingsNote" style="font-size:12px;color:#9AA495;"></span>
                     </div>
                 </div>
             </div>
@@ -530,7 +617,7 @@ async function loadStats() {
                 </div>`;
             }).join('');
         } else {
-            poolListStats.innerHTML = '<div style="color:#8888aa;font-size:13px">Nema pool-ova u bazi.</div>';
+            poolListStats.innerHTML = '<div style="color:#9AA495;font-size:13px">Nema pool-ova u bazi.</div>';
         }
     } catch (e) {
         console.error('Stats load error:', e);
@@ -558,14 +645,14 @@ async function loadUsers() {
         tbody.innerHTML = users.map(u => {
             const walletShort = u.tonWallet
                 ? u.tonWallet.slice(0, 6) + '…' + u.tonWallet.slice(-4)
-                : '<span style="color:#555">—</span>';
+                : '<span style="color:#6B7567">—</span>';
             const blacklistBtn = u.isBlacklisted
                 ? `<button class="btn btn-success" style="font-size:11px" onclick="setBlacklist('${u.telegramId}', false)">✅ Unblock</button>`
                 : `<button class="btn btn-danger" style="font-size:11px" onclick="setBlacklist('${u.telegramId}', true)">🚫 Block</button>`;
             return `
             <tr>
                 <td style="font-family:monospace">${u.telegramId}</td>
-                <td style="color:#ffd700;font-weight:600">${(u.clickBalance || 0).toFixed(2)}</td>
+                <td style="color:#ECC33D;font-weight:600">${(u.clickBalance || 0).toFixed(2)}</td>
                 <td>${(u.totalClicks || 0).toLocaleString()}</td>
                 <td>${(u.dailyClicks || 0).toLocaleString()}</td>
                 <td>—</td>
@@ -574,7 +661,7 @@ async function loadUsers() {
                 <td>
                     ${u.isBlacklisted
                         ? '<span class="badge badge-blacklisted">🚫 Blokiran</span>'
-                        : '<span style="color:#00cc66;font-size:12px">✅ OK</span>'}
+                        : '<span style="color:#6CFF93;font-size:12px">✅ OK</span>'}
                 </td>
                 <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
                     <button class="btn btn-success" onclick="addBalance('${u.telegramId}', 100)">+100</button>
@@ -638,11 +725,11 @@ async function loadNFTs() {
                 : n.staked
                 ? '<span class="nft-staked">🔒 Stake-an</span>'
                 : n.contractAddress && n.contractAddress.startsWith('withdraw:')
-                ? '<span style="color:#ff6b35">⏳ Withdrawal</span>'
-                : '<span style="color:#8888aa">📦 U torbi</span>';
+                ? '<span style="color:#FF8A3D">⏳ Withdrawal</span>'
+                : '<span style="color:#9AA495">📦 U torbi</span>';
             const rarityColor = {
-                'Mythic': '#ff6b35', 'Legendary': '#a855f7',
-                'Epic': '#ffd700', 'Rare': '#00d4ff', 'Common': '#8888aa'
+                'Mythic': '#FF8A3D', 'Legendary': '#a855f7',
+                'Epic': '#ECC33D', 'Rare': '#00d4ff', 'Common': '#9AA495'
             }[n.rarity] || '#e0e0e0';
             return `
             <tr>
@@ -704,7 +791,7 @@ async function loadWithdrawals() {
             <tr>
                 <td>#${w.id}</td>
                 <td style="font-family:monospace;font-size:12px">user #${w.userId}</td>
-                <td style="color:#ffd700;font-weight:600">${(w.amount || 0).toFixed(2)}</td>
+                <td style="color:#ECC33D;font-weight:600">${(w.amount || 0).toFixed(2)}</td>
                 <td>
                     <span style="font-family:monospace;font-size:11px">${addrShort}</span>
                     <button class="btn btn-primary" style="font-size:10px;padding:2px 6px;margin-left:4px"
@@ -717,7 +804,7 @@ async function loadWithdrawals() {
                 <td>
                     ${canSend
                         ? `<button class="btn btn-success" onclick="processWithdrawal(${w.id})">${btnLabel}</button>`
-                        : '<span style="color:#555;font-size:12px">—</span>'}
+                        : '<span style="color:#6B7567;font-size:12px">—</span>'}
                 </td>
             </tr>`;
         }).join('');
@@ -753,16 +840,15 @@ function copyToClipboard(text) {
 // --- POOLS ---
 // Backend /api/admin/pools vraća { pools: [...] }
 // Svaki: { id, poolName, totalAllocated, spent, remaining, lastUpdated }
-// /api/admin/pool/add kreira NOVI pool record (ne ažurira existing!) — backend bug
-// Za sada prikazujemo samo existing pools i dodajemo fond u postojeći
+// /api/admin/pool/add radi upsert — ažurira postojeći pool ili kreira novi ako ne postoji
 async function loadPools() {
     const container = document.getElementById('poolManagement');
-    container.innerHTML = '<div style="color:#8888aa;font-size:13px">Učitavanje...</div>';
+    container.innerHTML = '<div style="color:#9AA495;font-size:13px">Učitavanje...</div>';
     try {
         const data = await apiCall('/api/admin/pools');
         const pools = data.pools || [];
         if (!pools.length) {
-            container.innerHTML = '<div style="color:#8888aa">Nema pool-ova u bazi. Pokreni initPools skriptu.</div>';
+            container.innerHTML = '<div style="color:#9AA495">Nema pool-ova u bazi. Pokreni initPools skriptu.</div>';
             return;
         }
         container.innerHTML = pools.map(p => {
@@ -777,7 +863,7 @@ async function loadPools() {
             <div style="padding:12px 0;border-bottom:1px solid #2a2a4a;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                     <span style="font-weight:600;color:#e0e0e0">${emoji} ${p.poolName}</span>
-                    <span style="font-size:12px;color:#8888aa">
+                    <span style="font-size:12px;color:#9AA495">
                         Ukupno: ${(p.totalAllocated || 0).toLocaleString()} KVNC
                     </span>
                 </div>
@@ -795,13 +881,11 @@ async function loadPools() {
         }).join('');
     } catch (e) {
         console.error('Pools load error:', e);
-        container.innerHTML = '<div style="color:#ff4444">Greška pri učitavanju pool-ova</div>';
+        container.innerHTML = '<div style="color:#FF6B6B">Greška pri učitavanju pool-ova</div>';
     }
 }
 
-// NAPOMENA: backend /api/admin/pool/add kreira NOVI pool zapis umjesto da ažurira
-// Ovo je backend bug — za pravi fix pool add treba upsert, ne create
-// Ovdje šaljemo zahtjev i prikazujemo odgovarajuću poruku
+// Backend /api/admin/pool/add radi upsert (update ako pool postoji, create ako ne)
 async function addPoolFunds(poolName, amount) {
     if (!confirm(`Dodati ${amount.toLocaleString()} KVNC u pool "${poolName}"?`)) return;
     try {
