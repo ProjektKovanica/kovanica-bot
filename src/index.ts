@@ -1028,6 +1028,36 @@ async function initBot() {
         );
     });
 
+    bot.command("tokenomics", async (ctx: Context) => {
+    let message = "🪙 **KVNC TOKENOMICS** 🪙\n\n";
+    
+    message += `📊 **Osnovni podaci**\n`;
+    message += `└── Total Supply: **1,000,000,000** KVNC\n`;
+    message += `└── Burnano: **100,000,000** KVNC (10%)\n`;
+    message += `└── Cirkulacija: **900,000,000** KVNC\n\n`;
+    
+    message += `📦 **Raspodjela**\n`;
+    message += `└── 🔥 Burnano: **10%** (100M)\n`;
+    message += `└── 💧 DEX Pool: **20%** (200M) - 25% korišteno\n`;
+    message += `└── 🔒 Locked: **20%** (200M) - 1+ godina\n`;
+    message += `└── ⛏️ Tap Reward: **35%** (350M)\n`;
+    message += `└── 🎨 NFT Ecosystem: **10%** (100M)\n`;
+    message += `└── 👥 Referral/Stake: **5%** (50M)\n\n`;
+    
+    message += `🔒 **Locked adrese**\n`;
+    message += `└── 1+ godina: \`EQCUFe-WDLd7XwnyPRZ99s1oFgEFnQSJ3denTZ4eC9fTpSo1\`\n`;
+    message += `└── LP Lock (4 godine): \`EQCAshCkucJuYbQStNoHjIUoe4nZ7hbz2Mx0si1GxBxwRBJ7\`\n\n`;
+    
+    message += `📊 **Pool status**\n`;
+    message += `└── DEX Pool: 50M/200M korišteno (25%)\n`;
+    message += `└── Preostalo za DEX: **150M KVNC**\n\n`;
+    
+    message += `🔗 **Explorer:**\n`;
+    message += `https://tonscan.org/jetton/${process.env.KVNC_JETTON_MASTER}`;
+
+    await ctx.reply(message, { parse_mode: 'Markdown' });
+});
+	
     bot.command("price", async (ctx: Context) => {
         try {
             const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
@@ -2145,17 +2175,29 @@ async function initBot() {
         }
     });
 
-    app.get('/api/pools', async (req, res) => {
-        try {
-            const pools = await DexService.getPools(process.env.KVNC_JETTON_MASTER!);
-            res.json(pools);
-        } catch (error) {
-            console.error('❌ /api/pools error:', error);
-            res.status(500).json({ error: 'Server error' });
-        }
-    });
-
-    app.get('/api/swap-link', async (req, res) => {
+app.get('/api/pools', async (req, res) => {
+    try {
+        const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
+        const pools = {
+            usdt: {
+                liquidity: price.liquidity * 0.5,
+                volume24h: price.volume24h * 0.6,
+                apr: 15
+            },
+            gram: {
+                liquidity: price.liquidity * 0.5,
+                volume24h: price.volume24h * 0.4,
+                apr: 12
+            }
+        };
+        res.json(pools);
+    } catch (error) {
+        console.error('❌ /api/pools error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+   
+ app.get('/api/swap-link', async (req, res) => {
         try {
             const { to } = req.query;
             const link = DexService.getSwapLink(
