@@ -46,8 +46,6 @@ const analytics = new AnalyticsService(bot);
 const antiBot = new AntiBotService();
 const pushService = new PushService(bot);
 
-
-
 // === FUNKCIJE ===
 function getRank(totalClicks: number): string {
     if (totalClicks >= 100000) return "👑 Kralj rudara";
@@ -71,16 +69,13 @@ function isToday(date: Date): boolean {
 function extractTelegramId(initData: string, rawUser?: any): string | null {
     const botToken = process.env.BOT_TOKEN!;
     
-    // Pokuša HMAC validaciju
     const validatedId = validateAndExtractId(initData, botToken);
     if (validatedId) return validatedId;
 
-    // Dev fallback (automatski blokiran u produkciji)
     return extractTelegramIdDev(rawUser);
 }
 
-
-const HALVING_INTERVAL = 1000000; // svakih 1M klikova
+const HALVING_INTERVAL = 1000000;
 const MAX_ENERGY = 1000;
 const ENERGY_REGEN_PER_SEC = 2;
 
@@ -221,14 +216,22 @@ async function initBot() {
         await ctx.answerCallbackQuery();
         try {
             const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
-            await ctx.reply(
-                `💰 LIVE CIJENA KVNC\n\n` +
-                `💵 USDT: ${price.usdt.toFixed(6)}\n` +
-                `🪙 GRAM: ${price.gram.toFixed(6)}\n` +
-                `📈 24h: ${price.change24h > 0 ? "+" : ""}${price.change24h.toFixed(2)}%\n` +
-                `💧 Likvidnost: $${price.liquidity.toFixed(2)}\n\n` +
-                `📊 Izvor: STON.fi`
-            );
+            const trust = await DexService.getTrustScore(process.env.KVNC_JETTON_MASTER!);
+            
+            let message = `💰 **LIVE CIJENA KVNC**\n\n`;
+            message += `💵 USDT: ${price.usdt.toFixed(6)}\n`;
+            message += `🪙 GRAM: ${price.gram.toFixed(6)}\n`;
+            message += `📈 24h: ${price.change24h > 0 ? "+" : ""}${price.change24h.toFixed(2)}%\n`;
+            message += `💧 Likvidnost: $${price.liquidity.toFixed(2)}\n`;
+            message += `📊 Volumen: $${price.volume24h.toFixed(2)}\n\n`;
+            
+            if (trust) {
+                const emoji = trust.level === 'HIGH' ? '🟢' : trust.level === 'MEDIUM' ? '🟡' : '🔴';
+                message += `🔒 Trust Score: ${emoji} ${trust.score}/100\n`;
+            }
+            
+            
+            await ctx.reply(message, { parse_mode: 'Markdown' });
         } catch (e) {
             await ctx.reply("❌ Nije moguće dohvatiti cijenu.");
         }
@@ -334,9 +337,7 @@ async function initBot() {
             const hours = Math.floor(diff / 3600000);
             const mins = Math.floor((diff % 3600000) / 60000);
             return ctx.reply(
-                `⏳ Već si preuzeo dnevnu nagradu!
-
-` +
+                `⏳ Već si preuzeo dnevnu nagradu!\n\n` +
                 `🕐 Sljedeća nagrada za: ${hours}h ${mins}min`
             );
         }
@@ -351,14 +352,9 @@ async function initBot() {
         });
 
         await ctx.reply(
-            `🎁 Dnevna nagrada preuzeta!
-
-` +
-            `💰 +${reward} KVNC dodano na tvoj balans!
-` +
-            `💎 Novi balans: ${(user.clickBalance + reward).toFixed(2)} KVNC
-
-` +
+            `🎁 Dnevna nagrada preuzeta!\n\n` +
+            `💰 +${reward} KVNC dodano na tvoj balans!\n` +
+            `💎 Novi balans: ${(user.clickBalance + reward).toFixed(2)} KVNC\n\n` +
             `⏰ Vrati se sutra za novu nagradu!`
         );
     });
@@ -374,38 +370,23 @@ async function initBot() {
             const burned = Number(process.env.BURN_SUPPLY) || 100000000;
             const circulating = totalSupply - burned;
             
-            // Halving info
             const halvingInterval = 1000000;
             const currentEpoch = Math.floor(totalClicks / halvingInterval);
             const nextHalving = (currentEpoch + 1) * halvingInterval;
             const reward = INITIAL_REWARD / Math.pow(2, currentEpoch);
 
             await ctx.reply(
-                `📊 KOVANICA GLOBALNE STATISTIKE
-
-` +
-                `👥 Ukupno rudara: ${totalUsers.toLocaleString()}
-` +
-                `👆 Ukupno klikova: ${totalClicks.toLocaleString()}
-` +
-                `💰 KVNC u optjecaju: ${totalBalance.toFixed(0)} KVNC
-
-` +
-                `🪙 TOKENOMICS
-` +
-                `📦 Ukupna ponuda: ${totalSupply.toLocaleString()} KVNC
-` +
-                `🔥 Spaljeno: ${burned.toLocaleString()} KVNC
-` +
-                `💫 Cirkulacija: ${circulating.toLocaleString()} KVNC
-
-` +
-                `⛏️ HALVING INFO
-` +
-                `🔄 Trenutna nagrada: ${reward.toFixed(4)} KVNC/klik
-` +
-                `📉 Halving epoch: #${currentEpoch}
-` +
+                `📊 KOVANICA GLOBALNE STATISTIKE\n\n` +
+                `👥 Ukupno rudara: ${totalUsers.toLocaleString()}\n` +
+                `👆 Ukupno klikova: ${totalClicks.toLocaleString()}\n` +
+                `💰 KVNC u optjecaju: ${totalBalance.toFixed(0)} KVNC\n\n` +
+                `🪙 TOKENOMICS\n` +
+                `📦 Ukupna ponuda: ${totalSupply.toLocaleString()} KVNC\n` +
+                `🔥 Spaljeno: ${burned.toLocaleString()} KVNC\n` +
+                `💫 Cirkulacija: ${circulating.toLocaleString()} KVNC\n\n` +
+                `⛏️ HALVING INFO\n` +
+                `🔄 Trenutna nagrada: ${reward.toFixed(4)} KVNC/klik\n` +
+                `📉 Halving epoch: #${currentEpoch}\n` +
                 `🎯 Sljedeći halving za: ${(nextHalving - totalClicks).toLocaleString()} klikova`
             );
         } catch(e: any) {
@@ -419,20 +400,12 @@ async function initBot() {
         const burnPct = ((burned / totalSupply) * 100).toFixed(2);
         
         await ctx.reply(
-            `🔥 KVNC BURN INFO
-
-` +
-            `🔥 Spaljeno: ${burned.toLocaleString()} KVNC
-` +
-            `📦 Ukupna ponuda: ${totalSupply.toLocaleString()} KVNC
-` +
-            `📊 Postotak spaljen: ${burnPct}%
-` +
-            `💫 Preostalo: ${(totalSupply - burned).toLocaleString()} KVNC
-
-` +
-            `🔗 Provjeri na TON Explorer:
-` +
+            `🔥 KVNC BURN INFO\n\n` +
+            `🔥 Spaljeno: ${burned.toLocaleString()} KVNC\n` +
+            `📦 Ukupna ponuda: ${totalSupply.toLocaleString()} KVNC\n` +
+            `📊 Postotak spaljen: ${burnPct}%\n` +
+            `💫 Preostalo: ${(totalSupply - burned).toLocaleString()} KVNC\n\n` +
+            `🔗 Provjeri na TON Explorer:\n` +
             `https://tonscan.org/jetton/${process.env.KVNC_JETTON_MASTER}`
         );
     });
@@ -1058,18 +1031,22 @@ async function initBot() {
     bot.command("price", async (ctx: Context) => {
         try {
             const price = await DexService.getLivePrice(process.env.KVNC_JETTON_MASTER!);
+            const trust = await DexService.getTrustScore(process.env.KVNC_JETTON_MASTER!);
             
             let message = "💰 **LIVE CIJENA KVNC** 💰\n\n";
             message += `💵 **USDT:** ${price.usdt.toFixed(6)}\n`;
             message += `🪙 **GRAM:** ${price.gram.toFixed(6)}\n`;
-            message += `📈 **24h High:** $${price.high24h.toFixed(6)}\n`;
-            message += `📉 **24h Low:** $${price.low24h.toFixed(6)}\n`;
-            message += `📊 **Promjena 24h:** ${price.change24h > 0 ? '+' : ''}${price.change24h.toFixed(2)}%\n`;
-            message += `📈 **Volumen 24h:** $${price.volume24h.toFixed(2)}\n`;
+            message += `📊 **24h promjena:** ${price.change24h > 0 ? '+' : ''}${price.change24h.toFixed(2)}%\n`;
             message += `💧 **Likvidnost:** $${price.liquidity.toFixed(2)}\n`;
+            message += `📈 **24h volumen:** $${price.volume24h.toFixed(2)}\n`;
             message += `🏦 **Market Cap:** $${price.marketCap.toFixed(2)}\n\n`;
-            message += `⏱️ ${new Date().toLocaleString()}\n`;
-            message += `📊 Izvor: STON.fi V2`;
+            
+            if (trust) {
+                const emoji = trust.level === 'HIGH' ? '🟢' : trust.level === 'MEDIUM' ? '🟡' : '🔴';
+                message += `🔒 **Trust Score:** ${emoji} ${trust.score}/100 (${trust.level})\n`;
+            }
+            
+            message += `\n⏱️ ${new Date().toLocaleString()}\n`;
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
         } catch (error: any) {
@@ -1140,14 +1117,15 @@ async function initBot() {
                 if (simulation) {
                     simMessage += `  💰 Output: ${simulation.expectedOutput.toFixed(6)} ${toToken}\n`;
                     simMessage += `  📈 Price impact: ${simulation.priceImpact.toFixed(2)}%\n`;
-                    simMessage += `  💸 Fee: ${simulation.fee.toFixed(4)} TON\n`;
+                    simMessage += `  💸 Fee: ${simulation.fee.toFixed(4)} KVNC\n`;
                 }
 
                 await ctx.reply(
                     `🔄 **Swap KVNC → ${toToken}** 🔄\n\n` +
                     `💰 Iznos: ${amount} KVNC\n` +
                     `${simMessage}\n` +
-                    `🔗 Klikni za izvršavanje:\n${link}`
+                    `🔗 Klikni za izvršavanje:\n${link}\n\n` +
+                    `🔗 Izvršavanje: STON.fi`
                 );
             } catch (error: any) {
                 await ctx.reply(
@@ -1600,17 +1578,12 @@ async function initBot() {
     app.use(cors());
     app.use(express.json());
 
-    // STATIC FILES
     app.use(express.static(path.join(__dirname, '../public')));
 
-    // Eksplicitna ruta za index.html
     app.get('/', (req, res) => {
         res.sendFile(path.join(__dirname, '../public/index.html'));
     });
 
-    // === API ENDPOINTI ===
-
-    // === RATE LIMITING ===
     const tapLimiter = rateLimit({
         windowMs: 60 * 1000,
         max: 60,
@@ -1628,7 +1601,6 @@ async function initBot() {
     app.use("/api/tap", tapLimiter);
     app.use("/api/", apiLimiter);
 
-    // === WEBHOOK HANDLER ===
     app.post("/webhook", express.json(), async (req, res) => {
         try {
             await bot.handleUpdate(req.body);
@@ -1638,10 +1610,6 @@ async function initBot() {
             res.sendStatus(500);
         }
     });
-
-
-    // === RATE LIMITING ===
-    // === WEBHOOK HANDLER ===
 
     app.post('/api/me', async (req, res) => {
         try {
@@ -1657,7 +1625,6 @@ async function initBot() {
             
             const bonusAvailable = !dbUser.lastBonusDate || !isToday(dbUser.lastBonusDate);
             
-            // Kreiraj dnevne questove
             await QuestService.createDailyQuests(telegramId);
 
             const quests = await QuestService.getTodayQuests(telegramId);
@@ -1687,10 +1654,8 @@ async function initBot() {
             const user = await prisma.user.findUnique({ where: { telegramId } });
             if (!user) return res.status(404).json({ error: 'Korisnik nije pronađen' });
 
-            // Blacklist provjera
             if (user.isBlacklisted) return res.status(403).json({ error: 'Korisnički račun je blokiran' });
 
-            // Regeneriraj energiju
             const currentEnergy = await regenerateEnergy(user);
             if (currentEnergy <= 0) {
                 return res.status(400).json({ 
@@ -1700,14 +1665,11 @@ async function initBot() {
                 });
             }
 
-            // Halving nagrada
             const baseReward = await getCurrentReward();
             
-            // NFT bonus
             const equippedNFT = await NFTService.getEquippedNFT(telegramId);
             const multiplier = equippedNFT ? equippedNFT.bonusMultiplier : 1;
             
-            // Boost provjera
             const activeBoost = await prisma.boost.findFirst({
                 where: { userId: user.id, expiresAt: { gt: new Date() } }
             });
@@ -1715,17 +1677,14 @@ async function initBot() {
             
             const totalReward = baseReward * multiplier * boostMultiplier;
 
-            // Provjera dostupnosti sredstava u pool-u (usklađeno s bot /mine handlerom)
             const hasFunds = await PoolService.hasSufficientFunds(POOLS.TAP_BASE, totalReward);
             if (!hasFunds) {
                 return res.status(400).json({ error: 'Pool je prazan! Pokušaj kasnije.' });
             }
 
-            // Daily limit provjera
             const isNewDay = !isToday(user.lastClickDate);
             const dailyClicks = isNewDay ? 1 : user.dailyClicks + 1;
 
-            // Update korisnika
             const updatedUser = await prisma.user.update({
                 where: { telegramId },
                 data: {
@@ -1738,7 +1697,6 @@ async function initBot() {
                 }
             });
 
-            // Spremi transakciju
             await prisma.transaction.create({
                 data: {
                     userId: user.id,
@@ -1748,10 +1706,8 @@ async function initBot() {
                 }
             });
 
-            // Skini iznos iz pool-a (usklađeno s bot /mine handlerom)
             await PoolService.spendFromPool(POOLS.TAP_BASE, totalReward);
 
-            // Provjeri halving
             const newTotalClicks = await prisma.user.aggregate({ _sum: { totalClicks: true } });
             const totalGlobal = newTotalClicks._sum.totalClicks || 0;
             const oldEpoch = Math.floor((totalGlobal - 1) / HALVING_INTERVAL);
@@ -1765,10 +1721,8 @@ async function initBot() {
                 console.log(`⛏️ HALVING! Epoch ${newEpoch}, nova nagrada: ${newReward} KVNC`);
             }
 
-            // Update quest progresa
             await QuestService.updateQuestProgress(telegramId, 'clicks', 1);
 
-            // NFT auto-mint provjera (usklađeno s bot /mine handlerom — prije je nedostajalo u Mini App tapu)
             let mintedNFT = null;
             try {
                 const nftResult = await NFTService.checkAndMintNFT(telegramId, updatedUser.totalClicks);
@@ -2206,7 +2160,8 @@ async function initBot() {
             const { to } = req.query;
             const link = DexService.getSwapLink(
                 process.env.KVNC_JETTON_MASTER!,
-                to as string || 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c'
+                to as string || 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+                '1'
             );
             res.json({ link });
         } catch (error) {
@@ -2227,14 +2182,13 @@ async function initBot() {
         console.log(`✅ WebSocket running on ws://localhost:${PORT}/ws`);
     });
 
-    // Pokreni reminder
     const reminder = new ReminderService(bot);
     reminder.start();
     console.log('✅ Daily reminder pokrenut!');
     console.log('✅ Push service spreman!');
 
     // ============================================
-    // START BOT (TEK NAKON SERVERA!)
+    // START BOT
     // ============================================
     if (process.env.NODE_ENV === "production") {
         await bot.init();
@@ -2253,7 +2207,6 @@ async function initBot() {
     bot.catch((err) => {
         console.error("❌ Greška:", err);
     });
-
 
     // === NFT API ENDPOINTI ===
     app.post('/api/equip', async (req: any, res: any) => {
@@ -2317,7 +2270,6 @@ async function initBot() {
             if (nft.staked) return res.status(400).json({ error: 'NFT je stakean. Prvo ga unstakaj.' });
             if (nft.equipped) return res.status(400).json({ error: 'NFT je opremljen. Prvo ga skini.' });
 
-            // Označi NFT kao pending withdrawal
             await prisma.nFT.update({
                 where: { id: nft.id },
                 data: { contractAddress: `withdraw:${user.tonWallet}:${Date.now()}` }

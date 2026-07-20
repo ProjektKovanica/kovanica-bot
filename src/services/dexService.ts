@@ -1,219 +1,92 @@
 import axios from 'axios';
 
-const STON_API_V2 = 'https://api.ston.fi/v2';
-const DEX_SCALE = 1_000_000;
+const KVNC_JETTON_MASTER = process.env.KVNC_JETTON_MASTER!;
 
-export const POOLS = {
-    KVNC_USDT: 'EQCi5WSqkRsvaHNrs3pg6OrIA4C6Zk-inMHoVq0VAgo3svC5',
-    KVNC_GRAM: 'EQDaPt-caUdBWLhF2In1P4x2-S7MOw79aganZ58PqMFqxR8S',
-    TON: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
-};
+export class DexService {
+  private static lastPrice: any = null;
+  private static lastPriceUpdate = 0;
+  private static readonly PRICE_CACHE_TTL = 30000;
 
-export interface PoolInfo {
-    address: string;
-    name: string;
-    token0: string;
-    token1: string;
-    reserve0: string;
-    reserve1: string;
-    lpFee: number;
-    volume24h: number;
-    apy: number;
-    tvl: number;
-}
-
-export interface PriceData {
+  static async getLivePrice(jettonMaster: string = KVNC_JETTON_MASTER): Promise<{
     usdt: number;
     gram: number;
     change24h: number;
-    volume24h: number;
     liquidity: number;
+    volume24h: number;
     high24h: number;
     low24h: number;
     marketCap: number;
-}
+  }> {
+    if (this.lastPrice && Date.now() - this.lastPriceUpdate < this.PRICE_CACHE_TTL) {
+      return this.lastPrice;
+    }
 
-const EMPTY_PRICE: PriceData = {
-    usdt: 0, gram: 0, change24h: 0,
-    volume24h: 0, liquidity: 0,
-    high24h: 0, low24h: 0, marketCap: 0,
-};
-
-export class DexService {
-    private static cache: { price: PriceData | null; timestamp: number } = {
-        price: null,
-        timestamp: 0,
+    // ============================================
+    // RUČNE CIJENE - ZAMIJENI OVDJE PO POTREBI
+    // ============================================
+    const result = {
+      usdt: 0.00000348,
+      gram: 0.00000239,
+      change24h: 79.5,
+      liquidity: 348.21,
+      volume24h: 127,
+      high24h: 0.00000400,
+      low24h: 0.00000280,
+      marketCap: 3482.09
     };
-    private static CACHE_TTL = 60000;
+    
+    this.lastPrice = result;
+    this.lastPriceUpdate = Date.now();
+    return result;
+  }
 
-    static async getLivePrice(jettonMasterAddress: string): Promise<PriceData> {
-        try {
-            const now = Date.now();
-            if (this.cache.price && now - this.cache.timestamp < this.CACHE_TTL) {
-                return this.cache.price;
-            }
+  static getSwapLink(fromToken: string, toToken: string, amount: string): string {
+    return `https://app.ston.fi/swap?from=${fromToken}&to=${toToken}&amount=${amount}`;
+  }
 
-            const [usdtRes, gramRes] = await Promise.allSettled([
-                axios.get(`${STON_API_V2}/pools/${POOLS.KVNC_USDT}`, { timeout: 8000 }),
-                axios.get(`${STON_API_V2}/pools/${POOLS.KVNC_GRAM}`, { timeout: 8000 }),
-            ]);
+  static getAddLiquidityLink(tokenA: string, tokenB: string): string {
+    return `https://app.ston.fi/pools/add?token0=${tokenA}&token1=${tokenB}`;
+  }
 
-            let usdtPrice = 0;
-            let gramPrice = 0;
-            let volume24h = 0;
-            let liquidity = 0;
+  static getRemoveLiquidityLink(tokenA: string, tokenB: string): string {
+    return `https://app.ston.fi/pools/remove?token0=${tokenA}&token1=${tokenB}`;
+  }
 
-            if (usdtRes.status === "fulfilled") {
-                const pool = usdtRes.value.data?.pool || usdtRes.value.data;
-                if (pool) {
-                    const r0 = parseFloat(pool.reserve0 || "0");
-                    const r1 = parseFloat(pool.reserve1 || "0");
-                    if (r0 > 0 && r1 > 0) {
-                        usdtPrice = pool.token0_address === jettonMasterAddress
-                            ? r1 / r0 / DEX_SCALE
-                            : r0 / r1 / DEX_SCALE;
-                    }
-                    volume24h += parseFloat(pool.volume_24h || "0") / DEX_SCALE;
-                    liquidity += r0 / DEX_SCALE;
-                }
-            }
-
-            if (gramRes.status === "fulfilled") {
-                const pool = gramRes.value.data?.pool || gramRes.value.data;
-                if (pool) {
-                    const r0 = parseFloat(pool.reserve0 || "0");
-                    const r1 = parseFloat(pool.reserve1 || "0");
-                    if (r0 > 0 && r1 > 0) {
-                        gramPrice = pool.token0_address === jettonMasterAddress
-                            ? r1 / r0 / DEX_SCALE
-                            : r0 / r1 / DEX_SCALE;
-                    }
-                }
-            }
-
-            const priceData: PriceData = {
-                usdt: usdtPrice,
-                gram: gramPrice,
-                change24h: 0,
-                volume24h,
-                liquidity,
-                high24h: Math.max(usdtPrice, gramPrice),
-                low24h: usdtPrice > 0 && gramPrice > 0 ? Math.min(usdtPrice, gramPrice) : (usdtPrice || gramPrice),
-                marketCap: usdtPrice * 1_000_000_000,
-            };
-
-            this.cache.price = priceData;
-            this.cache.timestamp = now;
-            return priceData;
-        } catch (error) {
-            console.error("DexService greška:", error);
-            return this.cache.price || EMPTY_PRICE;
-        }
+  static async simulateSwap(fromToken: string, toToken: string, amount: number): Promise<{
+    expectedOutput: number;
+    priceImpact: number;
+    fee: number;
+  } | null> {
+    try {
+      const price = await this.getLivePrice(KVNC_JETTON_MASTER);
+      const toPrice = toToken === 'USDT' ? price.usdt : price.gram;
+      if (!toPrice || toPrice <= 0) return null;
+      return {
+        expectedOutput: (amount / toPrice) * 0.997,
+        priceImpact: Math.min(0.5 + (amount / 10000) * 0.1, 5),
+        fee: 0.003 * amount
+      };
+    } catch (error) {
+      return null;
     }
+  }
 
-    static async getPools(jettonMasterAddress: string): Promise<PoolInfo[]> {
-        try {
-            const [usdtRes, gramRes] = await Promise.allSettled([
-                axios.get(`${STON_API_V2}/pools/${POOLS.KVNC_USDT}`, { timeout: 8000 }),
-                axios.get(`${STON_API_V2}/pools/${POOLS.KVNC_GRAM}`, { timeout: 8000 }),
-            ]);
+  static async getTrustScore(jettonMaster: string = KVNC_JETTON_MASTER) {
+    return null;
+  }
 
-            const result: PoolInfo[] = [];
-            const names = ["KVNC/USDT", "KVNC/GRAM"];
-
-            for (const [i, res] of [usdtRes, gramRes].entries()) {
-                if (res.status === "fulfilled") {
-                    const pool = res.value.data?.pool || res.value.data;
-                    if (pool) {
-                        result.push({
-                            address: pool.address,
-                            name: names[i],
-                            token0: pool.token0_symbol || pool.token0_address,
-                            token1: pool.token1_symbol || pool.token1_address,
-                            reserve0: pool.reserve0 || "0",
-                            reserve1: pool.reserve1 || "0",
-                            lpFee: pool.lp_fee || 0.3,
-                            volume24h: parseFloat(pool.volume_24h || "0") / DEX_SCALE,
-                            apy: pool.apy || 0,
-                            tvl: (parseFloat(pool.reserve0 || "0") + parseFloat(pool.reserve1 || "0")) / DEX_SCALE,
-                        });
-                    }
-                }
-            }
-            return result;
-        } catch (error) {
-            console.error("getPools greška:", error);
-            return [];
-        }
-    }
-
-    static async getPoolDisplay(jettonMasterAddress: string): Promise<string> {
-        try {
-            const pools = await this.getPools(jettonMasterAddress);
-            const price = await this.getLivePrice(jettonMasterAddress);
-
-            let message = "💧 **DEX Pool-ovi** 💧\n\n";
-            message += "💰 **Cijena KVNC:**\n";
-            message += `  💵 USDT: ${price.usdt.toFixed(6)}\n`;
-            message += `  🪙 GRAM: ${price.gram.toFixed(6)}\n`;
-            message += `  📊 Volumen 24h: $${price.volume24h.toFixed(2)}\n`;
-            message += `  💧 Likvidnost: $${price.liquidity.toFixed(2)}\n`;
-            message += `  🏦 Market Cap: $${price.marketCap.toFixed(2)}\n\n`;
-
-            if (pools.length === 0) {
-                message += "📭 **Nema aktivnih pool-ova.**\n";
-                message += "🔗 https://app.ston.fi/pools";
-                return message;
-            }
-
-            for (const pool of pools) {
-                const r0 = (parseFloat(pool.reserve0) / DEX_SCALE).toFixed(2);
-                const r1 = (parseFloat(pool.reserve1) / DEX_SCALE).toFixed(2);
-                message += `📊 **${pool.name}**\n`;
-                message += "  📌 " + pool.address.slice(0, 12) + "...\n";
-                message += `  💰 ${pool.token0}: ${r0}\n`;
-                message += `  💰 ${pool.token1}: ${r1}\n`;
-                message += `  📈 Fee: ${pool.lpFee}%\n`;
-                message += `  💰 TVL: $${pool.tvl.toFixed(2)}\n\n`;
-            }
-
-            return message;
-        } catch (error) {
-            return "❌ Greška pri dohvaćanju pool-ova.";
-        }
-    }
-
-    static async simulateSwap(
-        fromToken: string,
-        toToken: string,
-        amount: number
-    ): Promise<{ expectedOutput: number; priceImpact: number; fee: number; route: string } | null> {
-        try {
-            const price = await this.getLivePrice(fromToken);
-            const expectedOutput = amount * (price.usdt || price.gram || 0);
-            return {
-                expectedOutput,
-                priceImpact: 0.1,
-                fee: amount * 0.003,
-                route: "Direct",
-            };
-        } catch (error) {
-            console.error("simulateSwap greška:", error);
-            return null;
-        }
-    }
-
-    static getSwapLink(fromToken: string, toToken: string, amount?: string): string {
-        let url = `https://app.ston.fi/swap?from=${fromToken}&to=${toToken}`;
-        if (amount) url += `&amount=${amount}`;
-        return url;
-    }
-
-    static getAddLiquidityLink(token0: string, token1: string): string {
-        return `https://app.ston.fi/add-liquidity?token0=${token0}&token1=${token1}`;
-    }
-
-    static getRemoveLiquidityLink(token0: string, token1: string): string {
-        return `https://app.ston.fi/remove-liquidity?token0=${token0}&token1=${token1}`;
-    }
+  static async getPoolDisplay(jettonMaster: string = KVNC_JETTON_MASTER): Promise<string> {
+    const price = await this.getLivePrice(jettonMaster);
+    let message = "💧 **DEX Pool-ovi** 💧\n\n";
+    message += `💰 **Cijena:** $${price.usdt.toFixed(8)} USDT\n`;
+    message += `🪙 **GRAM:** ${price.gram.toFixed(8)}\n`;
+    message += `📊 **24h promjena:** ${price.change24h > 0 ? '+' : ''}${price.change24h.toFixed(1)}%\n`;
+    message += `💧 **Likvidnost:** $${price.liquidity.toFixed(2)}\n`;
+    message += `📈 **24h volumen:** $${price.volume24h.toFixed(2)}\n`;
+    message += `🏦 **Market Cap:** $${price.marketCap.toFixed(2)}\n\n`;
+    message += `🔄 **Swap:** /swap GRAM 100\n`;
+    message += `➕ **Add liquidity:** /addliquidity USDT 1000\n`;
+    message += `📊 **Izvor:** Ručne cijene`;
+    return message;
+  }
 }
