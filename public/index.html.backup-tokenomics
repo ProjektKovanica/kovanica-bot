@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=7" />
+    <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
     <div class="bg-mesh">
@@ -32,7 +32,7 @@
                 <div class="header-actions">
                     <button class="icon-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
                     <div class="balance-chip">
-                        <img class="chip-icon" src="coin.png" alt="KVNC" />
+                        <img class="chip-icon" src="coin.jpg" alt="KVNC" />
                         <span class="balance" id="balance">0.0000</span>
                         <span class="currency">KVNC</span>
                     </div>
@@ -75,7 +75,7 @@
             </div>
         </div>
 
-        <!-- TAB NAVIGATION - 7 TABOVA -->
+        <!-- TAB NAVIGATION -->
         <div class="tabs-pill">
             <div class="tabs-inner">
                 <button class="tab active" data-tab="mine" onclick="switchTab('mine')"><i>⛏️</i><span>Rudnik</span></button>
@@ -84,7 +84,6 @@
                 <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')"><i>🏆</i><span>Top</span></button>
                 <button class="tab" data-tab="referral" onclick="switchTab('referral')"><i>👥</i><span>Ref</span></button>
                 <button class="tab" data-tab="wallet" onclick="switchTab('wallet')"><i>💳</i><span>Wallet</span></button>
-                <button class="tab" data-tab="tokenomics" onclick="switchTab('tokenomics')"><i>🪙</i><span>Token</span></button>
             </div>
         </div>
 
@@ -108,23 +107,11 @@
                 </div>
             </div>
 
-            <!-- PRICE CARD -->
-            <div class="price-card">
-                <div class="price-row">
-                    <span class="price-label">💰 KVNC / USDT</span>
-                    <span class="price-value" id="priceDisplay2">$0.00000348</span>
-                </div>
-                <div class="price-stats">
-                    <span>24h: <span class="price-change up" id="changeDisplay2">+79.5%</span></span>
-                    <span>💧 <span id="liquidityDisplay">$348</span></span>
-                </div>
-            </div>
-
             <div class="mine-stage">
                 <div class="coin-glow"></div>
                 <div class="coin-shadow"></div>
                 <div class="pickaxe-wrapper" id="pickaxeWrapper">
-                    <img class="coin-main" id="pickaxe" src="coin.png" alt="Kovanica" draggable="false" />
+                    <img class="coin-main" id="pickaxe" src="coin.jpg" alt="Kovanica" draggable="false" />
                     <div class="tap-ring"></div>
                     <div class="tap-ring delay"></div>
                 </div>
@@ -141,11 +128,8 @@
                     <button class="boost-btn" id="boostBtn" onclick="handleBoost()">⚡ Aktiviraj 2x Boost</button>
                 </div>
 
-                <!-- DAILY BONUS -->
-                <button class="daily-btn" onclick="claimDaily()">🎁 Dnevni bonus (2x)</button>
-
                 <div class="brand-mark">
-                    <img class="brand-mark-img" src="coin.png" alt="" />
+                    <img class="brand-mark-img" src="coin.jpg" alt="" />
                     <span>KVNC Kovanica Rudnik</span>
                 </div>
             </div>
@@ -247,26 +231,6 @@
                 <div class="wallet-address-box" id="walletAddressBox" style="display:none">
                     <span class="wallet-address-label">Adresa:</span>
                     <span class="wallet-address-value" id="walletAddressValue">-</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB: TOKENOMICS -->
-        <div class="tab-content" id="tab-tokenomics">
-            <div class="section-card" style="text-align:center">
-                <div class="section-title">🪙 KVNC Tokenomics</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px">
-                    <div class="stat-card"><span class="stat-label">Total Supply</span><span class="stat-value gold-text">1,000,000,000</span></div>
-                    <div class="stat-card"><span class="stat-label">Cirkulacija</span><span class="stat-value gold-text">900,000,000</span></div>
-                    <div class="stat-card"><span class="stat-label">🔥 Burnano</span><span class="stat-value" style="color:#ff6b6b">10% (100M)</span></div>
-                    <div class="stat-card"><span class="stat-label">💧 DEX Pool</span><span class="stat-value" style="color:#4ecdc4">20% (200M)</span></div>
-                    <div class="stat-card"><span class="stat-label">⛏️ Tap Reward</span><span class="stat-value" style="color:#f0b90b">35% (350M)</span></div>
-                    <div class="stat-card"><span class="stat-label">🎨 NFT</span><span class="stat-value" style="color:#a29bfe">10% (100M)</span></div>
-                    <div class="stat-card"><span class="stat-label">🔒 Locked</span><span class="stat-value" style="color:#fd79a8">20% (200M)</span></div>
-                    <div class="stat-card"><span class="stat-label">👥 Referral</span><span class="stat-value" style="color:#55efc4">5% (50M)</span></div>
-                </div>
-                <div style="margin-top:12px;font-size:11px;color:var(--muted)">
-                    🔗 <a href="https://tonscan.org/jetton/EQDKKFRJU5uar87OdtvLb8gynFF1fJj40xyYfhUgvc914I5S" target="_blank" style="color:var(--gold-2)">Pogledaj na TON Explorer</a>
                 </div>
             </div>
         </div>

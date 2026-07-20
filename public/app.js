@@ -33,6 +33,51 @@ function playTapSound() {
         osc.start(audioCtx.currentTime);
         osc.stop(audioCtx.currentTime + 0.1);
     } catch(e) {}
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === RANK CONFIG ===
@@ -53,6 +98,51 @@ function getRankInfo(totalClicks) {
         if (totalClicks >= RANKS[i].min) return { ...RANKS[i], index: i };
     }
     return { ...RANKS[0], index: 0 };
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 function getRankProgress(totalClicks) {
@@ -60,6 +150,51 @@ function getRankProgress(totalClicks) {
     if (rank.max === Infinity) return 100;
     const progress = ((totalClicks - rank.min) / (rank.max - rank.min)) * 100;
     return Math.min(100, Math.max(0, progress));
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === INIT ===
@@ -123,6 +258,51 @@ async function init() {
         console.error('Init error:', error);
         tg.showAlert('Greška pri učitavanju. Pokušaj ponovo.');
     }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === TONCONNECT ===
@@ -176,6 +356,51 @@ function initTonConnect() {
             }
         }
     });
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === UPDATE UI ===
@@ -233,6 +458,51 @@ function updateUI(data) {
     // Gumb
     const mineBtn = document.getElementById('mineBtn');
     if (mineBtn) mineBtn.disabled = energy <= 0;
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === ENERGY ===
@@ -256,6 +526,51 @@ function updateEnergyUI() {
             countdown.style.color = 'var(--muted)';
         }
     }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 function startEnergyRegen() {
@@ -270,6 +585,51 @@ function startEnergyRegen() {
             }
         }
     }, 1000);
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === BOOST TIMER ===
@@ -294,6 +654,51 @@ function startBoostTimer(endTimestamp) {
         if (progressEl) progressEl.style.width = `${pct}%`;
     }, 1000);
     boostEndTime = endTimestamp;
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === PARTICLES ===
@@ -313,6 +718,51 @@ function spawnParticles(x, y) {
         container.appendChild(p);
         setTimeout(() => p.remove(), 700);
     }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === MINE ===
@@ -441,6 +891,51 @@ async function handleMine(event) {
 
     isProcessing = false;
     if (btn) btn.disabled = energy <= 0;
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 function showFloatingCounter(text) {
@@ -451,6 +946,51 @@ function showFloatingCounter(text) {
     void counter.offsetWidth;
     counter.classList.add('show');
     setTimeout(() => counter.classList.remove('show'), 600);
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === BOOST ===
@@ -483,6 +1023,51 @@ async function handleBoost() {
             tg.showAlert(data.error);
         }
     } catch (e) { console.error('Boost error:', e); }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === SOUND TOGGLE ===
@@ -491,6 +1076,51 @@ function toggleSound() {
     const btn = document.getElementById('soundBtn');
     if (btn) btn.textContent = soundEnabled ? '🔊' : '🔇';
     tg.HapticFeedback.selectionChanged();
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === TABS ===
@@ -506,6 +1136,51 @@ function switchTab(tab) {
     if (tab === 'leaderboard') loadLeaderboard();
     if (tab === 'nft') loadNFTs();
     if (tab === 'quests') loadQuests();
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === LEADERBOARD ===
@@ -543,6 +1218,51 @@ async function loadLeaderboard() {
             myRankNum.textContent = `#${myRankIdx + 1}`;
         }
     } catch (e) { list.innerHTML = '<div class="lb-loading">Greška pri učitavanju</div>'; }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === NFTs ===
@@ -645,6 +1365,51 @@ async function loadNFTs() {
         console.error('NFT load error:', e);
         grid.innerHTML = '<div class="nft-loading">Greška pri učitavanju NFT-ova</div>';
     }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 function getNFTIcon(rarity) {
@@ -657,6 +1422,51 @@ function getNFTIcon(rarity) {
         'fire': '🔥', 'mythic': '🔥'
     };
     return icons[rarity.toLowerCase()] || '🎨';
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 async function equipNFT(nftId) {
@@ -677,6 +1487,51 @@ async function equipNFT(nftId) {
         }
         loadNFTs();
     } catch (e) { tg.showAlert('❌ Greška pri opremanju'); }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 async function stakeNFT(nftId) {
@@ -692,6 +1547,51 @@ async function stakeNFT(nftId) {
         tg.HapticFeedback.notificationOccurred('success');
         loadNFTs();
     } catch (e) { console.error(e); }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 async function withdrawNFT(nftId) {
@@ -721,6 +1621,51 @@ async function withdrawNFT(nftId) {
             }
         }
     );
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 async function handleUnequip() {
@@ -739,6 +1684,51 @@ async function handleUnequip() {
         tg.HapticFeedback.notificationOccurred('success');
         loadNFTs();
     } catch (e) { console.error(e); }
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === QUESTS ===
@@ -782,6 +1772,51 @@ async function loadQuests() {
                 </div>
             </div>`;
     }).join('');
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === REFERRAL ===
@@ -791,11 +1826,101 @@ function copyRefLink() {
         tg.showAlert('✅ Link kopiran!');
     }).catch(() => tg.showAlert(refLink));
     tg.HapticFeedback.notificationOccurred('success');
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 function shareRefLink() {
     if (!refLink) return;
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('⛏️ Pridruži se Kovanica rudniku i rudari KVNC kripto!')}`);
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 
 // === START ===
@@ -826,6 +1951,51 @@ function initCoinTilt() {
     wrapper.addEventListener('pointerleave', () => {
         coin.style.transform = '';
     });
+
+async function claimDaily() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) return;
+        const response = await fetch("/api/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || "" })
+        });
+        const data = await response.json();
+        if (data.success) {
+            tg.showAlert(`🎉 +${data.reward} KVNC dnevni bonus!`);
+            loadData();
+        } else {
+            tg.showAlert(data.error || "Već si iskoristio dnevni bonus!");
+        }
+    } catch(e) { console.error(e); }
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
+}
+
+function updatePriceDisplay(price) {
+    const el = document.getElementById("priceDisplay2");
+    if (el) el.textContent = "$" + parseFloat(price.usdt || 0).toFixed(8);
+    const changeEl = document.getElementById("changeDisplay2");
+    if (changeEl) {
+        const change = parseFloat(price.change24h || 0);
+        changeEl.textContent = (change > 0 ? "+" : "") + change.toFixed(1) + "%";
+        changeEl.style.color = change >= 0 ? "#50fa7b" : "#ff6b6b";
+    }
+    const liqEl = document.getElementById("liquidityDisplay");
+    if (liqEl) liqEl.textContent = "$" + parseFloat(price.liquidity || 0).toFixed(2);
+}
 }
 document.addEventListener('DOMContentLoaded', initCoinTilt);
 setTimeout(initCoinTilt, 800);
