@@ -102,64 +102,78 @@ async function initBot() {
     // BOT KOMANDE
     // ============================================
     
-    bot.command("start", async (ctx: Context) => {
-        if (!ctx.from) return ctx.reply("Nema korisnika!");
-        const telegramId = String(ctx.from.id);
+   bot.command("start", async (ctx: Context) => {
+    if (!ctx.from) return ctx.reply("Nema korisnika!");
+    const telegramId = String(ctx.from.id);
 
-        const payload = ctx.message?.text?.split(" ");
-        let referrerId: number | null = null;
-        if (payload && payload.length > 1 && payload[1].startsWith("ref_")) {
-            const refTelegramId = payload[1].replace("ref_", "");
-            const referrer = await prisma.user.findUnique({ where: { telegramId: refTelegramId } });
-            if (referrer && referrer.telegramId !== telegramId) {
-                referrerId = referrer.id;
-            }
+    const payload = ctx.message?.text?.split(" ");
+    let referrerId: number | null = null;
+    if (payload && payload.length > 1 && payload[1].startsWith("ref_")) {
+        const refTelegramId = payload[1].replace("ref_", "");
+        const referrer = await prisma.user.findUnique({ where: { telegramId: refTelegramId } });
+        if (referrer && referrer.telegramId !== telegramId) {
+            referrerId = referrer.id;
         }
+    }
 
-        const user = await prisma.user.upsert({
-            where: { telegramId },
-            update: {},
-            create: { telegramId, referredBy: referrerId || undefined },
-        });
-
-        if (referrerId && user.referredBy === referrerId) {
-            const referrerUser = await prisma.user.update({
-                where: { id: referrerId },
-                data: { clickBalance: { increment: REFERRAL_BONUS_INVITER }, referralCount: { increment: 1 } },
-            });
-            await QuestService.updateQuestProgress(referrerUser.telegramId, 'referrals', 1);
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { clickBalance: { increment: REFERRAL_BONUS_NEW } },
-            });
-            await ctx.reply(`🎉 Dobrodošao! Dobio si ${REFERRAL_BONUS_NEW} KVNC bonus, a tvoj pozivatelj ${REFERRAL_BONUS_INVITER} KVNC!`);
-        }
-
-        const rank = getRank(user.totalClicks);
-        const bonusAvailable = !user.lastBonusDate || !isToday(user.lastBonusDate);
-
-        await ctx.reply(
-            `🪙 Kovanica (KVNC) Tap Miner\n\n` +
-            `👑 Rang: ${rank}\n` +
-            `💰 Balans: ${user.clickBalance.toFixed(2)} KVNC\n` +
-            `${bonusAvailable ? "🔥 Dnevni bonus dostupan (2x)!" : "✅ Dnevni bonus iskorišten"}`,
-            {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: "🚀 Otvori rudnik", web_app: { url: process.env.MINI_APP_URL || "https://kovanica.online" } }],
-                        [
-                            { text: "📊 Status", callback_data: "menu_status" },
-                            { text: "🏆 Top", callback_data: "menu_leaderboard" },
-                        ],
-                        [
-                            { text: "👥 Referral", callback_data: "menu_referral" },
-                            { text: "🎮 Igre", callback_data: "menu_games" },
-                        ],
-                    ],
-                },
-            }
-        );
+    const user = await prisma.user.upsert({
+        where: { telegramId },
+        update: {},
+        create: { telegramId, referredBy: referrerId || undefined },
     });
+
+    if (referrerId && user.referredBy === referrerId) {
+        await prisma.user.update({
+            where: { id: referrerId },
+            data: { clickBalance: { increment: REFERRAL_BONUS_INVITER }, referralCount: { increment: 1 } },
+        });
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { clickBalance: { increment: REFERRAL_BONUS_NEW } },
+        });
+        await ctx.reply(`🎉 Dobrodošao! Dobio si ${REFERRAL_BONUS_NEW} KVNC bonus, a tvoj pozivatelj ${REFERRAL_BONUS_INVITER} KVNC!`);
+    }
+
+    const rank = getRank(user.totalClicks);
+    const bonusAvailable = !user.lastBonusDate || !isToday(user.lastBonusDate);
+
+    await ctx.reply(
+        `🪙 **Kovanica (KVNC) Tap Miner**\n\n` +
+        `👑 Rang: ${rank}\n` +
+        `💰 Balans: ${user.clickBalance.toFixed(2)} KVNC\n` +
+        `👆 Ukupno klikova: ${user.totalClicks}\n` +
+        `${bonusAvailable ? "🔥 Dnevni bonus dostupan (2x)!" : "✅ Dnevni bonus iskorišten"}\n\n` +
+        `📊 /status - Moj profil\n` +
+        `🏆 /leaderboard - Top lista\n` +
+        `👥 /referral - Pozovi prijatelje\n` +
+        `💳 /wallet - Spremi adresu\n` +
+        `💸 /withdraw - Isplata (min 10,000 KVNC)\n` +
+        `🎨 /nfts - NFT-ovi\n` +
+        `💰 /price - Cijena KVNC\n` +
+        `🪙 /tokenomics - Raspodjela tokena\n` +
+        `🚀 /mine - Otvori rudnik`,
+        {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🔨 Klikni za rudarenje", callback_data: "tap" }],
+                    [{ text: "🚀 Otvori rudnik", web_app: { url: process.env.MINI_APP_URL || "https://kovanica.online" } }],
+                    [
+                        { text: "📊 Status", callback_data: "menu_status" },
+                        { text: "🏆 Top", callback_data: "menu_leaderboard" },
+                    ],
+                    [
+                        { text: "👥 Referral", callback_data: "menu_referral" },
+                        { text: "💰 Cijena", callback_data: "menu_price" },
+                    ],
+                    [
+                        { text: "🪙 Tokenomics", callback_data: "menu_tokenomics" },
+                        { text: "💳 Wallet", callback_data: "menu_wallet" },
+                    ],
+                ]
+            },
+        }
+    );
+});
 
     bot.callbackQuery("menu_status", async (ctx) => {
         await ctx.answerCallbackQuery();
