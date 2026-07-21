@@ -1,0 +1,279 @@
+// ========================================
+// KOVANICA MINI APP - RADNA VERZIJA
+// ========================================
+
+const tg = window.Telegram.WebApp;
+tg.expand();
+tg.setHeaderColor('#060A04');
+tg.setBackgroundColor('#060A04');
+
+let userData = null;
+let tonConnectUI = null;
+let isProcessing = false;
+let energy = 1000;
+let maxEnergy = 1000;
+let boostEndTime = null;
+let boostInterval = null;
+let energyInterval = null;
+let refLink = '';
+let soundEnabled = true;
+let audioCtx = null;
+
+// ===== RANKOVI =====
+const RANKS = [
+    { name: '🪨 Novi rudar', min: 0, max: 100 },
+    { name: '⛏️ Početnik', min: 100, max: 500 },
+    { name: '⛏️ Napredni rudar', min: 500, max: 2000 },
+    { name: '🥉 Brončani rudar', min: 2000, max: 5000 },
+    { name: '🥈 Srebrni rudar', min: 5000, max: 10000 },
+    { name: '🥇 Zlatni rudar', min: 10000, max: 20000 },
+    { name: '🔹 Platinasti rudar', min: 20000, max: 50000 },
+    { name: '💎 Dijamantni rudar', min: 50000, max: 100000 },
+    { name: '👑 Kralj rudara', min: 100000, max: Infinity },
+];
+
+function getRankInfo(totalClicks) {
+    for (let i = RANKS.length - 1; i >= 0; i--) {
+        if (totalClicks >= RANKS[i].min) return { ...RANKS[i], index: i };
+    }
+    return { ...RANKS[0], index: 0 };
+}
+
+function getRankProgress(totalClicks) {
+    const rank = getRankInfo(totalClicks);
+    if (rank.max === Infinity) return 100;
+    const progress = ((totalClicks - rank.min) / (rank.max - rank.min)) * 100;
+    return Math.min(100, Math.max(0, progress));
+}
+
+// ===== INIT =====
+async function init() {
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) {
+            tg.showAlert('Greška pri povezivanju s Telegramom!');
+            return;
+        }
+
+        // Avatar
+        const avatarEl = document.getElementById('avatar');
+        if (avatarEl) {
+            if (user.photo_url) {
+                avatarEl.style.backgroundImage = `url(${user.photo_url})`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.textContent = (user.first_name || 'R')[0].toUpperCase();
+            }
+        }
+
+        // Username
+        const usernameEl = document.getElementById('username');
+        if (usernameEl) usernameEl.textContent = user.first_name || user.username || 'Rudar';
+
+        // Dohvati podatke korisnika
+        const response = await fetch('/api/me', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        userData = data;
+
+        updateUI(data);
+        startEnergyRegen();
+
+        // Referral link
+        refLink = `https://t.me/kovanicatapbot?start=ref_${user.id}`;
+        const refLinkEl = document.getElementById('refLink');
+        if (refLinkEl) refLinkEl.textContent = refLink;
+
+        const refCountEl = document.getElementById('refCount');
+        if (refCountEl) refCountEl.textContent = data.referralCount || 0;
+        const refEarnedEl = document.getElementById('refEarned');
+        if (refEarnedEl) refEarnedEl.textContent = ((data.referralCount || 0) * 10).toFixed(0);
+
+        tg.HapticFeedback.impactOccurred('light');
+        initTonConnect();
+    } catch (error) {
+        console.error('Init error:', error);
+        tg.showAlert('Greška pri učitavanju. Pokušaj ponovo.');
+    }
+}
+
+// ===== UPDATE UI =====
+function updateUI(data) {
+    if (!data) return;
+
+    const balanceEl = document.getElementById('balance');
+    if (balanceEl) balanceEl.textContent = (data.clickBalance || 0).toFixed(4);
+
+    const totalClicks = data.totalClicks || 0;
+    const rankInfo = getRankInfo(totalClicks);
+    const rankEl = document.getElementById('rankBadge');
+    if (rankEl) rankEl.textContent = data.rank || rankInfo.name;
+
+    const progress = getRankProgress(totalClicks);
+    const progressFill = document.getElementById('rankProgressFill');
+    const progressText = document.getElementById('rankProgressText');
+    if (progressFill) progressFill.style.width = `${progress}%`;
+    if (progressText) {
+        if (rankInfo.max === Infinity) {
+            progressText.textContent = '👑 MAX RANG';
+        } else {
+            progressText.textContent = `${totalClicks.toLocaleString()} / ${rankInfo.max.toLocaleString()}`;
+        }
+    }
+
+    const totalEl = document.getElementById('totalClicks');
+    if (totalEl) totalEl.textContent = totalClicks.toLocaleString();
+
+    const dailyEl = document.getElementById('dailyClicks');
+    if (dailyEl) dailyEl.textContent = (data.dailyClicks || 0).toLocaleString();
+
+    // Učitaj NFT-ove i ostalo
+    loadNFTs();
+    loadQuests();
+    loadLeaderboard();
+}
+
+// ===== OSTALE FUNKCIJE =====
+function startEnergyRegen() {
+    if (energyInterval) clearInterval(energyInterval);
+    energyInterval = setInterval(() => {
+        if (energy < maxEnergy) {
+            energy = Math.min(maxEnergy, energy + 2);
+            updateEnergyUI();
+        }
+    }, 1000);
+}
+
+function updateEnergyUI() {
+    const fill = document.getElementById('energyFill');
+    const val = document.getElementById('energyVal');
+    const pct = maxEnergy > 0 ? Math.min(100, (energy / maxEnergy) * 100) : 0;
+    if (fill) fill.style.width = `${pct}%`;
+    if (val) val.textContent = `${Math.floor(energy)} / ${maxEnergy}`;
+
+    const countdown = document.getElementById('energyCountdown');
+    if (countdown) {
+        if (energy >= maxEnergy) {
+            countdown.textContent = '⚡ Energija puna!';
+            countdown.style.color = 'var(--energy)';
+        } else {
+            const secsLeft = Math.ceil((maxEnergy - energy) / 2);
+            const mins = Math.floor(secsLeft / 60);
+            const secs = secsLeft % 60;
+            countdown.textContent = `🔋 Puno za: ${mins}m ${secs}s`;
+            countdown.style.color = 'var(--muted)';
+        }
+    }
+}
+
+// ===== TABS =====
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const tabBtn = document.querySelector(`[data-tab="${tab}"]`);
+    if (tabBtn) tabBtn.classList.add('active');
+    const tabContent = document.getElementById(`tab-${tab}`);
+    if (tabContent) tabContent.classList.add('active');
+    tg.HapticFeedback.selectionChanged();
+    if (tab === 'leaderboard') loadLeaderboard();
+    if (tab === 'nft') loadNFTs();
+    if (tab === 'quests') loadQuests();
+}
+
+// ===== LOAD FUNKCIJE =====
+async function loadNFTs() {
+    // Implementiraj
+}
+
+async function loadQuests() {
+    // Implementiraj
+}
+
+async function loadLeaderboard() {
+    // Implementiraj
+}
+
+function initTonConnect() {
+    // Implementiraj
+}
+
+// ===== MINE =====
+async function handleMine(event) {
+    if (isProcessing || energy <= 0) return;
+    isProcessing = true;
+
+    const btn = document.getElementById('mineBtn');
+    if (btn) btn.disabled = true;
+
+    try {
+        const user = tg.initDataUnsafe?.user || null;
+        if (!user) throw new Error('No user');
+
+        const response = await fetch('/api/tap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+        });
+
+        if (!response.ok) {
+            if (response.status === 429) {
+                tg.showAlert('Previše brzo!');
+                isProcessing = false;
+                if (btn) btn.disabled = false;
+                return;
+            }
+            if (response.status === 400) {
+                tg.showAlert('⚡ Nema energije! Pričekaj regeneraciju.');
+                isProcessing = false;
+                if (btn) btn.disabled = true;
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        userData = { ...userData, ...data };
+
+        const balanceEl = document.getElementById('balance');
+        if (balanceEl) balanceEl.textContent = (data.clickBalance || 0).toFixed(4);
+
+        const totalEl = document.getElementById('totalClicks');
+        if (totalEl) totalEl.textContent = (data.totalClicks || 0).toLocaleString();
+
+        const dailyEl = document.getElementById('dailyClicks');
+        if (dailyEl) dailyEl.textContent = (data.dailyClicks || 0).toLocaleString();
+
+        if (data.rank) {
+            const rankEl = document.getElementById('rankBadge');
+            if (rankEl) rankEl.textContent = data.rank;
+        }
+
+        if (data.energy !== undefined) {
+            energy = data.energy;
+            maxEnergy = data.maxEnergy || maxEnergy;
+            updateEnergyUI();
+        }
+
+    } catch (error) {
+        console.error('Tap error:', error);
+    }
+
+    isProcessing = false;
+    if (btn) btn.disabled = energy <= 0;
+}
+
+// ===== POKRENI =====
+document.addEventListener('DOMContentLoaded', () => {
+    const mineBtn = document.getElementById('mineBtn');
+    if (mineBtn) mineBtn.addEventListener('click', handleMine);
+});
+
+init();
+console.log('🚀 Kovanica Mini App loaded!');

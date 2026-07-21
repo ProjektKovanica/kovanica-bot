@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin – Kovanica Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        :root{
+            --gold-1:#FFF2A0;--gold-2:#ECC33D;--gold-3:#B78F1F;
+            --gold-glow:rgba(236,195,61,0.35);--gold-soft:rgba(236,195,61,0.12);
+            --bg:#060A04;--surface:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);
+            --border-gold:rgba(236,195,61,0.22);--text:#F5F6EE;--muted:#9AA495;--muted-2:#6B7567;
+            --energy:#6CFF93;--boost:#FF8A3D;--danger:#FF6B6B;--info:#6CB4FF;
+            --radius-xl:24px;--radius-lg:18px;--radius-md:12px;--radius-pill:100px;
+        }
+        html,body{height:100%}
+        body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);padding:20px;overflow-x:hidden}
+        body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+            background:radial-gradient(120% 60% at 50% -10%,rgba(236,195,61,.14) 0%,transparent 60%),
+                       radial-gradient(80% 50% at 100% 0%,rgba(108,255,147,.06) 0%,transparent 50%),var(--bg)}
+        .container{max-width:1400px;margin:0 auto;position:relative;z-index:1}
+        header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;margin-bottom:24px;
+            background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));
+            backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--radius-xl);
+            box-shadow:0 10px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08)}
+        header h1{font-family:'Space Grotesk',sans-serif;
+            background:linear-gradient(90deg,var(--gold-1),var(--gold-2));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:24px;font-weight:800}
+        .status{color:var(--energy);font-size:13px;font-weight:700}
+        /* LOGIN */
+        .login-box{max-width:400px;margin:100px auto;
+            background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));
+            backdrop-filter:blur(16px);padding:36px;border-radius:var(--radius-xl);
+            border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.35)}
+        .login-box h2{font-family:'Space Grotesk',sans-serif;color:var(--gold-2);margin-bottom:20px;font-size:20px;font-weight:800}
+        .login-box input{width:100%;padding:12px 16px;margin-bottom:16px;
+            background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:var(--radius-md);
+            color:var(--text);font-size:15px;font-family:inherit}
+        .login-box input:focus{outline:none;border-color:var(--border-gold)}
+        .login-box button{width:100%;padding:13px;
+            background:linear-gradient(180deg,var(--gold-1) 0%,var(--gold-2) 50%,var(--gold-3) 100%);
+            border:none;border-radius:var(--radius-pill);color:#1A1A05;font-size:15px;font-weight:800;
+            font-family:'Space Grotesk',sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(236,195,61,.3);transition:.15s}
+        .login-box button:active{transform:scale(.97)}
+        .err{color:var(--danger);margin-bottom:12px;text-align:center;font-size:13px;font-weight:600}
+        /* STATS */
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:24px}
+        .stat-card{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));
+            padding:18px;border-radius:var(--radius-lg);border:1px solid var(--border);text-align:center}
+        .stat-card .number{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:800;
+            background:linear-gradient(90deg,var(--gold-1),var(--gold-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .stat-card .label{color:var(--muted);font-size:11px;margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+        /* SECTION */
+        .section{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));
+            backdrop-filter:blur(16px);border-radius:var(--radius-xl);
+            border:1px solid var(--border);padding:20px;margin-bottom:20px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+        .section h2{font-family:'Space Grotesk',sans-serif;color:var(--gold-2);margin-bottom:16px;font-size:17px;font-weight:700}
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+        th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+        /* BUTTONS */
+        .btn{padding:6px 14px;border:none;border-radius:var(--radius-pill);cursor:pointer;font-size:12px;font-weight:700;transition:.15s;font-family:inherit}
+        .btn:active{transform:scale(.95)}
+        .btn-success{background:rgba(108,255,147,.15);color:var(--energy);border:1px solid rgba(108,255,147,.3)}
+        .btn-danger {background:rgba(255,107,107,.15);color:var(--danger);border:1px solid rgba(255,107,107,.3)}
+        .btn-warning{background:rgba(255,138,61,.15); color:var(--boost); border:1px solid rgba(255,138,61,.3)}
+        .btn-primary{background:var(--gold-soft);     color:var(--gold-2);border:1px solid var(--border-gold)}
+        .btn-info   {background:rgba(108,180,255,.15);color:var(--info);  border:1px solid rgba(108,180,255,.3)}
+        .hidden{display:none!important}
+        /* TABS */
+        .tab-bar{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap;
+            background:rgba(0,0,0,.35);backdrop-filter:blur(20px);
+            border:1px solid var(--border);border-radius:var(--radius-pill);padding:5px;width:fit-content}
+        .tab-bar button{padding:9px 18px;background:transparent;border:none;border-radius:var(--radius-pill);
+            color:var(--muted);cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:.2s}
+        .tab-bar button.active{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06));color:var(--gold-2)}
+        .tab-bar button:hover{color:var(--text)}
+        .tab-content{display:none}.tab-content.active{display:block}
+        /* INPUTS */
+        .inp{padding:9px 14px;background:rgba(0,0,0,.35);border:1px solid var(--border);
+            border-radius:var(--radius-md);color:var(--text);font-family:inherit;font-size:13.5px}
+        .inp:focus{outline:none;border-color:var(--border-gold)}
+        select.inp{cursor:pointer}
+        /* TOAST */
+        .toast{position:fixed;bottom:30px;right:30px;padding:14px 22px;border-radius:var(--radius-lg);
+            background:linear-gradient(180deg,rgba(20,25,15,.97),rgba(10,14,8,.97));
+            backdrop-filter:blur(20px);border:1px solid var(--border);color:var(--text);
+            display:none;z-index:1000;font-size:14px;font-weight:600;box-shadow:0 10px 40px rgba(0,0,0,.5);max-width:360px}
+        .toast.success{border-color:rgba(108,255,147,.4)}.toast.error{border-color:rgba(255,107,107,.4)}
+        .toast.info{border-color:rgba(108,180,255,.4)}.toast.show{display:block;animation:slideUp .3s ease}
+        @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        /* POOL BAR */
+        .pool-bar{display:flex;align-items:center;gap:12px;margin:8px 0;font-size:13px}
+        .pool-name{width:160px;color:var(--text);font-weight:700}
+        .pool-pct{width:50px;color:var(--gold-2);text-align:right;font-weight:700}
+        .pool-fill{height:8px;border-radius:var(--radius-pill);background:rgba(0,0,0,.4);
+            border:1px solid var(--border);flex:1;overflow:hidden}
+        .pool-fill .progress{height:100%;border-radius:var(--radius-pill);
+            background:linear-gradient(90deg,var(--gold-3),var(--gold-2),var(--gold-1));
+            box-shadow:0 0 10px var(--gold-glow);transition:width .5s ease}
+        .pool-remaining{width:140px;color:var(--muted);text-align:right;font-size:12px}
+        /* BADGES */
+        .badge{display:inline-block;padding:3px 9px;border-radius:var(--radius-pill);font-size:10.5px;font-weight:700}
+        .b-pending  {background:rgba(255,138,61,.15); color:var(--boost); border:1px solid rgba(255,138,61,.3)}
+        .b-processed{background:rgba(108,255,147,.15);color:var(--energy);border:1px solid rgba(108,255,147,.3)}
+        .b-failed   {background:rgba(255,107,107,.15);color:var(--danger);border:1px solid rgba(255,107,107,.3)}
+        .b-black    {background:rgba(255,107,107,.15);color:var(--danger);border:1px solid rgba(255,107,107,.3)}
+        .b-ok       {color:var(--energy);font-size:12px;font-weight:700}
+        /* MODAL */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+            z-index:2000;display:flex;align-items:center;justify-content:center}
+        .modal-box{background:linear-gradient(180deg,rgba(20,28,14,.98),rgba(10,16,8,.98));
+            border:1px solid var(--border-gold);border-radius:var(--radius-xl);
+            padding:28px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+        .modal-box h3{font-family:'Space Grotesk',sans-serif;color:var(--gold-2);margin-bottom:10px;font-size:17px}
+        .modal-box p{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:18px;white-space:pre-line}
+        .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+        /* HALVING */
+        .halving-card{background:rgba(236,195,61,.06);border:1px solid var(--border-gold);
+            border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+        .h-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.04)}
+        .h-row:last-child{border-bottom:none}
+        .h-val{color:var(--gold-2);font-weight:700;font-family:'Space Grotesk',sans-serif}
+        /* MISC */
+        .loading-row td{text-align:center;color:var(--muted);padding:24px}
+        .row-actions{display:flex;gap:4px;flex-wrap:wrap}
+        .sub{color:var(--muted-2);font-size:11px}
+        @media(max-width:768px){
+            .stats-grid{grid-template-columns:repeat(2,1fr)}
+            th,td{padding:6px 8px;font-size:12px}
+            header h1{font-size:18px}
+            .tab-bar{width:100%}
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<header>
+    <h1>⚙️ Admin Dashboard</h1>
+    <div style="display:flex;align-items:center;gap:12px">
+        <span class="status">● Online</span>
+        <span id="lastRefresh" class="sub"></span>
+        <button class="btn btn-danger" onclick="logout()">Odjava</button>
+    </div>
+</header>
+
+<!-- LOGIN -->
+<div id="loginBox" class="login-box">
+    <h2>🔐 Admin Login</h2>
+    <div id="loginErr" class="err hidden"></div>
+    <input type="password" id="pwInput" placeholder="Lozinka..." onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">Prijava</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
+    <div class="tab-bar">
+        <button class="active" data-tab="stats">📊 Stats</button>
+        <button data-tab="users">👥 Korisnici</button>
+        <button data-tab="nfts">🎨 NFT-ovi</button>
+        <button data-tab="pools">💧 Pool-ovi</button>
+        <button data-tab="withdrawals">💸 Isplate</button>
+        <button data-tab="halving">⛏️ Halving</button>
+        <button data-tab="broadcast">📢 Broadcast</button>
+        <button data-tab="settings">⚙️ Postavke</button>
+    </div>
+
+    <!-- STATS -->
+    <div id="tab-stats" class="tab-content active">
+        <div class="stats-grid">
+            <div class="stat-card"><div class="number" id="sUsers">-</div><div class="label">👥 Korisnici</div></div>
+            <div class="stat-card"><div class="number" id="sActive">-</div><div class="label">✅ Aktivni danas</div></div>
+            <div class="stat-card"><div class="number" id="sClicks">-</div><div class="label">👆 Ukupno klikova</div></div>
+            <div class="stat-card"><div class="number" id="sNFTs">-</div><div class="label">🎨 NFT-ovi</div></div>
+            <div class="stat-card"><div class="number" id="sPending">-</div><div class="label">💸 Pending isplate</div></div>
+            <div class="stat-card"><div class="number" id="sKVNC">-</div><div class="label">💰 Ukupno KVNC</div></div>
+        </div>
+        <div class="section">
+            <h2>💧 Pool-ovi</h2>
+            <div id="statsPoolList"><div class="sub" style="padding:8px">Učitavanje...</div></div>
+        </div>
+    </div>
+
+    <!-- KORISNICI -->
+    <div id="tab-users" class="tab-content">
+        <div class="section">
+            <h2>👥 Korisnici</h2>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                <input class="inp" id="userSearch" placeholder="🔍 Telegram ID..." oninput="loadUsers()" style="width:220px">
+                <button class="btn btn-primary" onclick="loadUsers()">🔄 Osvježi</button>
+                <span id="userCount" class="sub"></span>
+            </div>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead><tr>
+                        <th>Telegram ID</th><th>Balans</th><th>Ukupno klikova</th>
+                        <th>Dnevno</th><th>Referali</th><th>Wallet</th><th>Status</th><th>Akcije</th>
+                    </tr></thead>
+                    <tbody id="usersTable"><tr class="loading-row"><td colspan="8">Učitavanje...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- NFT-OVI -->
+    <div id="tab-nfts" class="tab-content">
+        <div class="section">
+            <h2>🎨 NFT-ovi</h2>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+                <button class="btn btn-primary" onclick="loadNFTs()">🔄 Osvježi</button>
+                <span id="nftCount" class="sub"></span>
+            </div>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead><tr>
+                        <th>ID</th><th>Ime</th><th>Rarity</th><th>Bonus</th>
+                        <th>Staking</th><th>User ID</th><th>Status</th><th>Iskopan</th><th>Akcija</th>
+                    </tr></thead>
+                    <tbody id="nftsTable"><tr class="loading-row"><td colspan="9">Učitavanje...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- POOL-OVI -->
+    <div id="tab-pools" class="tab-content">
+        <div class="section">
+            <h2>💧 Pool-ovi</h2>
+            <p class="sub" style="margin-bottom:16px;line-height:1.6">
+                Kontroliraju raspoloživost KVNC za nagrade. Dodavanje fondova povećava <code style="color:var(--gold-2)">remaining</code> i <code style="color:var(--gold-2)">totalAllocated</code>.
+            </p>
+            <div id="poolMgmt"><div class="sub">Učitavanje...</div></div>
+        </div>
+        <div class="section">
+            <h2>➕ Novi / dopuna poola</h2>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Ime poola</div>
+                    <input class="inp" id="newPoolName" placeholder="tap_base" style="width:200px">
+                </div>
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Iznos (KVNC)</div>
+                    <input class="inp" id="newPoolAmount" type="number" placeholder="1000000" style="width:160px">
+                </div>
+                <button class="btn btn-success" onclick="createPool()">➕ Dodaj / Kreiraj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ISPLATE -->
+    <div id="tab-withdrawals" class="tab-content">
+        <div class="section">
+            <h2>💸 Isplate</h2>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                <button class="btn btn-primary" onclick="loadWithdrawals()">🔄 Osvježi</button>
+                <select class="inp" id="wFilter" onchange="loadWithdrawals()" style="width:160px">
+                    <option value="all">Sve</option>
+                    <option value="pending" selected>⏳ Pending</option>
+                    <option value="processed">✅ Obrađene</option>
+                    <option value="failed">❌ Neuspjele</option>
+                </select>
+                <span id="wCount" class="sub"></span>
+            </div>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead><tr>
+                        <th>ID</th><th>User ID</th><th>KVNC</th><th>TON Adresa</th>
+                        <th>Zatraženo</th><th>Obrađeno</th><th>Status</th><th>Akcija</th>
+                    </tr></thead>
+                    <tbody id="wTable"><tr class="loading-row"><td colspan="8">Učitavanje...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- HALVING -->
+    <div id="tab-halving" class="tab-content">
+        <div class="section">
+            <h2>⛏️ Halving status</h2>
+            <div id="halvingStatus"><div class="sub">Učitavanje...</div></div>
+        </div>
+        <div class="section">
+            <h2>📜 Halving povijest</h2>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead><tr><th>Epoch</th><th>Globalni klikovi</th><th>Stara nagrada</th><th>Nova nagrada</th><th>Datum</th></tr></thead>
+                    <tbody id="halvingTable"><tr class="loading-row"><td colspan="5">Učitavanje...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- BROADCAST -->
+    <div id="tab-broadcast" class="tab-content">
+        <div class="section">
+            <h2>📢 Broadcast poruka</h2>
+            <p class="sub" style="margin-bottom:14px;line-height:1.6">
+                Šalje Telegram poruku svim neblokiranim korisnicima. Podržava Markdown. Rate limit: ~20 poruka/s.
+            </p>
+            <textarea id="broadcastMsg" class="inp" rows="5" style="width:100%;resize:vertical;margin-bottom:12px"
+                placeholder="Upiši poruku... (podržava *bold*, _italic_, `code`)"></textarea>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <button class="btn btn-warning" onclick="previewBroadcast()">👁️ Preview</button>
+                <button class="btn btn-danger" onclick="sendBroadcast()">📤 Pošalji svima</button>
+                <span id="broadcastNote" class="sub"></span>
+            </div>
+            <div id="broadcastPreview" style="margin-top:14px;display:none;
+                background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;font-size:14px;line-height:1.6;white-space:pre-wrap"></div>
+        </div>
+        <div class="section">
+            <h2>🎁 Airdrop KVNC</h2>
+            <p class="sub" style="margin-bottom:14px;line-height:1.6">Dodaje KVNC na balans svih neblokizranih korisnika odjednom.</p>
+            <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Iznos po korisniku (KVNC)</div>
+                    <input class="inp" id="airdropAmount" type="number" placeholder="10" style="width:160px">
+                </div>
+                <button class="btn btn-success" onclick="sendAirdrop()">🎁 Pošalji airdrop</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POSTAVKE -->
+    <div id="tab-settings" class="tab-content">
+        <div class="section">
+            <h2>⚙️ Postavke servera</h2>
+            <p class="sub" style="margin-bottom:16px;line-height:1.6">
+                Vrijednosti su hardkodirane u <code style="color:var(--gold-2)">src/index.ts</code>. 
+                Promjena ovdje ne restarta server — potreban je redeploy za trajne promjene.
+            </p>
+            <div style="display:grid;gap:16px;max-width:520px">
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Dnevni limit klikova</div>
+                    <input type="number" id="sDailyLimit" class="inp" style="width:100%">
+                </div>
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Početna nagrada po kliku (KVNC)</div>
+                    <input type="number" step="0.0001" id="sInitialReward" class="inp" style="width:100%">
+                </div>
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Minimalna isplata (KVNC)</div>
+                    <input type="number" id="sMinWithdrawal" class="inp" style="width:100%">
+                </div>
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Referral bonus — pozivatelj (KVNC)</div>
+                    <input type="number" id="sRefInviter" class="inp" style="width:100%">
+                </div>
+                <div>
+                    <div class="sub" style="margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Referral bonus — novi korisnik (KVNC)</div>
+                    <input type="number" id="sRefNew" class="inp" style="width:100%">
+                </div>
+                <div style="display:flex;gap:10px;align-items:center">
+                    <button class="btn btn-success" onclick="saveSettings()">💾 Spremi</button>
+                    <span id="settingsNote" class="sub"></span>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>🚨 Opasne akcije</h2>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                <button class="btn btn-danger" onclick="resetDaily()">🔄 Reset dnevnih klikova (sve)</button>
+                <button class="btn btn-warning" onclick="manualReport()">📊 Pošalji dnevni izvještaj</button>
+            </div>
+            <p class="sub" style="line-height:1.6">⚠️ Reset postavlja <code style="color:var(--gold-2)">dailyClicks=0</code> za sve korisnike. Ne može se poništiti.</p>
+        </div>
+    </div>
+</div><!-- /dashboard -->
+</div><!-- /container -->
+
+<!-- MODAL -->
+<div id="modal" class="modal-bg hidden">
+    <div class="modal-box">
+        <h3 id="modalTitle">Potvrda</h3>
+        <p id="modalMsg"></p>
+        <div class="modal-actions">
+            <button class="btn btn-warning" onclick="closeModal()">Odustani</button>
+            <button class="btn btn-danger" id="modalOk">Potvrdi</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+// ============================================================
+// KOVANICA ADMIN DASHBOARD
+// Auth: x-admin-token header (= ADMIN_PASSWORD)
+// ============================================================
+
+let token = null;
+let modalCb = null;
+
+// ── LOGIN ──────────────────────────────────────────────────
+function login() {
+    const pw = document.getElementById('pwInput').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.classList.add('hidden');
+    fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ password: pw })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success && d.token) {
+            token = d.token;
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            loadAll();
+            toast('✅ Prijava uspješna!', 'success');
+        } else {
+            errEl.textContent = '❌ ' + (d.error || 'Neispravna lozinka');
+            errEl.classList.remove('hidden');
+        }
+    })
+    .catch(() => {
+        errEl.textContent = '❌ Greška pri spajanju!';
+        errEl.classList.remove('hidden');
+    });
+}
+
+function logout() {
+    token = null;
+    document.getElementById('loginBox').classList.remove('hidden');
+    document.getElementById('dashboard').classList.add('hidden');
+}
+
+// ── API ────────────────────────────────────────────────────
+async function api(url, method = 'GET', body = null) {
+    const opts = { method, headers: { 'x-admin-token': token, 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    if (res.status === 401) { toast('❌ Sesija istekla.', 'error'); logout(); return {}; }
+    return res.json();
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + type + ' show';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 4500);
+}
+
+// ── MODAL ─────────────────────────────────────────────────
+function confirm2(title, msg, cb, okLabel = 'Potvrdi', okClass = 'btn-danger') {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMsg').textContent = msg;
+    const okBtn = document.getElementById('modalOk');
+    okBtn.textContent = okLabel;
+    okBtn.className = 'btn ' + okClass;
+    modalCb = cb;
+    document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal').classList.add('hidden'); modalCb = null; }
+document.getElementById('modalOk').onclick = () => { closeModal(); if (modalCb) modalCb(); };
+document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+// ── TABS ──────────────────────────────────────────────────
+document.querySelectorAll('.tab-bar button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const t = this.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('tab-' + t).classList.add('active');
+        const m = {stats:loadStats, users:loadUsers, nfts:loadNFTs, withdrawals:loadWithdrawals,
+                   pools:loadPools, halving:loadHalving, settings:loadSettings};
+        if (m[t]) m[t]();
+    });
+});
+
+function loadAll() { loadStats(); loadUsers(); loadNFTs(); loadWithdrawals(); loadPools(); loadSettings(); }
+
+// ── STATS ─────────────────────────────────────────────────
+// /api/admin/stats → { totalUsers, todayUsers, totalClicks, totalBalance, pendingWithdrawals, totalNFTs }
+// /api/admin/pools → { pools: [...] }
+async function loadStats() {
+    try {
+        const [s, p] = await Promise.all([api('/api/admin/stats'), api('/api/admin/pools')]);
+        document.getElementById('sUsers').textContent   = (s.totalUsers || 0).toLocaleString();
+        document.getElementById('sActive').textContent  = (s.todayUsers || 0).toLocaleString();
+        document.getElementById('sClicks').textContent  = (s.totalClicks || 0).toLocaleString();
+        document.getElementById('sNFTs').textContent    = (s.totalNFTs || 0).toLocaleString();
+        document.getElementById('sPending').textContent = (s.pendingWithdrawals || 0).toLocaleString();
+        document.getElementById('sKVNC').textContent    = (s.totalBalance || 0).toFixed(2);
+        document.getElementById('lastRefresh').textContent = 'Ažurirano: ' + new Date().toLocaleTimeString('hr-HR');
+
+        const pools = p.pools || [];
+        const el = document.getElementById('statsPoolList');
+        el.innerHTML = pools.length ? pools.map(pool => {
+            const used = pool.totalAllocated > 0 ? ((pool.spent / pool.totalAllocated) * 100).toFixed(1) : '0.0';
+            const emoji = {tap_base:'⛏️', nft_mint_rewards:'🎨', referral_pool:'👥', dex_kvnc_gram:'💧', dex_kvnc_usdt:'💧'}[pool.poolName] || '📦';
+            return `<div class="pool-bar">
+                <span class="pool-name">${emoji} ${pool.poolName}</span>
+                <span class="pool-pct">${used}%</span>
+                <div class="pool-fill"><div class="progress" style="width:${Math.min(100,used)}%"></div></div>
+                <span class="pool-remaining">${(pool.remaining||0).toLocaleString()} KVNC</span>
+            </div>`;
+        }).join('') : '<div class="sub" style="padding:8px">Nema pool-ova u bazi.</div>';
+    } catch(e) { toast('❌ Greška pri učitavanju statistika', 'error'); }
+}
+
+// ── USERS ─────────────────────────────────────────────────
+// /api/admin/users?search= → { users: [{ id, telegramId, clickBalance, totalClicks, dailyClicks, referralCount, tonWallet, isBlacklisted }] }
+async function loadUsers() {
+    const tbody = document.getElementById('usersTable');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Učitavanje...</td></tr>';
+    try {
+        const search = document.getElementById('userSearch').value.trim();
+        const d = await api('/api/admin/users?search=' + encodeURIComponent(search));
+        const users = d.users || [];
+        document.getElementById('userCount').textContent = users.length + ' korisnika';
+        if (!users.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Nema korisnika</td></tr>'; return; }
+        tbody.innerHTML = users.map(u => {
+            const wallet = u.tonWallet
+                ? `<span title="${u.tonWallet}" style="font-family:monospace;font-size:11px;cursor:pointer;color:var(--energy)" onclick="copyText('${u.tonWallet.replace(/'/g,'')}')">${u.tonWallet.slice(0,6)}…${u.tonWallet.slice(-4)} 📋</span>`
+                : '<span class="sub">—</span>';
+            const statusBadge = u.isBlacklisted ? '<span class="badge b-black">🚫 Blokiran</span>' : '<span class="b-ok">✅ OK</span>';
+            const blockBtn = u.isBlacklisted
+                ? `<button class="btn btn-success" onclick="setBlacklist('${u.telegramId}',false)">✅ Unblock</button>`
+                : `<button class="btn btn-danger"  onclick="setBlacklist('${u.telegramId}',true)">🚫 Block</button>`;
+            return `<tr>
+                <td style="font-family:monospace;font-size:12px">${u.telegramId}</td>
+                <td style="color:var(--gold-2);font-weight:700">${(u.clickBalance||0).toFixed(2)}</td>
+                <td>${(u.totalClicks||0).toLocaleString()}</td>
+                <td>${(u.dailyClicks||0).toLocaleString()}</td>
+                <td>${u.referralCount||0}</td>
+                <td>${wallet}</td>
+                <td>${statusBadge}</td>
+                <td><div class="row-actions">
+                    <button class="btn btn-success" onclick="addBalance('${u.telegramId}',100)">+100</button>
+                    <button class="btn btn-warning" onclick="addBalance('${u.telegramId}',1000)">+1K</button>
+                    <button class="btn btn-danger"  onclick="addBalance('${u.telegramId}',-100)">-100</button>
+                    ${blockBtn}
+                </div></td>
+            </tr>`;
+        }).join('');
+    } catch(e) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Greška</td></tr>'; }
+}
+
+// /api/admin/user/balance POST { telegramId, amount } → { success, newBalance }
+async function addBalance(telegramId, amount) {
+    const action = amount > 0 ? `dodati ${amount}` : `oduzeti ${Math.abs(amount)}`;
+    confirm2('Promjena balansa', `Sigurno ${action} KVNC korisniku ${telegramId}?`, async () => {
+        const d = await api('/api/admin/user/balance', 'POST', { telegramId, amount });
+        if (d.success) { toast(`✅ Novi balans: ${d.newBalance.toFixed(2)} KVNC`, 'success'); loadUsers(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// /api/admin/user/blacklist POST { telegramId, blacklist } → { success }
+async function setBlacklist(telegramId, blacklist) {
+    confirm2(blacklist ? 'Blokiraj korisnika' : 'Odblokiraj korisnika',
+        `${blacklist ? 'Blokirati' : 'Odblokirati'} korisnika ${telegramId}?`, async () => {
+        const d = await api('/api/admin/user/blacklist', 'POST', { telegramId, blacklist });
+        if (d.success) { toast(`✅ Korisnik ${blacklist ? 'blokiran' : 'odblokan'}!`, 'success'); loadUsers(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// ── NFTs ──────────────────────────────────────────────────
+// /api/admin/nfts → { nfts: [{ id, userId, rarity, name, bonusMultiplier, stakingReward, mintedAt, equipped, staked, contractAddress }] }
+const RARITY_C = { Mythic:'#FF8A3D', Legendary:'#a855f7', Epic:'#ECC33D', Rare:'#6CB4FF', Common:'#9AA495' };
+const RARITY_E = { Mythic:'🔥', Legendary:'💎', Epic:'🥇', Rare:'🥈', Common:'⛏️' };
+
+async function loadNFTs() {
+    const tbody = document.getElementById('nftsTable');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Učitavanje...</td></tr>';
+    try {
+        const d = await api('/api/admin/nfts');
+        const nfts = d.nfts || [];
+        document.getElementById('nftCount').textContent = nfts.length + ' NFT-ova';
+        if (!nfts.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Nema NFT-ova</td></tr>'; return; }
+        tbody.innerHTML = nfts.map(n => {
+            const c = RARITY_C[n.rarity] || '#e0e0e0';
+            const e = RARITY_E[n.rarity] || '🎨';
+            const isW = n.contractAddress && n.contractAddress.startsWith('withdraw:');
+            const status = n.equipped ? '<span style="color:var(--gold-2);font-weight:700">✅ Opremljen</span>'
+                : n.staked ? '<span style="color:var(--energy);font-weight:700">🔒 Stake-an</span>'
+                : isW ? '<span style="color:var(--boost)">⏳ Withdrawal</span>'
+                : '<span class="sub">📦 U torbi</span>';
+            const mintDate = n.mintedAt ? new Date(n.mintedAt).toLocaleDateString('hr-HR') : '—';
+            return `<tr>
+                <td class="sub">#${n.id}</td>
+                <td style="font-weight:600">${e} ${n.name||'—'}</td>
+                <td style="color:${c};font-weight:700">${n.rarity||'—'}</td>
+                <td style="color:var(--gold-2);font-weight:700">${n.bonusMultiplier||1}x</td>
+                <td class="sub">${(n.stakingReward||0).toFixed(2)}/dan</td>
+                <td style="font-family:monospace;font-size:12px;color:var(--muted)">#${n.userId}</td>
+                <td>${status}</td>
+                <td class="sub">${mintDate}</td>
+                <td><button class="btn btn-danger" onclick="deleteNFT(${n.id},'${(n.name||'').replace(/'/g,'')}')" style="font-size:11px">🗑️</button></td>
+            </tr>`;
+        }).join('');
+    } catch(e) { tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Greška</td></tr>'; }
+}
+
+// /api/admin/nft/delete POST { id } → { success }
+async function deleteNFT(id, name) {
+    confirm2('Brisanje NFT-a', `Trajno izbrisati "${name}" (#${id})?\nOvo ne može se poništiti.`, async () => {
+        const d = await api('/api/admin/nft/delete', 'POST', { id });
+        if (d.success) { toast('✅ NFT izbrisan!', 'success'); loadNFTs(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// ── WITHDRAWALS ───────────────────────────────────────────
+// /api/admin/withdrawals → { withdrawals: [{ id, userId, amount, status, tonAddress, requestedAt, processedAt }] }
+async function loadWithdrawals() {
+    const tbody = document.getElementById('wTable');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Učitavanje...</td></tr>';
+    try {
+        const filter = document.getElementById('wFilter').value;
+        const d = await api('/api/admin/withdrawals');
+        let list = d.withdrawals || [];
+        if (filter !== 'all') list = list.filter(w => w.status === filter);
+        document.getElementById('wCount').textContent = list.length + ' isplata';
+        if (!list.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Nema isplata ✅</td></tr>'; return; }
+        tbody.innerHTML = list.map(w => {
+            const addrShort = w.tonAddress ? w.tonAddress.slice(0,8)+'…'+w.tonAddress.slice(-6) : '—';
+            const safeAddr = (w.tonAddress||'').replace(/'/g,'');
+            const bc = w.status === 'processed' ? 'b-processed' : w.status === 'failed' ? 'b-failed' : 'b-pending';
+            const bt = w.status === 'processed' ? '✅ Obrađeno' : w.status === 'failed' ? '❌ Neuspjelo' : '⏳ Pending';
+            const canGo = w.status === 'pending' || w.status === 'failed';
+            const btnLbl = w.status === 'failed' ? '🔁 Retry' : '📤 Pošalji';
+            return `<tr>
+                <td class="sub">#${w.id}</td>
+                <td style="font-family:monospace;font-size:12px;color:var(--muted)">#${w.userId}</td>
+                <td style="color:var(--gold-2);font-weight:700">${(w.amount||0).toFixed(2)}</td>
+                <td>
+                    <span style="font-family:monospace;font-size:11px">${addrShort}</span>
+                    ${w.tonAddress ? `<button class="btn btn-primary" style="font-size:10px;padding:2px 6px;margin-left:4px" onclick="copyText('${safeAddr}')">📋</button>` : ''}
+                </td>
+                <td class="sub">${w.requestedAt ? new Date(w.requestedAt).toLocaleString('hr-HR') : '—'}</td>
+                <td class="sub">${w.processedAt ? new Date(w.processedAt).toLocaleString('hr-HR') : '—'}</td>
+                <td><span class="badge ${bc}">${bt}</span></td>
+                <td>${canGo ? `<button class="btn btn-success" onclick="processWithdrawal(${w.id},${(w.amount||0).toFixed(2)})">${btnLbl}</button>` : '<span class="sub">—</span>'}</td>
+            </tr>`;
+        }).join('');
+    } catch(e) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Greška</td></tr>'; }
+}
+
+// /api/admin/withdrawal/process POST { id } → { success, withdrawal } ili { error }
+async function processWithdrawal(id, amount) {
+    confirm2('📤 Pošalji KVNC on-chain',
+        `Poslati ${amount} KVNC za isplatu #${id}?\n\nOvo šalje pravi TON jetton transfer i oduzima KVNC s korisnikovog balansa. Ne može se poništiti.`,
+        async () => {
+            toast('⏳ Šaljem transakciju na TON mrežu...', 'info');
+            const d = await api('/api/admin/withdrawal/process', 'POST', { id });
+            if (d.success) { toast('✅ Isplata poslana on-chain!', 'success'); loadWithdrawals(); loadStats(); }
+            else { toast('❌ ' + (d.error || 'Greška pri slanju'), 'error'); loadWithdrawals(); }
+        }, '📤 Pošalji', 'btn-success');
+}
+
+// ── POOLS ─────────────────────────────────────────────────
+// /api/admin/pools → { pools: [{ id, poolName, totalAllocated, spent, remaining, lastUpdated }] }
+async function loadPools() {
+    const el = document.getElementById('poolMgmt');
+    el.innerHTML = '<div class="sub">Učitavanje...</div>';
+    try {
+        const d = await api('/api/admin/pools');
+        const pools = d.pools || [];
+        if (!pools.length) { el.innerHTML = '<div class="sub">Nema pool-ova. Kreiraj ih ispod.</div>'; return; }
+        el.innerHTML = pools.map(p => {
+            const pct = p.totalAllocated > 0 ? ((p.spent / p.totalAllocated) * 100).toFixed(1) : '0.0';
+            const emoji = {tap_base:'⛏️', nft_mint_rewards:'🎨', referral_pool:'👥', dex_kvnc_gram:'💧', dex_kvnc_usdt:'💧'}[p.poolName] || '📦';
+            const upd = p.lastUpdated ? new Date(p.lastUpdated).toLocaleString('hr-HR') : '—';
+            return `<div style="padding:16px 0;border-bottom:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+                    <span style="font-weight:700;font-size:15px">${emoji} ${p.poolName}</span>
+                    <span class="sub">ažurirano: ${upd}</span>
+                </div>
+                <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap">
+                    <span>Ukupno: <strong style="color:var(--text)">${(p.totalAllocated||0).toLocaleString()} KVNC</strong></span>
+                    <span>Potrošeno: <strong style="color:var(--danger)">${(p.spent||0).toLocaleString()} KVNC</strong></span>
+                    <span>Ostalo: <strong style="color:var(--energy)">${(p.remaining||0).toLocaleString()} KVNC</strong></span>
+                </div>
+                <div class="pool-bar" style="margin:0 0 12px 0">
+                    <span class="pool-pct" style="width:auto;margin-right:8px">${pct}%</span>
+                    <div class="pool-fill"><div class="progress" style="width:${Math.min(100,pct)}%"></div></div>
+                </div>
+                <div class="row-actions">
+                    <button class="btn btn-primary" onclick="addFunds('${p.poolName}',1000)">+1K</button>
+                    <button class="btn btn-warning" onclick="addFunds('${p.poolName}',10000)">+10K</button>
+                    <button class="btn btn-info"    onclick="addFunds('${p.poolName}',100000)">+100K</button>
+                    <button class="btn btn-success" onclick="addFunds('${p.poolName}',1000000)">+1M</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) { el.innerHTML = '<div style="color:var(--danger)">Greška pri učitavanju</div>'; }
+}
+
+// /api/admin/pool/add POST { poolName, amount } → { success, pool, wasNew }
+async function addFunds(poolName, amount) {
+    confirm2('Dodaj fondove', `Dodati ${amount.toLocaleString()} KVNC u pool "${poolName}"?`, async () => {
+        const d = await api('/api/admin/pool/add', 'POST', { poolName, amount });
+        if (d.success) { toast(`✅ ${amount.toLocaleString()} KVNC dodano!`, 'success'); loadPools(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    }, 'Dodaj', 'btn-success');
+}
+
+async function createPool() {
+    const poolName = document.getElementById('newPoolName').value.trim();
+    const amount   = parseInt(document.getElementById('newPoolAmount').value);
+    if (!poolName) { toast('❌ Upiši ime poola', 'error'); return; }
+    if (!amount || amount < 1) { toast('❌ Upiši validan iznos', 'error'); return; }
+    confirm2('Kreiraj pool', `Kreirati / dopuniti pool "${poolName}" s ${amount.toLocaleString()} KVNC?`, async () => {
+        const d = await api('/api/admin/pool/add', 'POST', { poolName, amount });
+        if (d.success) {
+            toast(`✅ Pool "${poolName}" ${d.wasNew ? 'kreiran' : 'dopunjen'}!`, 'success');
+            document.getElementById('newPoolName').value = '';
+            document.getElementById('newPoolAmount').value = '';
+            loadPools(); loadStats();
+        } else toast('❌ ' + (d.error || 'Greška'), 'error');
+    }, 'Kreiraj', 'btn-success');
+}
+
+// ── HALVING ───────────────────────────────────────────────
+// /api/admin/halving → { events, currentEpoch, currentReward, totalGlobal, nextHalvingAt, clicksToNext, halvingInterval, initialReward }
+async function loadHalving() {
+    const statusEl = document.getElementById('halvingStatus');
+    const tbody = document.getElementById('halvingTable');
+    statusEl.innerHTML = '<div class="sub">Učitavanje...</div>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Učitavanje...</td></tr>';
+    try {
+        const d = await api('/api/admin/halving');
+        const pct = d.halvingInterval > 0
+            ? (((d.totalGlobal % d.halvingInterval) / d.halvingInterval) * 100).toFixed(1)
+            : '0.0';
+
+        statusEl.innerHTML = `
+            <div class="halving-card">
+                <div class="h-row"><span class="sub">Trenutna nagrada / klik</span><span class="h-val">${(d.currentReward||0).toFixed(4)} KVNC</span></div>
+                <div class="h-row"><span class="sub">Halving epoch</span><span class="h-val">#${d.currentEpoch||0}</span></div>
+                <div class="h-row"><span class="sub">Globalni klikovi ukupno</span><span class="h-val">${(d.totalGlobal||0).toLocaleString()}</span></div>
+                <div class="h-row"><span class="sub">Sljedeći halving za</span><span class="h-val">${(d.clicksToNext||0).toLocaleString()} klikova</span></div>
+                <div class="h-row"><span class="sub">Nagrada nakon halvinga</span><span class="h-val">${((d.currentReward||0)/2).toFixed(4)} KVNC</span></div>
+            </div>
+            <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Napredak do sljedećeg halvinga — ${pct}%</div>
+            <div style="height:10px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:100px;overflow:hidden;max-width:600px">
+                <div style="height:100%;width:${Math.min(100,pct)}%;background:linear-gradient(90deg,var(--gold-3),var(--gold-2),var(--gold-1));border-radius:100px;box-shadow:0 0 10px var(--gold-glow);transition:width .5s ease"></div>
+            </div>`;
+
+        const events = d.events || [];
+        if (!events.length) {
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Još nema halving evenata u bazi.</td></tr>';
+        } else {
+            tbody.innerHTML = events.map(e => `<tr>
+                <td style="color:var(--gold-2);font-weight:700">#${e.epoch}</td>
+                <td>${(e.totalClicks||0).toLocaleString()}</td>
+                <td class="sub">${(e.oldReward||0).toFixed(4)} KVNC</td>
+                <td style="color:var(--energy);font-weight:700">${(e.newReward||0).toFixed(4)} KVNC</td>
+                <td class="sub">${e.createdAt ? new Date(e.createdAt).toLocaleString('hr-HR') : '—'}</td>
+            </tr>`).join('');
+        }
+    } catch(e) {
+        statusEl.innerHTML = '<div style="color:var(--danger)">Greška pri učitavanju</div>';
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Greška</td></tr>';
+    }
+}
+
+// ── BROADCAST ─────────────────────────────────────────────
+function previewBroadcast() {
+    const msg = document.getElementById('broadcastMsg').value;
+    if (!msg.trim()) { toast('❌ Poruka je prazna', 'error'); return; }
+    const prev = document.getElementById('broadcastPreview');
+    prev.textContent = msg;
+    prev.style.display = 'block';
+}
+
+// /api/admin/broadcast POST { message } → { success, sent, failed, total }
+async function sendBroadcast() {
+    const msg = document.getElementById('broadcastMsg').value.trim();
+    if (!msg) { toast('❌ Poruka je prazna', 'error'); return; }
+    confirm2('📢 Broadcast',
+        `Poslati ovu poruku svim korisnicima?\n\nOvo može potrajati nekoliko minuta za veliki broj korisnika.`,
+        async () => {
+            toast('⏳ Slanje broadcast poruke...', 'info');
+            const noteEl = document.getElementById('broadcastNote');
+            noteEl.textContent = 'Slanje...';
+            const d = await api('/api/admin/broadcast', 'POST', { message: msg });
+            if (d.success) {
+                toast(`✅ Poslano: ${d.sent}/${d.total} korisnika (${d.failed} grešaka)`, 'success');
+                noteEl.textContent = `Poslano: ${d.sent} | Greška: ${d.failed} | Ukupno: ${d.total}`;
+            } else {
+                toast('❌ ' + (d.error || 'Greška pri slanju'), 'error');
+                noteEl.textContent = '';
+            }
+        }, '📢 Pošalji', 'btn-warning');
+}
+
+// /api/admin/airdrop POST { amount } → { success, affected, totalSent }
+async function sendAirdrop() {
+    const amount = parseFloat(document.getElementById('airdropAmount').value);
+    if (!amount || amount <= 0) { toast('❌ Upiši validan iznos', 'error'); return; }
+    confirm2('🎁 Airdrop',
+        `Dodati ${amount} KVNC na balans SVAKOG aktivnog korisnika?\n\nOvo ne može se poništiti.`,
+        async () => {
+            toast('⏳ Šaljem airdrop...', 'info');
+            const d = await api('/api/admin/airdrop', 'POST', { amount });
+            if (d.success) {
+                toast(`✅ Airdrop poslan! ${d.affected} korisnika × ${amount} = ${d.totalSent.toFixed(0)} KVNC`, 'success');
+                loadStats();
+            } else toast('❌ ' + (d.error || 'Greška'), 'error');
+        }, '🎁 Pošalji airdrop', 'btn-success');
+}
+
+// ── SETTINGS ──────────────────────────────────────────────
+// /api/admin/settings GET → { minWithdrawal, dailyLimit, initialReward, referralBonusInviter, referralBonusNew, nodeEnv }
+async function loadSettings() {
+    try {
+        const d = await api('/api/admin/settings');
+        document.getElementById('sDailyLimit').value    = d.dailyLimit || 10000;
+        document.getElementById('sInitialReward').value = d.initialReward || 1.0;
+        document.getElementById('sMinWithdrawal').value = d.minWithdrawal || 1000;
+        document.getElementById('sRefInviter').value    = d.referralBonusInviter || 10;
+        document.getElementById('sRefNew').value        = d.referralBonusNew || 5;
+        document.getElementById('settingsNote').textContent = `ENV: ${d.nodeEnv || '—'}`;
+    } catch(e) { console.error('Settings error:', e); }
+}
+
+// /api/admin/settings POST → { success, message }
+async function saveSettings() {
+    const settings = {
+        dailyLimit: parseInt(document.getElementById('sDailyLimit').value),
+        initialReward: parseFloat(document.getElementById('sInitialReward').value),
+        minWithdrawal: parseInt(document.getElementById('sMinWithdrawal').value),
+        referralBonusInviter: parseInt(document.getElementById('sRefInviter').value),
+        referralBonusNew: parseInt(document.getElementById('sRefNew').value)
+    };
+    const d = await api('/api/admin/settings', 'POST', settings);
+    if (d.success) toast('✅ ' + (d.message || 'Spremljeno!'), 'success');
+    else toast('❌ ' + (d.error || 'Greška'), 'error');
+}
+
+// /api/admin/reset-daily POST → { success, affected }
+async function resetDaily() {
+    confirm2('⚠️ Reset dnevnih klikova',
+        'Postaviti dailyClicks = 0 za SVE korisnike?\n\nOvo ne može se poništiti!',
+        async () => {
+            const d = await api('/api/admin/reset-daily', 'POST');
+            if (d.success) { toast(`✅ Reset uspješan — ${d.affected} korisnika`, 'success'); loadUsers(); }
+            else toast('❌ ' + (d.error || 'Greška'), 'error');
+        });
+}
+
+// /api/admin/report POST → { success, message }
+async function manualReport() {
+    confirm2('📊 Dnevni izvještaj',
+        'Poslati ručni dnevni izvještaj na Telegram OWNER_ID?',
+        async () => {
+            const d = await api('/api/admin/report', 'POST');
+            if (d.success) toast('✅ ' + d.message, 'success');
+            else toast('❌ ' + (d.error || 'Greška'), 'error');
+        }, 'Pošalji', 'btn-success');
+}
+
+// ── UTIL ──────────────────────────────────────────────────
+function copyText(t) {
+    navigator.clipboard?.writeText(t)
+        .then(() => toast('📋 Kopirano!', 'success'))
+        .catch(() => toast('❌ Kopiranje nije uspjelo', 'error'));
+}
+
+// Auto-refresh stats svake 30s
+setInterval(() => { if (token) loadStats(); }, 30000);
+</script>
+</body>
+</html>

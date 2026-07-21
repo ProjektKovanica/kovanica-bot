@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kovanica Rudnik</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=6" />
+</head>
+<body>
+    <div id="particleContainer"></div>
+    <canvas id="bgCanvas"></canvas>
+
+    <div id="app">
+
+        <!-- HEADER -->
+        <div class="header">
+            <div class="user-row">
+                <div class="user-left">
+                    <div class="avatar" id="avatar">R</div>
+                    <div class="user-info">
+                        <span class="username" id="username">Rudar</span>
+                        <span class="rank-badge" id="rankBadge">🪨 Novi rudar</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="icon-btn" id="soundBtn" onclick="toggleSound()" title="Zvuk">🔊</button>
+                    <div class="balance-pill">
+                        <span class="balance-icon">💎</span>
+                        <span class="balance" id="balance">0.0000</span>
+                        <span class="currency">KVNC</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RANK PROGRESS -->
+            <div class="rank-progress-wrap">
+                <div class="rank-progress-fill" id="rankProgressFill" style="width:0%">
+                    <div class="rank-progress-glow"></div>
+                </div>
+            </div>
+            <div class="rank-progress-row">
+                <span class="rank-progress-label" id="rankProgressText">0 / 100</span>
+                <span class="rank-progress-next" id="rankNext">do sljedećeg ranga</span>
+            </div>
+
+            <!-- BOOST BAR -->
+            <div class="boost-bar" id="boostBar" style="display:none">
+                <span class="boost-icon">⚡</span>
+                <span class="boost-label">2x BOOST</span>
+                <div class="boost-progress-wrap">
+                    <div class="boost-progress" id="boostProgress"></div>
+                </div>
+                <span class="boost-time" id="boostTime">10:00</span>
+            </div>
+
+            <!-- ENERGY BAR -->
+            <div class="energy-wrap">
+                <div class="energy-header">
+                    <span class="energy-label">⚡ Energija</span>
+                    <span class="energy-val" id="energyVal">1000 / 1000</span>
+                </div>
+                <div class="energy-bar-bg">
+                    <div class="energy-bar-fill" id="energyFill" style="width:100%"></div>
+                </div>
+                <div class="energy-countdown" id="energyCountdown">⚡ Energija puna!</div>
+            </div>
+        </div>
+
+        <!-- TAB NAVIGATION -->
+        <div class="tabs" id="tabBar">
+            <button class="tab active" data-tab="mine" onclick="switchTab('mine')">
+                <span class="tab-icon">⛏️</span>
+                <span class="tab-label">Rudnik</span>
+            </button>
+            <button class="tab" data-tab="nft" onclick="switchTab('nft')">
+                <span class="tab-icon">🎨</span>
+                <span class="tab-label">NFT</span>
+            </button>
+            <button class="tab" data-tab="games" onclick="switchTab('games')">
+                <span class="tab-icon">🎮</span>
+                <span class="tab-label">Igre</span>
+            </button>
+            <button class="tab" data-tab="quests" onclick="switchTab('quests')">
+                <span class="tab-icon">📋</span>
+                <span class="tab-label">Zadaci</span>
+            </button>
+            <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">
+                <span class="tab-icon">🏆</span>
+                <span class="tab-label">Top</span>
+            </button>
+            <button class="tab" data-tab="referral" onclick="switchTab('referral')">
+                <span class="tab-icon">👥</span>
+                <span class="tab-label">Ref</span>
+            </button>
+            <button class="tab" data-tab="wallet" onclick="switchTab('wallet')">
+                <span class="tab-icon">💳</span>
+                <span class="tab-label">Wallet</span>
+            </button>
+        </div>
+
+        <!-- TAB: MINE -->
+        <div class="tab-content active" id="tab-mine">
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-icon">👆</span>
+                    <span class="stat-value" id="totalClicks">0</span>
+                    <span class="stat-label">Ukupno</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">📅</span>
+                    <span class="stat-value" id="dailyClicks">0</span>
+                    <span class="stat-label">Danas</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="rewardPerTap">1 KVNC</span>
+                    <span class="stat-label">Po kliku</span>
+                </div>
+            </div>
+
+            <div class="mine-area">
+                <!-- Floating reward indicator -->
+                <div class="click-counter" id="clickCounter">+1</div>
+
+                <!-- Main mine button -->
+                <div class="mine-core" id="mineCore">
+                    <div class="mine-ring mine-ring-outer"></div>
+                    <div class="mine-ring mine-ring-middle"></div>
+                    <div class="mine-btn-wrap" id="mineBtnWrap">
+                        <button class="mine-btn" id="mineBtn" onclick="handleMine(event)">
+                            <div class="mine-btn-inner">
+                                <span class="mine-pickaxe" id="pickaxe">⛏️</span>
+                                <span class="mine-btn-text">RUDARI!</span>
+                                <span class="mine-btn-sub" id="rewardSub">+1 KVNC po kliku</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Boost button -->
+                <button class="boost-activate-btn" id="boostBtn" onclick="handleBoost()">
+                    <span class="boost-btn-icon">⚡</span>
+                    <span class="boost-btn-text">Aktiviraj 2x Boost</span>
+                    <span class="boost-btn-cost">10 KVNC</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB: NFT -->
+        <div class="tab-content" id="tab-nft">
+            <div class="section-header">
+                <span class="section-title">🎨 Moji NFT-ovi</span>
+            </div>
+            <div class="nft-equipped-card" id="nftEquippedCard">
+                <div class="nft-eq-empty" id="nftEqEmpty">
+                    <span class="nft-eq-empty-icon">🎨</span>
+                    <span class="nft-eq-empty-text">Nema opremljenog NFT-a</span>
+                    <span class="nft-eq-empty-hint">Opremi NFT za bonus rudarenja!</span>
+                </div>
+                <div class="nft-eq-card" id="nftEqCard" style="display:none">
+                    <div class="nft-eq-icon-wrap">
+                        <span class="nft-eq-icon" id="nftEqIcon">⛏️</span>
+                    </div>
+                    <div class="nft-eq-info">
+                        <span class="nft-eq-name" id="nftEqName">-</span>
+                        <span class="nft-eq-bonus" id="nftEqBonus">1x bonus</span>
+                        <span class="nft-eq-label">Aktivni NFT</span>
+                    </div>
+                    <button class="nft-unequip-btn" onclick="handleUnequip()">Skini</button>
+                </div>
+            </div>
+
+            <div class="nft-rarity-legend">
+                <div class="rarity-item common">⛏️ Common <span>1.2x</span></div>
+                <div class="rarity-item rare">🥈 Rare <span>1.5x</span></div>
+                <div class="rarity-item epic">🥇 Epic <span>2.0x</span></div>
+                <div class="rarity-item legendary">💎 Legendary <span>3.0x</span></div>
+                <div class="rarity-item mythic">🔥 Mythic <span>5.0x</span></div>
+            </div>
+
+            <div class="nft-grid" id="nftGrid">
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <span>Učitavanje NFT-ova...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: GAMES -->
+        <div class="tab-content" id="tab-games">
+            <div class="section-header">
+                <span class="section-title">🎮 Mini Igre</span>
+                <span class="section-sub">Zaradi KVNC igranjem!</span>
+            </div>
+            <div class="games-grid">
+                <div class="game-card" onclick="openGame('coinflip')">
+                    <div class="game-card-icon">🪙</div>
+                    <div class="game-card-info">
+                        <span class="game-card-name">Coin Flip</span>
+                        <span class="game-card-desc">Glava ili pismo</span>
+                    </div>
+                    <div class="game-card-reward">+50 KVNC</div>
+                </div>
+                <div class="game-card" onclick="openGame('rps')">
+                    <div class="game-card-icon">✊</div>
+                    <div class="game-card-info">
+                        <span class="game-card-name">Kam-Šk-Pap</span>
+                        <span class="game-card-desc">Klasična igra</span>
+                    </div>
+                    <div class="game-card-reward">+30 KVNC</div>
+                </div>
+                <div class="game-card" onclick="openGame('guess')">
+                    <div class="game-card-icon">🔢</div>
+                    <div class="game-card-info">
+                        <span class="game-card-name">Pogodi Broj</span>
+                        <span class="game-card-desc">1-10, 3 pokušaja</span>
+                    </div>
+                    <div class="game-card-reward">+100 KVNC</div>
+                </div>
+                <div class="game-card" onclick="openGame('memory')">
+                    <div class="game-card-icon">🧠</div>
+                    <div class="game-card-info">
+                        <span class="game-card-name">Memory</span>
+                        <span class="game-card-desc">Pronađi parove</span>
+                    </div>
+                    <div class="game-card-reward">+200 KVNC</div>
+                </div>
+            </div>
+
+            <!-- GAME OVERLAYS -->
+            <div class="game-overlay" id="gameOverlay" style="display:none">
+                <div class="game-container" id="gameContainer"></div>
+            </div>
+        </div>
+
+        <!-- TAB: QUESTS -->
+        <div class="tab-content" id="tab-quests">
+            <div class="section-header">
+                <span class="section-title">📋 Dnevni Zadaci</span>
+                <span class="section-sub" id="questsReset">Reset u ponoć</span>
+            </div>
+            <div class="quest-list" id="questList">
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <span>Učitavanje zadataka...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: LEADERBOARD -->
+        <div class="tab-content" id="tab-leaderboard">
+            <div class="section-header">
+                <span class="section-title">🏆 Top Rudari</span>
+            </div>
+            <div class="lb-list" id="lbList">
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <span>Učitavanje...</span>
+                </div>
+            </div>
+            <div class="lb-my-rank" id="lbMyRank" style="display:none">
+                Tvoj rang: <span id="myRankNum">#-</span>
+            </div>
+        </div>
+
+        <!-- TAB: REFERRAL -->
+        <div class="tab-content" id="tab-referral">
+            <div class="section-header">
+                <span class="section-title">👥 Pozovi Prijatelje</span>
+            </div>
+            <div class="ref-hero">
+                <div class="ref-hero-icon">🤝</div>
+                <div class="ref-hero-text">Za svakog prijatelja dobit ćeš</div>
+                <div class="ref-hero-reward">10 KVNC</div>
+            </div>
+            <div class="ref-stats-row">
+                <div class="ref-stat">
+                    <span class="ref-stat-val" id="refCount">0</span>
+                    <span class="ref-stat-label">Pozvanih</span>
+                </div>
+                <div class="ref-stat-divider"></div>
+                <div class="ref-stat">
+                    <span class="ref-stat-val" id="refEarned">0</span>
+                    <span class="ref-stat-label">Zarađeno KVNC</span>
+                </div>
+            </div>
+            <div class="ref-link-block">
+                <div class="ref-link-label">Tvoj referral link:</div>
+                <div class="ref-link-box" id="refLink">Učitavanje...</div>
+            </div>
+            <div class="ref-actions">
+                <button class="ref-btn ref-btn-copy" onclick="copyRefLink()">📋 Kopiraj</button>
+                <button class="ref-btn ref-btn-share" onclick="shareRefLink()">📤 Podijeli</button>
+            </div>
+
+            <div class="section-header" style="margin-top:20px">
+                <span class="section-title">🏅 Referral Top</span>
+            </div>
+            <div class="ref-lb-list" id="refLbList">
+                <div class="loading-state"><div class="loading-spinner"></div><span>Učitavanje...</span></div>
+            </div>
+        </div>
+
+        <!-- TAB: WALLET -->
+        <div class="tab-content" id="tab-wallet">
+            <div class="section-header">
+                <span class="section-title">💳 TON Wallet</span>
+            </div>
+            <div class="wallet-hero">
+                <div class="wallet-hero-icon">💎</div>
+                <div class="wallet-hero-text">Poveži TON wallet za automatske KVNC isplate</div>
+            </div>
+            <div id="tonconnect-button" class="ton-btn-wrap"></div>
+            <div class="wallet-status-card" id="walletStatusCard">
+                <div class="wallet-status-row">
+                    <span class="wallet-status-label">Status</span>
+                    <span class="wallet-status-value" id="walletStatusValue">Nije povezan</span>
+                </div>
+                <div class="wallet-address-row" id="walletAddressBox" style="display:none">
+                    <span class="wallet-status-label">Adresa</span>
+                    <span class="wallet-address-value" id="walletAddressValue">-</span>
+                </div>
+            </div>
+            <div class="wallet-info-list">
+                <div class="wallet-info-item">
+                    <span class="wallet-info-icon">⚡</span>
+                    <span class="wallet-info-text">Automatske isplate bez ručnog upisivanja</span>
+                </div>
+                <div class="wallet-info-item">
+                    <span class="wallet-info-icon">🔒</span>
+                    <span class="wallet-info-text">Sigurna veza putem TON Connect protokola</span>
+                </div>
+                <div class="wallet-info-item">
+                    <span class="wallet-info-icon">⏱️</span>
+                    <span class="wallet-info-text">Isplate se obrađuju u roku 24-48h</span>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /app -->
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
+    <script src="app.js?v=6"></script>
+</body>
+</html>

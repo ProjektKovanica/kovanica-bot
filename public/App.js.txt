@@ -1,0 +1,1071 @@
+/**
+ * KOVANICA RUDNIK — app.js v6
+ * Kompletni upgrade: mini igre, i18n, batch tap, offline fallback, animirani canvas BG
+ */
+
+// ── TELEGRAM INIT ──
+const tg = window.Telegram?.WebApp;
+if (tg) {
+    tg.expand();
+    tg.setHeaderColor?.('#0E0E1A');
+    tg.setBackgroundColor?.('#09090F');
+}
+
+// ── I18N ──
+const LANG = (tg?.initDataUnsafe?.user?.language_code || navigator.language || 'hr').startsWith('hr') ? 'hr' : 'en';
+const T = {
+    hr: {
+        loading: 'Učitavanje...', error: 'Greška', retry: 'Pokušaj ponovno',
+        energy_full: '⚡ Energija puna!', energy_regen: '🔋 Puno za: {t}',
+        no_energy: '⚡ Nema energije! Pričekaj regeneraciju.',
+        boost_already: 'Boost je već aktivan!', boost_ok: '⚡ 2x Boost aktiviran na 10 minuta!',
+        boost_question: 'Kupi 2x Boost za 10 KVNC na 10 minuta?',
+        nft_equipped: '✅ NFT opremljen!', nft_equip_err: '❌ Greška pri opremanju',
+        nft_none: 'Nemaš NFT-ova.\nRudarenjem otključavaš NFT-ove!',
+        nft_count: 'Imaš {n} NFT-ova.\nKoristi /nfts u botu za pregled.',
+        withdraw_confirm: 'Povući NFT na tvoj TON wallet?\nAdmin će ga poslati u roku 24h.',
+        withdraw_ok: '✅ Zahtjev primljen!', withdraw_err: '❌ Greška pri withdrawalu',
+        link_copied: '✅ Link kopiran!',
+        share_text: '⛏️ Pridruži se Kovanica rudniku i rudari KVNC kripto!',
+        max_rank: '👑 MAX RANG', progress_to: 'do sljedećeg ranga',
+        tab_mine: 'Rudnik', tab_nft: 'NFT', tab_games: 'Igre',
+        tab_quests: 'Zadaci', tab_lb: 'Top', tab_ref: 'Ref', tab_wallet: 'Wallet',
+        game_win: '🎉 Pobjeda! +{r} KVNC', game_lose: '😔 Poraz...', game_draw: '🤝 Neriješeno',
+        game_play_again: 'Igraj ponovo', game_close: 'Zatvori',
+        coinflip_title: '🪙 Coin Flip', coinflip_choose: 'Odaberi stranu:',
+        rps_title: '✊ Kamen-Škare-Papir', rps_choose: 'Odaberi:',
+        guess_title: '🔢 Pogodi Broj', guess_prompt: 'Mislim na broj od 1 do 10.',
+        guess_higher: '📈 Više!', guess_lower: '📉 Niže!', guess_exact: '🎯 Točno!',
+        guess_attempts: 'Pokušaj {n}/3', guess_lost: '😔 Bio je {n}.',
+        memory_title: '🧠 Memory', memory_moves: 'Potezi: {n}', memory_win: '🎉 Riješeno za {n} poteza!',
+        quest_mining: 'Rudarski Dan', quest_mining_desc: 'Klikni {t} puta danas',
+        quest_refs: 'Pozovi Prijatelje', quest_refs_desc: 'Pozovi {t} korisnika',
+        quest_nft: 'Iskopaj NFT', quest_nft_desc: 'Iskopaj {t} NFT',
+        lb_you: '👤 Ti', lb_miner: 'Rudar #{id}',
+        rank_my: 'Tvoj rang:',
+        ref_earned: 'Zarađeno KVNC', ref_invited: 'Pozvanih',
+        wallet_connected: '✅ Povezan', wallet_disconnected: 'Nije povezan',
+        no_data: 'Nema podataka', no_quests: 'Nema aktivnih zadataka',
+        no_miners: 'Još nema rudara!',
+    },
+    en: {
+        loading: 'Loading...', error: 'Error', retry: 'Try again',
+        energy_full: '⚡ Energy full!', energy_regen: '🔋 Full in: {t}',
+        no_energy: '⚡ No energy! Wait for regeneration.',
+        boost_already: 'Boost is already active!', boost_ok: '⚡ 2x Boost activated for 10 minutes!',
+        boost_question: 'Buy 2x Boost for 10 KVNC for 10 minutes?',
+        nft_equipped: '✅ NFT equipped!', nft_equip_err: '❌ Equip error',
+        nft_none: 'You have no NFTs.\nMine to unlock NFTs!',
+        nft_count: 'You have {n} NFTs.\nUse /nfts in bot to view.',
+        withdraw_confirm: 'Withdraw NFT to your TON wallet?\nAdmin will send within 24h.',
+        withdraw_ok: '✅ Request received!', withdraw_err: '❌ Withdrawal error',
+        link_copied: '✅ Link copied!',
+        share_text: '⛏️ Join the Kovanica mine and mine KVNC crypto!',
+        max_rank: '👑 MAX RANK', progress_to: 'to next rank',
+        tab_mine: 'Mine', tab_nft: 'NFT', tab_games: 'Games',
+        tab_quests: 'Quests', tab_lb: 'Top', tab_ref: 'Ref', tab_wallet: 'Wallet',
+        game_win: '🎉 Win! +{r} KVNC', game_lose: '😔 Loss...', game_draw: '🤝 Draw',
+        game_play_again: 'Play again', game_close: 'Close',
+        coinflip_title: '🪙 Coin Flip', coinflip_choose: 'Choose side:',
+        rps_title: '✊ Rock-Paper-Scissors', rps_choose: 'Choose:',
+        guess_title: '🔢 Guess Number', guess_prompt: "I'm thinking of a number 1-10.",
+        guess_higher: '📈 Higher!', guess_lower: '📉 Lower!', guess_exact: '🎯 Exact!',
+        guess_attempts: 'Attempt {n}/3', guess_lost: '😔 It was {n}.',
+        memory_title: '🧠 Memory', memory_moves: 'Moves: {n}', memory_win: '🎉 Solved in {n} moves!',
+        quest_mining: 'Mining Day', quest_mining_desc: 'Click {t} times today',
+        quest_refs: 'Invite Friends', quest_refs_desc: 'Invite {t} users',
+        quest_nft: 'Mine NFT', quest_nft_desc: 'Mine {t} NFT',
+        lb_you: '👤 You', lb_miner: 'Miner #{id}',
+        rank_my: 'Your rank:',
+        ref_earned: 'Earned KVNC', ref_invited: 'Invited',
+        wallet_connected: '✅ Connected', wallet_disconnected: 'Not connected',
+        no_data: 'No data', no_quests: 'No active quests',
+        no_miners: 'No miners yet!',
+    }
+};
+function t(key, vars = {}) {
+    let str = T[LANG]?.[key] || T.hr[key] || key;
+    for (const [k, v] of Object.entries(vars)) str = str.replace(`{${k}}`, v);
+    return str;
+}
+
+// ── STATE ──
+let userData     = null;
+let tonConnectUI = null;
+let energy       = 1000;
+let maxEnergy    = 1000;
+let boostEndTime = null;
+let boostInterval= null;
+let energyInterval = null;
+let currentTab   = 'mine';
+let refLink      = '';
+let soundEnabled = true;
+let audioCtx     = null;
+
+// Batch tap queue — sends taps to server every 500ms in batches
+let tapQueue     = 0;
+let tapFlushTimer= null;
+let pendingBalance = 0;
+let pendingTotal   = 0;
+let pendingDaily   = 0;
+
+// ── RANK CONFIG ──
+const RANKS = [
+    { name: '🪨 Novi rudar',       min: 0,       max: 100 },
+    { name: '⛏️ Početnik',         min: 100,     max: 500 },
+    { name: '⛏️ Napredni rudar',   min: 500,     max: 2000 },
+    { name: '🥉 Brončani rudar',   min: 2000,    max: 5000 },
+    { name: '🥈 Srebrni rudar',    min: 5000,    max: 10000 },
+    { name: '🥇 Zlatni rudar',     min: 10000,   max: 20000 },
+    { name: '🔹 Platinasti rudar', min: 20000,   max: 50000 },
+    { name: '💎 Dijamantni rudar', min: 50000,   max: 100000 },
+    { name: '👑 Kralj rudara',     min: 100000,  max: Infinity },
+];
+function getRankInfo(tc) {
+    for (let i = RANKS.length - 1; i >= 0; i--)
+        if (tc >= RANKS[i].min) return { ...RANKS[i], index: i };
+    return { ...RANKS[0], index: 0 };
+}
+function getRankProgress(tc) {
+    const r = getRankInfo(tc);
+    if (r.max === Infinity) return 100;
+    return Math.min(100, Math.max(0, ((tc - r.min) / (r.max - r.min)) * 100));
+}
+
+// ── AUDIO ──
+function playTapSound(pitch = 800) {
+    if (!soundEnabled) return;
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc  = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(pitch * 0.5, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.08);
+    } catch(e) {}
+}
+function playWinSound() { playTapSound(880); setTimeout(() => playTapSound(1100), 120); }
+function playLoseSound(){ playTapSound(300); }
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('soundBtn');
+    if (btn) btn.textContent = soundEnabled ? '🔊' : '🔇';
+    tg?.HapticFeedback?.selectionChanged();
+}
+
+// ── CANVAS BG (floating crystal particles) ──
+function initBackground() {
+    const canvas = document.getElementById('bgCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+    function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    for (let i = 0; i < 28; i++) {
+        particles.push({
+            x: Math.random() * 1000,
+            y: Math.random() * 1000,
+            r: Math.random() * 1.8 + 0.4,
+            vx: (Math.random() - 0.5) * 0.2,
+            vy: -Math.random() * 0.25 - 0.05,
+            a: Math.random(),
+            c: Math.random() > 0.6 ? '#FFD700' : '#22D3EE'
+        });
+    }
+    function frame() {
+        ctx.clearRect(0, 0, W, H);
+        particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy; p.a += 0.004;
+            if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+            if (p.x < -10 || p.x > W + 10) p.vx *= -1;
+            ctx.globalAlpha = (Math.sin(p.a) * 0.3 + 0.4);
+            ctx.fillStyle = p.c;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(frame);
+    }
+    frame();
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg, type = '', dur = 2200) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── PARTICLES ──
+function spawnParticles(x, y) {
+    const container = document.getElementById('particleContainer');
+    if (!container) return;
+    const colors = ['#FFD700','#FFE449','#F97316','#22D3EE','#ffffff'];
+    for (let i = 0; i < 10; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `
+            left:${x}px; top:${y}px;
+            background:${colors[Math.floor(Math.random() * colors.length)]};
+            width:${Math.random()*5+3}px; height:${Math.random()*5+3}px;
+            --dx:${(Math.random()-0.5)*130}px;
+            --dy:${-(Math.random()*110+40)}px;
+        `;
+        container.appendChild(p);
+        setTimeout(() => p.remove(), 750);
+    }
+}
+
+// ── INIT ──
+async function init() {
+    initBackground();
+    try {
+        const user = tg?.initDataUnsafe?.user || null;
+        if (!user) {
+            showToast('Otvori kroz Telegram!', 'error');
+            return;
+        }
+
+        // Avatar
+        const avatarEl = document.getElementById('avatar');
+        if (avatarEl) {
+            if (user.photo_url) {
+                avatarEl.style.backgroundImage = `url(${user.photo_url})`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.textContent = (user.first_name || 'R')[0].toUpperCase();
+            }
+        }
+        const usernameEl = document.getElementById('username');
+        if (usernameEl) usernameEl.textContent = user.first_name || user.username || 'Rudar';
+
+        const resp = await fetch('/api/me', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg.initData || '' })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        userData = await resp.json();
+
+        energy = maxEnergy = 1000;
+        updateUI(userData);
+        startEnergyRegen();
+
+        refLink = `https://t.me/kovanicatapbot?start=ref_${user.id}`;
+        setEl('refLink', refLink);
+        setEl('refCount', userData.referralCount || 0);
+        setEl('refEarned', ((userData.referralCount || 0) * 10).toFixed(0));
+
+        tg?.HapticFeedback?.impactOccurred('light');
+        initTonConnect();
+    } catch(err) {
+        console.error('Init error:', err);
+        showToast(t('error') + ': init', 'error');
+    }
+}
+
+// ── HELPERS ──
+function setEl(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+function getUser() { return tg?.initDataUnsafe?.user || null; }
+
+// ── UPDATE UI ──
+function updateUI(data) {
+    if (!data) return;
+    const tc = data.totalClicks || 0;
+    const rank = getRankInfo(tc);
+    const prog = getRankProgress(tc);
+    const baseReward = data.baseReward || data.reward || 1.0;
+
+    setEl('balance', (data.clickBalance || 0).toFixed(4));
+    setEl('rankBadge', data.rank || rank.name);
+    setEl('totalClicks', tc.toLocaleString());
+    setEl('dailyClicks', (data.dailyClicks || 0).toLocaleString());
+    setEl('rewardPerTap', `${baseReward.toFixed(4)} KVNC`);
+    setEl('rewardSub', `+${baseReward.toFixed(4)} KVNC po kliku`);
+
+    const fill = document.getElementById('rankProgressFill');
+    if (fill) fill.style.width = `${prog}%`;
+    if (rank.max === Infinity) {
+        setEl('rankProgressText', t('max_rank'));
+        setEl('rankNext', '');
+    } else {
+        setEl('rankProgressText', `${tc.toLocaleString()} / ${rank.max.toLocaleString()}`);
+        setEl('rankNext', t('progress_to'));
+    }
+
+    if (data.energy    !== undefined) energy    = data.energy;
+    if (data.maxEnergy !== undefined) maxEnergy = data.maxEnergy;
+    updateEnergyUI();
+
+    if (data.boostActive && data.boostEndsAt) startBoostTimer(new Date(data.boostEndsAt).getTime());
+
+    const mineBtn = document.getElementById('mineBtn');
+    if (mineBtn) mineBtn.disabled = energy <= 0;
+}
+
+// ── ENERGY ──
+function updateEnergyUI() {
+    const pct = maxEnergy > 0 ? Math.min(100, (energy / maxEnergy) * 100) : 0;
+    const fill = document.getElementById('energyFill');
+    if (fill) fill.style.width = `${pct}%`;
+    setEl('energyVal', `${Math.floor(energy)} / ${maxEnergy}`);
+
+    const cd = document.getElementById('energyCountdown');
+    if (!cd) return;
+    if (energy >= maxEnergy) {
+        cd.textContent = t('energy_full');
+        cd.style.color = 'var(--energy)';
+    } else {
+        const s = Math.ceil((maxEnergy - energy) / 2);
+        const m = Math.floor(s / 60), sec = s % 60;
+        cd.textContent = t('energy_regen', { t: `${m}m ${sec}s` });
+        cd.style.color = 'var(--text-faint)';
+    }
+}
+function startEnergyRegen() {
+    if (energyInterval) clearInterval(energyInterval);
+    energyInterval = setInterval(() => {
+        if (energy < maxEnergy) {
+            energy = Math.min(maxEnergy, energy + 2);
+            updateEnergyUI();
+            if (energy > 0) {
+                const btn = document.getElementById('mineBtn');
+                if (btn && !tapQueue) btn.disabled = false;
+            }
+        }
+    }, 1000);
+}
+
+// ── BOOST TIMER ──
+function startBoostTimer(endTs) {
+    const bar = document.getElementById('boostBar');
+    if (bar) bar.style.display = 'flex';
+    if (boostInterval) clearInterval(boostInterval);
+    const total = 10 * 60 * 1000;
+    boostInterval = setInterval(() => {
+        const rem = endTs - Date.now();
+        if (rem <= 0) {
+            clearInterval(boostInterval);
+            if (bar) bar.style.display = 'none';
+            return;
+        }
+        const m = Math.floor(rem / 60000), s = Math.floor((rem % 60000) / 1000);
+        setEl('boostTime', `${m}:${s.toString().padStart(2,'0')}`);
+        const p = document.getElementById('boostProgress');
+        if (p) p.style.width = `${Math.min(100,(rem/total)*100)}%`;
+    }, 1000);
+    boostEndTime = endTs;
+}
+
+// ── MINE / BATCH TAP ──
+function handleMine(event) {
+    if (energy <= 0) {
+        showToast(t('no_energy'), 'error');
+        return;
+    }
+
+    // Optimistic update
+    energy = Math.max(0, energy - 1);
+    pendingBalance += userData?.baseReward || 1;
+    pendingTotal   += 1;
+    pendingDaily   += 1;
+    tapQueue++;
+
+    // Animate
+    const pickaxe = document.getElementById('pickaxe');
+    if (pickaxe) {
+        pickaxe.classList.remove('hit');
+        void pickaxe.offsetWidth;
+        pickaxe.classList.add('hit');
+        setTimeout(() => pickaxe.classList.remove('hit'), 120);
+    }
+
+    // Floating counter
+    const reward = userData?.baseReward || 1;
+    showFloatingCounter(`+${reward.toFixed(4)}`);
+
+    // Particles
+    const coords = event?.clientX
+        ? { x: event.clientX, y: event.clientY }
+        : (() => {
+            const r = document.getElementById('mineCore')?.getBoundingClientRect();
+            return r ? { x: r.left + r.width/2, y: r.top + r.height/2 } : { x: 200, y: 300 };
+          })();
+    spawnParticles(coords.x, coords.y);
+    playTapSound();
+    tg?.HapticFeedback?.impactOccurred('medium');
+
+    // Optimistic UI
+    const cb = (parseFloat(document.getElementById('balance')?.textContent || '0') + reward);
+    setEl('balance', cb.toFixed(4));
+    setEl('totalClicks', (parseInt(document.getElementById('totalClicks')?.textContent?.replace(/\D/g,'') || '0') + 1).toLocaleString());
+    setEl('dailyClicks', (parseInt(document.getElementById('dailyClicks')?.textContent?.replace(/\D/g,'') || '0') + 1).toLocaleString());
+    updateEnergyUI();
+
+    if (energy <= 0) {
+        const btn = document.getElementById('mineBtn');
+        if (btn) btn.disabled = true;
+    }
+
+    // Schedule batch flush
+    if (tapFlushTimer) clearTimeout(tapFlushTimer);
+    tapFlushTimer = setTimeout(flushTaps, 500);
+}
+
+async function flushTaps() {
+    if (!tapQueue) return;
+    const batchSize = tapQueue;
+    tapQueue = 0;
+    tapFlushTimer = null;
+    const user = getUser();
+    if (!user) return;
+    try {
+        const resp = await fetch('/api/tap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg?.initData || '', count: batchSize })
+        });
+        if (!resp.ok) {
+            if (resp.status === 429) { showToast('Previše brzo!', 'error'); return; }
+            if (resp.status === 400) { showToast(t('no_energy'), 'error'); return; }
+            return;
+        }
+        const data = await resp.json();
+        userData = { ...userData, ...data };
+
+        // Sync with server values (authority)
+        if (data.clickBalance !== undefined) setEl('balance', data.clickBalance.toFixed(4));
+        if (data.totalClicks  !== undefined) setEl('totalClicks', data.totalClicks.toLocaleString());
+        if (data.dailyClicks  !== undefined) setEl('dailyClicks', data.dailyClicks.toLocaleString());
+        if (data.energy       !== undefined) { energy = data.energy; maxEnergy = data.maxEnergy || maxEnergy; updateEnergyUI(); }
+        if (data.rank) {
+            setEl('rankBadge', data.rank);
+            const prog = getRankProgress(data.totalClicks || 0);
+            const fill = document.getElementById('rankProgressFill');
+            if (fill) fill.style.width = `${prog}%`;
+            const rank = getRankInfo(data.totalClicks || 0);
+            if (rank.max === Infinity) { setEl('rankProgressText', t('max_rank')); setEl('rankNext', ''); }
+            else { setEl('rankProgressText', `${(data.totalClicks||0).toLocaleString()} / ${rank.max.toLocaleString()}`); }
+        }
+        if (data.baseReward) {
+            setEl('rewardPerTap', `${data.baseReward.toFixed(4)} KVNC`);
+            setEl('rewardSub', `+${data.baseReward.toFixed(4)} KVNC po kliku`);
+        }
+        if (data.boostActive && data.boostEndsAt) startBoostTimer(new Date(data.boostEndsAt).getTime());
+        if (data.mintedNFT) {
+            tg?.HapticFeedback?.notificationOccurred('success');
+            showToast(`🎉 NFT: ${data.mintedNFT.name} (${data.mintedNFT.rarity})!`, 'gold', 4000);
+        }
+        const btn = document.getElementById('mineBtn');
+        if (btn) btn.disabled = energy <= 0;
+    } catch(e) {
+        console.error('Flush error:', e);
+        // Rollback optimistic
+        energy = Math.min(maxEnergy, energy + batchSize);
+        updateEnergyUI();
+    }
+}
+
+function showFloatingCounter(text) {
+    const el = document.getElementById('clickCounter');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 650);
+}
+
+// ── BOOST ──
+async function handleBoost() {
+    if (boostEndTime && boostEndTime > Date.now()) { showToast(t('boost_already'), 'error'); return; }
+    const user = getUser(); if (!user) return;
+    try {
+        const resp = await fetch('/api/boost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg?.initData || '', action: 'buy' })
+        });
+        const data = await resp.json();
+        if (data.boostActive && data.boostEndsAt) {
+            startBoostTimer(new Date(data.boostEndsAt).getTime());
+            tg?.HapticFeedback?.notificationOccurred('success');
+            showToast(t('boost_ok'), 'gold');
+            if (data.clickBalance !== undefined) setEl('balance', data.clickBalance.toFixed(4));
+        } else if (data.error) {
+            showToast('❌ ' + data.error, 'error');
+        }
+    } catch(e) { showToast(t('error'), 'error'); }
+}
+
+// ── TONCONNECT ──
+function initTonConnect() {
+    if (typeof TON_CONNECT_UI === 'undefined') return;
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: `${window.location.origin}/tonconnect-manifest.json`,
+        buttonRootId: 'tonconnect-button'
+    });
+    tonConnectUI.onStatusChange(async (wallet) => {
+        const user = getUser(); if (!user) return;
+        if (wallet) {
+            const address = wallet.account.address;
+            setEl('walletStatusValue', t('wallet_connected'));
+            const box = document.getElementById('walletAddressBox');
+            if (box) box.style.display = 'flex';
+            setEl('walletAddressValue', address);
+            try {
+                await fetch('/api/wallet/connect', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rawUser: user, initData: tg?.initData || '', address })
+                });
+                tg?.HapticFeedback?.notificationOccurred('success');
+            } catch(e) {}
+        } else {
+            setEl('walletStatusValue', t('wallet_disconnected'));
+            const box = document.getElementById('walletAddressBox');
+            if (box) box.style.display = 'none';
+            try {
+                await fetch('/api/wallet/disconnect', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rawUser: user, initData: tg?.initData || '' })
+                });
+            } catch(e) {}
+        }
+    });
+}
+
+// ── TABS ──
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const btn = document.querySelector(`[data-tab="${tab}"]`);
+    if (btn) btn.classList.add('active');
+    const content = document.getElementById(`tab-${tab}`);
+    if (content) content.classList.add('active');
+    tg?.HapticFeedback?.selectionChanged();
+    if (tab === 'leaderboard') loadLeaderboard();
+    if (tab === 'nft')         loadNFTs();
+    if (tab === 'quests')      loadQuests();
+    if (tab === 'referral')    loadRefLeaderboard();
+}
+
+// ── LEADERBOARD ──
+async function loadLeaderboard() {
+    const list = document.getElementById('lbList');
+    if (!list) return;
+    list.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div><span>Učitavanje...</span></div>';
+    try {
+        const resp = await fetch('/api/leaderboard');
+        const data = await resp.json();
+        const users = Array.isArray(data) ? data : (data.users || []);
+        if (!users.length) {
+            list.innerHTML = `<div class="empty-state"><span class="empty-state-icon">🏆</span><span class="empty-state-text">${t('no_miners')}</span></div>`;
+            return;
+        }
+        const myId = String(getUser()?.id || '');
+        const medals = ['🥇','🥈','🥉'];
+        list.innerHTML = users.map((u, i) => {
+            const isMe = String(u.telegramId) === myId;
+            const medal = medals[i] || `#${i+1}`;
+            const name  = isMe ? t('lb_you') : t('lb_miner', { id: String(u.telegramId).slice(-4) });
+            return `
+            <div class="lb-item ${isMe ? 'me' : ''}">
+                <span class="lb-rank">${medal}</span>
+                <div class="lb-info">
+                    <span class="lb-name">${name}</span>
+                    <span class="lb-rank-label">${getRankInfo(u.totalClicks||0).name}</span>
+                </div>
+                <span class="lb-clicks">${(u.totalClicks||0).toLocaleString()}</span>
+            </div>`;
+        }).join('');
+        const myIdx = users.findIndex(u => String(u.telegramId) === myId);
+        const myRankEl = document.getElementById('lbMyRank');
+        if (myIdx !== -1 && myRankEl) {
+            myRankEl.style.display = 'block';
+            setEl('myRankNum', `#${myIdx+1}`);
+        }
+    } catch(e) {
+        list.innerHTML = `<div class="empty-state"><span class="empty-state-icon">⚠️</span><span class="empty-state-text">${t('error')}</span></div>`;
+    }
+}
+
+// ── NFTs ──
+function getNFTIcon(rarity) {
+    if (!rarity) return '🎨';
+    const map = { bronze:'⛏️',common:'⛏️',silver:'🥈',rare:'🥈',gold:'🥇',epic:'🥇',diamond:'💎',legendary:'💎',fire:'🔥',mythic:'🔥' };
+    return map[rarity.toLowerCase()] || '🎨';
+}
+
+async function loadNFTs() {
+    const grid = document.getElementById('nftGrid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="loading-state" style="grid-column:1/-1"><div class="loading-spinner"></div><span>Učitavanje NFT-ova...</span></div>';
+    try {
+        const user = getUser(); if (!user) return;
+        const resp = await fetch('/api/nftcount', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg?.initData || '' })
+        });
+        const data = await resp.json();
+        const nfts = data.nfts || [];
+        const hasWallet = !!data.tonWallet;
+
+        if (!nfts.length) {
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column:1/-1">
+                    <span class="empty-state-icon">🎨</span>
+                    <span class="empty-state-text">${data.count > 0 ? t('nft_count', {n: data.count}) : t('nft_none')}</span>
+                </div>`;
+            return;
+        }
+
+        const equipped = nfts.find(n => n.equipped);
+        const eqEmpty  = document.getElementById('nftEqEmpty');
+        const eqCard   = document.getElementById('nftEqCard');
+        if (equipped) {
+            if (eqEmpty) eqEmpty.style.display = 'none';
+            if (eqCard)  eqCard.style.display  = 'flex';
+            setEl('nftEqIcon', getNFTIcon(equipped.rarity));
+            setEl('nftEqName', equipped.name);
+            setEl('nftEqBonus', `${equipped.bonusMultiplier}x bonus`);
+        } else {
+            if (eqEmpty) eqEmpty.style.display = 'flex';
+            if (eqCard)  eqCard.style.display  = 'none';
+        }
+
+        grid.innerHTML = nfts.map(nft => {
+            const isPending  = nft.contractAddress?.startsWith('withdraw:');
+            const isEquipped = nft.equipped;
+            const equipBtn   = `<button class="nft-action-btn primary" onclick="equipNFT(${nft.id})">${isEquipped ? '✅' : 'Opremi'}</button>`;
+            const stakeBtn   = `<button class="nft-action-btn energy-style" onclick="stakeNFT(${nft.id})">${nft.staked ? '🔒 Unstake' : 'Stake'}</button>`;
+            let withdrawBtn;
+            if (isPending)              withdrawBtn = `<button class="nft-action-btn" disabled style="opacity:.4">⏳</button>`;
+            else if (!hasWallet)        withdrawBtn = `<button class="nft-action-btn" disabled style="opacity:.4;font-size:9px">🔒</button>`;
+            else if (nft.staked||isEquipped) withdrawBtn = `<button class="nft-action-btn" disabled style="opacity:.4">📤</button>`;
+            else                        withdrawBtn = `<button class="nft-action-btn boost-style" onclick="withdrawNFT(${nft.id})">📤</button>`;
+            return `
+            <div class="nft-card ${isEquipped?'equipped':''} ${isPending?'nft-pending':''}">
+                <span class="nft-card-icon">${getNFTIcon(nft.rarity)}</span>
+                <span class="nft-card-name">${nft.name}</span>
+                <span class="nft-card-bonus">${nft.bonusMultiplier}x</span>
+                <span class="nft-card-rarity">${nft.rarity}</span>
+                <div class="nft-card-actions">${equipBtn}${stakeBtn}${withdrawBtn}</div>
+            </div>`;
+        }).join('');
+
+        if (!hasWallet) {
+            grid.innerHTML += `<div class="nft-wallet-warning" style="grid-column:1/-1">⚠️ Poveži TON wallet za withdrawal</div>`;
+        }
+    } catch(e) {
+        console.error('NFT error:', e);
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">⚠️</span><span class="empty-state-text">${t('error')}</span></div>`;
+    }
+}
+
+async function equipNFT(id) {
+    const user = getUser(); if (!user) return;
+    try {
+        const res = await fetch('/api/equip', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg?.initData||'', nftId: id })
+        });
+        const data = await res.json();
+        if (res.ok) { tg?.HapticFeedback?.notificationOccurred('success'); showToast(t('nft_equipped'), 'success'); }
+        else showToast('❌ ' + (data.error || t('error')), 'error');
+        loadNFTs();
+    } catch(e) { showToast(t('nft_equip_err'), 'error'); }
+}
+async function stakeNFT(id) {
+    const user = getUser(); if (!user) return;
+    try {
+        await fetch('/api/stake', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg?.initData||'', nftId: id })
+        });
+        tg?.HapticFeedback?.notificationOccurred('success');
+        loadNFTs();
+    } catch(e) {}
+}
+async function withdrawNFT(id) {
+    const user = getUser(); if (!user) return;
+    tg?.showConfirm?.(t('withdraw_confirm'), async (ok) => {
+        if (!ok) return;
+        try {
+            const resp = await fetch('/api/nft/withdraw', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rawUser: user, initData: tg?.initData||'', nftId: id })
+            });
+            const data = await resp.json();
+            if (data.success) { showToast(t('withdraw_ok'), 'success'); tg?.HapticFeedback?.notificationOccurred('success'); loadNFTs(); }
+            else showToast('❌ ' + (data.error || t('error')), 'error');
+        } catch(e) { showToast(t('withdraw_err'), 'error'); }
+    });
+}
+async function handleUnequip() {
+    const user = getUser(); if (!user) return;
+    try {
+        await fetch('/api/unequip', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawUser: user, initData: tg?.initData||'' })
+        });
+        tg?.HapticFeedback?.notificationOccurred('success');
+        loadNFTs();
+    } catch(e) {}
+}
+
+// ── QUESTS ──
+const QUEST_META = {
+    clicks:    { icon:'⛏️', titleKey:'quest_mining', descKey:'quest_mining_desc' },
+    referrals: { icon:'👥', titleKey:'quest_refs',   descKey:'quest_refs_desc'   },
+    nft:       { icon:'🎨', titleKey:'quest_nft',    descKey:'quest_nft_desc'    },
+};
+async function loadQuests() {
+    const list = document.getElementById('questList'); if (!list) return;
+    list.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div><span>Učitavanje...</span></div>';
+    const quests = userData?.quests || [];
+    if (!quests.length) {
+        list.innerHTML = `<div class="empty-state"><span class="empty-state-icon">📋</span><span class="empty-state-text">${t('no_quests')}</span></div>`;
+        return;
+    }
+    list.innerHTML = quests.map(q => {
+        const meta = QUEST_META[q.type] || { icon:'📋', titleKey:'no_quests', descKey:'no_quests' };
+        const pct  = Math.min(100, (q.progress / q.target) * 100);
+        return `
+        <div class="quest-item ${q.completed?'done':''}">
+            <div class="quest-header">
+                <span class="quest-title">${meta.icon} ${t(meta.titleKey)}</span>
+                <span class="quest-reward">+${q.reward} KVNC</span>
+            </div>
+            <div class="quest-desc">${t(meta.descKey, {t: q.target.toLocaleString()})}</div>
+            <div class="quest-progress-wrap"><div class="quest-progress-fill" style="width:${pct}%"></div></div>
+            <div class="quest-footer">
+                <span class="quest-count">${q.progress.toLocaleString()} / ${q.target.toLocaleString()}</span>
+                ${q.completed ? '<span class="quest-done-badge">✅ Završeno</span>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── REFERRAL ──
+function copyRefLink() {
+    if (!refLink) return;
+    navigator.clipboard?.writeText(refLink)
+        .then(() => showToast(t('link_copied'), 'success'))
+        .catch(() => showToast(refLink));
+    tg?.HapticFeedback?.notificationOccurred('success');
+}
+function shareRefLink() {
+    if (!refLink) return;
+    tg?.openTelegramLink?.(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(t('share_text'))}`);
+}
+async function loadRefLeaderboard() {
+    const list = document.getElementById('refLbList'); if (!list) return;
+    list.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div></div>';
+    try {
+        const resp = await fetch('/api/leaderboard/referral').catch(() => null);
+        if (!resp || !resp.ok) { list.innerHTML = ''; return; }
+        const data = await resp.json();
+        const users = Array.isArray(data) ? data : (data.users || []);
+        if (!users.length) { list.innerHTML = ''; return; }
+        const myId = String(getUser()?.id || '');
+        const medals = ['🥇','🥈','🥉'];
+        list.innerHTML = users.map((u, i) => {
+            const isMe = String(u.telegramId) === myId;
+            return `
+            <div class="lb-item ${isMe?'me':''}">
+                <span class="lb-rank">${medals[i] || `#${i+1}`}</span>
+                <div class="lb-info">
+                    <span class="lb-name">${isMe ? t('lb_you') : t('lb_miner', {id: String(u.telegramId).slice(-4)})}</span>
+                </div>
+                <span class="lb-clicks">${u.referralCount || 0} ref</span>
+            </div>`;
+        }).join('');
+    } catch(e) { list.innerHTML = ''; }
+}
+
+// ═══════════════════════════════════════════════════
+// ── MINI IGRE ──
+// ═══════════════════════════════════════════════════
+
+function openGame(type) {
+    const overlay = document.getElementById('gameOverlay');
+    const container = document.getElementById('gameContainer');
+    if (!overlay || !container) return;
+    overlay.style.display = 'flex';
+    tg?.HapticFeedback?.impactOccurred('light');
+
+    switch(type) {
+        case 'coinflip': renderCoinFlip(container); break;
+        case 'rps':      renderRPS(container);      break;
+        case 'guess':    renderGuess(container);    break;
+        case 'memory':   renderMemory(container);   break;
+    }
+}
+function closeGame() {
+    const overlay = document.getElementById('gameOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+function gameReward(amount) {
+    // Award coins — optimistic, then sync with backend if possible
+    const bal = parseFloat(document.getElementById('balance')?.textContent || '0');
+    setEl('balance', (bal + amount).toFixed(4));
+    if (userData) userData.clickBalance = (userData.clickBalance || 0) + amount;
+    showToast(`+${amount} KVNC`, 'gold');
+    playWinSound();
+    tg?.HapticFeedback?.notificationOccurred('success');
+}
+
+/* ── COIN FLIP ── */
+function renderCoinFlip(c) {
+    let choice = null;
+    let spinning = false;
+    c.innerHTML = `
+        <div class="game-header">
+            <span class="game-title">${t('coinflip_title')}</span>
+            <button class="game-close-btn" onclick="closeGame()">${t('game_close')}</button>
+        </div>
+        <div class="game-body">
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">${t('coinflip_choose')}</div>
+            <div class="coin-choices">
+                <button class="coin-choice-btn" id="cf-heads" onclick="cfChoose('heads')">🌕 Glava</button>
+                <button class="coin-choice-btn" id="cf-tails" onclick="cfChoose('tails')">💿 Pismo</button>
+            </div>
+            <div class="coin-display" id="cfCoin">🪙</div>
+            <div class="game-result-text" id="cfResult"></div>
+            <button class="game-action-btn" id="cfFlip" onclick="cfFlip()" disabled>Baci novčić</button>
+        </div>`;
+    window.cfChoose = (side) => {
+        if (spinning) return;
+        choice = side;
+        document.getElementById('cf-heads').classList.toggle('chosen', side==='heads');
+        document.getElementById('cf-tails').classList.toggle('chosen', side==='tails');
+        document.getElementById('cfFlip').disabled = false;
+        tg?.HapticFeedback?.selectionChanged();
+    };
+    window.cfFlip = () => {
+        if (!choice || spinning) return;
+        spinning = true;
+        document.getElementById('cfFlip').disabled = true;
+        const coin = document.getElementById('cfCoin');
+        const res  = document.getElementById('cfResult');
+        res.textContent = '';
+        let frames = 0;
+        const emojis = ['🪙','⭕','🪙','⭕'];
+        const anim = setInterval(() => {
+            coin.textContent = emojis[frames % emojis.length];
+            frames++;
+            if (frames > 14) {
+                clearInterval(anim);
+                const outcome  = Math.random() < 0.5 ? 'heads' : 'tails';
+                coin.textContent = outcome === 'heads' ? '🌕' : '💿';
+                const win = outcome === choice;
+                res.textContent = win ? t('game_win', {r: 50}) : t('game_lose');
+                res.className   = 'game-result-text ' + (win ? 'win' : 'lose');
+                if (win) gameReward(50); else playLoseSound();
+                spinning = false;
+                document.getElementById('cfFlip').textContent = t('game_play_again');
+                document.getElementById('cfFlip').disabled = false;
+                document.getElementById('cfFlip').onclick = () => renderCoinFlip(c);
+            }
+        }, 90);
+    };
+}
+
+/* ── ROCK PAPER SCISSORS ── */
+function renderRPS(c) {
+    const opts   = [['✊','rock'],['✌️','scissors'],['🖐️','paper']];
+    const beats  = { rock:'scissors', scissors:'paper', paper:'rock' };
+    c.innerHTML = `
+        <div class="game-header">
+            <span class="game-title">${t('rps_title')}</span>
+            <button class="game-close-btn" onclick="closeGame()">${t('game_close')}</button>
+        </div>
+        <div class="game-body">
+            <div class="rps-vs" style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">
+                <span>${t('rps_choose')}</span>
+            </div>
+            <div class="rps-choices">
+                ${opts.map(([e,k]) => `<button class="rps-btn" onclick="rpsPlay('${k}')">${e}</button>`).join('')}
+            </div>
+            <div class="rps-vs" id="rpsResult" style="display:none;justify-content:space-around;align-items:center;margin:16px 0;font-size:40px;"></div>
+            <div class="game-result-text" id="rpsText"></div>
+            <button class="game-action-btn" id="rpsReplay" style="display:none" onclick="renderRPS(document.getElementById('gameContainer'))">${t('game_play_again')}</button>
+        </div>`;
+    window.rpsPlay = (choice) => {
+        const aiIdx = Math.floor(Math.random() * 3);
+        const ai    = opts[aiIdx][1];
+        const aiE   = opts[aiIdx][0];
+        const myE   = opts.find(o => o[1]===choice)[0];
+        const rv    = document.getElementById('rpsResult');
+        const rt    = document.getElementById('rpsText');
+        rv.style.display = 'flex';
+        rv.innerHTML = `<span>${myE}</span><span style="font-size:18px;color:var(--text-dim)">VS</span><span>${aiE}</span>`;
+        let result, cls;
+        if (choice === ai)           { result = t('game_draw'); cls = 'draw'; }
+        else if (beats[choice]===ai) { result = t('game_win',{r:30}); cls = 'win'; gameReward(30); }
+        else                          { result = t('game_lose'); cls = 'lose'; playLoseSound(); }
+        rt.textContent = result;
+        rt.className   = 'game-result-text ' + cls;
+        document.getElementById('rpsReplay').style.display = 'block';
+        tg?.HapticFeedback?.impactOccurred(cls==='win'?'heavy':'light');
+    };
+}
+
+/* ── GUESS NUMBER ── */
+function renderGuess(c) {
+    const secret  = Math.floor(Math.random() * 10) + 1;
+    let attempts  = 0;
+    const maxAttempts = 3;
+    c.innerHTML = `
+        <div class="game-header">
+            <span class="game-title">${t('guess_title')}</span>
+            <button class="game-close-btn" onclick="closeGame()">${t('game_close')}</button>
+        </div>
+        <div class="game-body">
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">${t('guess_prompt')}</div>
+            <div class="guess-input-wrap">
+                <input type="number" min="1" max="10" class="guess-input" id="guessInput" placeholder="1-10" />
+                <button class="guess-submit-btn" onclick="guessSubmit()">OK</button>
+            </div>
+            <div class="guess-hint" id="guessHint"></div>
+            <div class="guess-attempts" id="guessAttempts">${t('guess_attempts',{n: attempts+1})}</div>
+            <div class="game-result-text" id="guessResult"></div>
+            <button class="game-action-btn" id="guessReplay" style="display:none" onclick="renderGuess(document.getElementById('gameContainer'))">${t('game_play_again')}</button>
+        </div>`;
+    window.guessSubmit = () => {
+        const val = parseInt(document.getElementById('guessInput').value);
+        if (!val || val < 1 || val > 10) return;
+        attempts++;
+        const hint    = document.getElementById('guessHint');
+        const attEl   = document.getElementById('guessAttempts');
+        const result  = document.getElementById('guessResult');
+        const replay  = document.getElementById('guessReplay');
+        const input   = document.getElementById('guessInput');
+        if (val === secret) {
+            const reward = attempts === 1 ? 200 : attempts === 2 ? 150 : 100;
+            hint.textContent = t('guess_exact');
+            result.textContent = t('game_win', {r: reward});
+            result.className   = 'game-result-text win';
+            gameReward(reward);
+            replay.style.display = 'block';
+            input.disabled = true;
+        } else if (attempts >= maxAttempts) {
+            hint.textContent   = t('guess_lost', {n: secret});
+            result.className   = 'game-result-text lose';
+            result.textContent = t('game_lose');
+            playLoseSound();
+            replay.style.display = 'block';
+            input.disabled = true;
+        } else {
+            hint.textContent = val < secret ? t('guess_higher') : t('guess_lower');
+            attEl.textContent = t('guess_attempts', {n: attempts+1});
+            input.value = '';
+            input.focus();
+            tg?.HapticFeedback?.impactOccurred('light');
+        }
+    };
+    document.getElementById('guessInput')?.addEventListener('keydown', e => { if (e.key==='Enter') window.guessSubmit(); });
+}
+
+/* ── MEMORY ── */
+function renderMemory(c) {
+    const emojis = ['⛏️','💎','🥇','🔥','🪙','💰','🪨','🏔️'];
+    const cards  = [...emojis,...emojis].sort(() => Math.random()-0.5);
+    let flipped  = [], matched = new Set(), moves = 0, locked = false;
+    c.innerHTML = `
+        <div class="game-header">
+            <span class="game-title">${t('memory_title')}</span>
+            <button class="game-close-btn" onclick="closeGame()">${t('game_close')}</button>
+        </div>
+        <div class="game-body">
+            <div class="memory-stats">
+                <span>${t('memory_moves',{n:0})}</span>
+                <span style="color:var(--gold)">${matched.size/2}/8</span>
+            </div>
+            <div class="memory-grid" id="memGrid"></div>
+            <div class="game-result-text" id="memResult"></div>
+            <button class="game-action-btn" id="memReplay" style="display:none" onclick="renderMemory(document.getElementById('gameContainer'))">${t('game_play_again')}</button>
+        </div>`;
+    const grid = document.getElementById('memGrid');
+    function updateStats() {
+        const s = c.querySelector('.memory-stats span');
+        if (s) s.textContent = t('memory_moves', {n: moves});
+        const s2 = c.querySelectorAll('.memory-stats span')[1];
+        if (s2) s2.textContent = `${matched.size/2}/8`;
+    }
+    cards.forEach((emoji, i) => {
+        const el = document.createElement('div');
+        el.className = 'memory-card';
+        el.dataset.i = i;
+        el.dataset.e = emoji;
+        el.textContent = '❓';
+        el.onclick = () => {
+            if (locked || flipped.includes(i) || matched.has(i)) return;
+            el.textContent = emoji;
+            el.classList.add('flipped');
+            flipped.push(i);
+            tg?.HapticFeedback?.selectionChanged();
+            if (flipped.length === 2) {
+                locked = true; moves++;
+                updateStats();
+                const [a, b] = flipped;
+                const eA = cards[a], eB = cards[b];
+                if (eA === eB) {
+                    matched.add(a); matched.add(b);
+                    grid.children[a].classList.add('matched');
+                    grid.children[b].classList.add('matched');
+                    flipped = []; locked = false;
+                    if (matched.size === cards.length) {
+                        const reward = Math.max(50, 300 - moves * 10);
+                        document.getElementById('memResult').textContent = t('memory_win', {n: moves});
+                        document.getElementById('memResult').className = 'game-result-text win';
+                        document.getElementById('memReplay').style.display = 'block';
+                        gameReward(reward);
+                    }
+                } else {
+                    setTimeout(() => {
+                        grid.children[a].textContent = '❓';
+                        grid.children[b].textContent = '❓';
+                        grid.children[a].classList.remove('flipped');
+                        grid.children[b].classList.remove('flipped');
+                        flipped = []; locked = false;
+                    }, 900);
+                }
+            }
+        };
+        grid.appendChild(el);
+    });
+}
+
+// ── START ──
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    // Mine button also responds to pickaxe click inside the circle
+    const core = document.getElementById('mineCore');
+    if (core) core.addEventListener('click', e => {
+        // Only if click is on the circle/button area (not overlay elements)
+        if (e.target.closest('.mine-btn') || e.target.closest('.mine-btn-wrap')) {
+            handleMine(e);
+        }
+    });
+});
+
+console.log('🪙 Kovanica Mini App v6 loaded — ' + LANG.toUpperCase())

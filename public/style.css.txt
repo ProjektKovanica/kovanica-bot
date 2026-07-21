@@ -1,0 +1,942 @@
+* =====================================================
+   KOVANICA RUDNIK — style.css v6
+   Font: Space Grotesk (display) + Space Mono (data)
+   Paleta: Duboki antracit + zlato + cyan naglasak
+   ===================================================== */
+
+*, *::before, *::after {
+    margin: 0; padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+    /* Core palette */
+    --gold:        #FFD700;
+    --gold-bright: #FFE449;
+    --gold-dark:   #B8860B;
+    --gold-glow:   rgba(255, 215, 0, 0.20);
+    --gold-dim:    rgba(255, 215, 0, 0.10);
+
+    /* Backgrounds */
+    --bg:          #09090F;
+    --surface:     #0E0E1A;
+    --surface2:    #141424;
+    --surface3:    #1A1A2E;
+    --border:      rgba(255,255,255,0.07);
+    --border-gold: rgba(255, 215, 0, 0.18);
+
+    /* Text */
+    --text:        #EEF2FF;
+    --text-dim:    #9AA0B8;
+    --text-faint:  rgba(154,160,184,0.55);
+
+    /* Accents */
+    --energy:      #22D3EE;
+    --energy-dim:  rgba(34,211,238,0.12);
+    --boost:       #F97316;
+    --boost-dim:   rgba(249,115,22,0.12);
+    --green:       #22C55E;
+    --green-dim:   rgba(34,197,94,0.12);
+    --purple:      #A78BFA;
+    --purple-dim:  rgba(167,139,250,0.12);
+    --red:         #EF4444;
+
+    /* Sizes */
+    --radius-sm:   8px;
+    --radius-md:   14px;
+    --radius-lg:   20px;
+    --radius-xl:   28px;
+}
+
+/* ── BASE ── */
+html { height: 100%; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+}
+
+#bgCanvas {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+}
+
+#app {
+    position: relative; z-index: 1;
+    max-width: 430px; width: 100%;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    padding-bottom: 24px;
+}
+
+/* ── PARTICLES ── */
+#particleContainer {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 999;
+}
+.particle {
+    position: absolute;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleFly 0.75s ease-out forwards;
+}
+@keyframes particleFly {
+    0%   { opacity: 1; transform: translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
+
+/* ── HEADER ── */
+.header {
+    background: var(--surface);
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+.header::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(255,215,0,0.06) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.user-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.user-left { display: flex; align-items: center; gap: 10px; }
+
+.avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, #FFD700, #F97316);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; color: #09090F;
+    flex-shrink: 0; overflow: hidden;
+    border: 2px solid rgba(255,215,0,0.25);
+    box-shadow: 0 0 0 1px rgba(255,215,0,0.08);
+}
+
+.user-info { display: flex; flex-direction: column; gap: 3px; }
+.username  { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.2px; }
+
+.rank-badge {
+    display: inline-block;
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    border: 1px solid var(--border-gold);
+    width: fit-content;
+    letter-spacing: 0.2px;
+}
+
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+.icon-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.15s;
+}
+.icon-btn:active { transform: scale(0.92); }
+
+.balance-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--gold-dim);
+    border: 1px solid var(--border-gold);
+    border-radius: 20px;
+    padding: 5px 10px;
+}
+.balance-icon { font-size: 12px; }
+.balance {
+    font-size: 16px; font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    color: var(--gold);
+    letter-spacing: -0.5px;
+}
+.currency { font-size: 10px; color: var(--text-dim); font-weight: 600; }
+
+/* RANK PROGRESS */
+.rank-progress-wrap {
+    height: 5px;
+    background: rgba(255,215,0,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    position: relative;
+}
+.rank-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-bright));
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+}
+.rank-progress-glow {
+    position: absolute; right: 0; top: -2px;
+    width: 12px; height: 9px;
+    background: var(--gold);
+    border-radius: 50%;
+    filter: blur(4px);
+    opacity: 0.9;
+}
+.rank-progress-row {
+    display: flex; justify-content: space-between;
+    margin-bottom: 8px;
+}
+.rank-progress-label { font-size: 10px; color: var(--text-dim); font-family: 'Space Mono', monospace; }
+.rank-progress-next  { font-size: 10px; color: var(--text-faint); }
+
+/* BOOST BAR */
+.boost-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--boost-dim);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    margin-bottom: 8px;
+}
+.boost-icon  { font-size: 14px; }
+.boost-label { font-size: 11px; font-weight: 700; color: var(--boost); white-space: nowrap; }
+.boost-progress-wrap {
+    flex: 1; height: 4px;
+    background: rgba(249,115,22,0.15);
+    border-radius: 2px; overflow: hidden;
+}
+.boost-progress {
+    height: 100%;
+    background: var(--boost);
+    border-radius: 2px;
+    transition: width 1s linear;
+}
+.boost-time { font-size: 11px; color: var(--boost); font-weight: 700; white-space: nowrap; min-width: 38px; text-align: right; font-family: 'Space Mono', monospace; }
+
+/* ENERGY */
+.energy-wrap { margin-top: 2px; }
+.energy-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.energy-label { font-size: 11px; color: var(--energy); font-weight: 600; }
+.energy-val   { font-size: 11px; color: var(--text-dim); font-family: 'Space Mono', monospace; }
+.energy-bar-bg {
+    height: 6px;
+    background: rgba(34,211,238,0.08);
+    border-radius: 3px; overflow: hidden;
+    margin-bottom: 3px;
+}
+.energy-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0891B2, #22D3EE, #67E8F9);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    position: relative;
+}
+.energy-countdown { font-size: 10px; color: var(--text-faint); text-align: right; }
+
+/* ── TABS ── */
+.tabs {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+    padding: 0 2px;
+}
+.tab {
+    background: none; border: none;
+    padding: 8px 2px 6px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.18s;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 1px;
+}
+.tab-icon  { font-size: 16px; line-height: 1; }
+.tab-label { font-size: 9px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.2px; }
+.tab.active .tab-label { color: var(--gold); }
+.tab.active { border-bottom-color: var(--gold); }
+.tab:active { transform: scale(0.92); }
+
+/* ── TAB CONTENT ── */
+.tab-content { display: none; flex: 1; padding: 14px 14px; }
+.tab-content.active { display: block; animation: fadeIn 0.18s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── SECTION HEADERS ── */
+.section-header { margin-bottom: 14px; }
+.section-title { font-size: 16px; font-weight: 700; color: var(--text); display: block; }
+.section-sub   { font-size: 11px; color: var(--text-dim); display: block; margin-top: 2px; }
+
+/* ── MINE TAB ── */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.stat-item {
+    background: var(--surface2);
+    border-radius: var(--radius-md);
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    transition: border-color 0.2s;
+}
+.stat-item:hover { border-color: var(--border-gold); }
+.stat-icon  { font-size: 16px; }
+.stat-value { font-size: 13px; font-weight: 700; color: var(--text); font-family: 'Space Mono', monospace; }
+.stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* MINE AREA */
+.mine-area {
+    position: relative;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding-top: 8px;
+}
+
+.click-counter {
+    position: absolute;
+    top: -10px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 26px; font-weight: 800;
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    text-shadow: 0 0 24px var(--gold-glow);
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 10;
+}
+.click-counter.show { animation: floatUp 0.65s cubic-bezier(0.22,0.61,0.36,1) forwards; }
+@keyframes floatUp {
+    0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    60%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-52px) scale(0.8); }
+}
+
+/* MINE CORE — circular button design */
+.mine-core {
+    position: relative;
+    width: 220px; height: 220px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+}
+.mine-ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(255,215,0,0.10);
+    animation: ringPulse 3s ease-in-out infinite;
+}
+.mine-ring-outer  { inset: 0; animation-delay: 0s; }
+.mine-ring-middle { inset: 15px; animation-delay: 0.4s; border-color: rgba(255,215,0,0.07); }
+@keyframes ringPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%       { opacity: 1;   transform: scale(1.015); }
+}
+
+.mine-btn-wrap {
+    width: 170px; height: 170px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border-gold);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow:
+        0 0 0 6px rgba(255,215,0,0.04),
+        0 8px 32px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,215,0,0.12);
+    transition: all 0.1s ease;
+}
+.mine-btn-wrap:has(.mine-btn:active) {
+    transform: scale(0.94);
+    box-shadow:
+        0 0 0 10px rgba(255,215,0,0.08),
+        0 4px 16px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,215,0,0.06);
+}
+
+.mine-btn {
+    width: 100%; height: 100%;
+    background: none; border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none;
+}
+.mine-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.mine-btn-inner {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+}
+.mine-pickaxe {
+    font-size: 52px;
+    display: block;
+    transition: transform 0.1s ease;
+    filter: drop-shadow(0 2px 12px rgba(255,215,0,0.3));
+}
+.mine-pickaxe.hit { transform: rotate(-28deg) scale(1.25); }
+.mine-btn-text {
+    font-size: 13px; font-weight: 800;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+.mine-btn-sub { font-size: 9px; color: var(--text-dim); letter-spacing: 0.5px; }
+
+/* BOOST ACTIVATE BUTTON */
+.boost-activate-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    background: var(--boost-dim);
+    border: 1px solid rgba(249,115,22,0.25);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.boost-activate-btn:active { transform: scale(0.97); }
+.boost-btn-icon { font-size: 18px; }
+.boost-btn-text { font-size: 13px; font-weight: 700; color: var(--boost); flex: 1; text-align: left; }
+.boost-btn-cost {
+    font-size: 11px; color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 8px;
+}
+
+/* ── NFT TAB ── */
+.nft-equipped-card {
+    background: var(--surface2);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 14px;
+    margin-bottom: 14px;
+}
+.nft-eq-empty {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    padding: 8px;
+}
+.nft-eq-empty-icon { font-size: 28px; }
+.nft-eq-empty-text { font-size: 13px; font-weight: 600; color: var(--text-dim); }
+.nft-eq-empty-hint { font-size: 11px; color: var(--text-faint); }
+
+.nft-eq-card {
+    display: flex; align-items: center; gap: 12px;
+}
+.nft-eq-icon-wrap {
+    width: 52px; height: 52px;
+    background: var(--gold-dim);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+.nft-eq-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nft-eq-name  { font-size: 14px; font-weight: 700; color: var(--gold); }
+.nft-eq-bonus { font-size: 12px; color: var(--text-dim); }
+.nft-eq-label { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.5px; }
+.nft-unequip-btn {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+}
+.nft-unequip-btn:active { transform: scale(0.95); }
+
+/* Rarity legend */
+.nft-rarity-legend {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 14px;
+}
+.rarity-item {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid;
+}
+.rarity-item span { font-family: 'Space Mono', monospace; margin-left: 4px; }
+.rarity-item.common   { background: rgba(156,163,175,0.08); color: #9CA3AF; border-color: rgba(156,163,175,0.2); }
+.rarity-item.rare     { background: rgba(34,211,238,0.08);  color: #22D3EE; border-color: rgba(34,211,238,0.2);  }
+.rarity-item.epic     { background: var(--gold-dim);         color: var(--gold); border-color: var(--border-gold); }
+.rarity-item.legendary{ background: var(--purple-dim);       color: var(--purple); border-color: rgba(167,139,250,0.25); }
+.rarity-item.mythic   { background: rgba(239,68,68,0.08);    color: #F87171; border-color: rgba(239,68,68,0.2);  }
+
+/* NFT GRID */
+.nft-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.nft-card {
+    background: var(--surface2);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 14px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.nft-card:active { transform: scale(0.96); }
+.nft-card.equipped { border-color: var(--gold); background: var(--gold-dim); }
+.nft-card-icon { font-size: 36px; margin-bottom: 2px; }
+.nft-card-name   { font-size: 12px; font-weight: 700; color: var(--text); }
+.nft-card-bonus  { font-size: 11px; color: var(--gold); font-family: 'Space Mono', monospace; }
+.nft-card-rarity { font-size: 10px; color: var(--text-dim); }
+.nft-card-actions { display: flex; gap: 4px; margin-top: 8px; width: 100%; }
+.nft-action-btn {
+    flex: 1;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 4px;
+    color: var(--text-dim);
+    font-size: 10px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.nft-action-btn:active { transform: scale(0.93); }
+.nft-action-btn.primary {
+    background: var(--gold-dim);
+    border-color: var(--border-gold);
+    color: var(--gold);
+}
+.nft-action-btn.energy-style {
+    background: var(--energy-dim);
+    border-color: rgba(34,211,238,0.2);
+    color: var(--energy);
+}
+.nft-action-btn.boost-style {
+    background: var(--boost-dim);
+    border-color: rgba(249,115,22,0.2);
+    color: var(--boost);
+}
+.nft-pending { opacity: 0.7; }
+.nft-wallet-warning {
+    grid-column: 1/-1;
+    text-align: center;
+    background: var(--boost-dim);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    font-size: 11px;
+    color: var(--boost);
+    margin-top: 4px;
+}
+
+/* ── GAMES TAB ── */
+.games-grid {
+    display: flex; flex-direction: column;
+    gap: 10px;
+}
+.game-card {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.game-card:active { transform: scale(0.97); border-color: var(--border-gold); }
+.game-card-icon { font-size: 32px; flex-shrink: 0; }
+.game-card-info { flex: 1; }
+.game-card-name { display: block; font-size: 14px; font-weight: 700; color: var(--text); }
+.game-card-desc { display: block; font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.game-card-reward {
+    font-size: 12px; font-weight: 700;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 20px;
+    padding: 4px 10px;
+    white-space: nowrap;
+    font-family: 'Space Mono', monospace;
+}
+
+/* GAME OVERLAY */
+.game-overlay {
+    position: fixed; inset: 0;
+    background: rgba(9,9,15,0.95);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.game-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    width: 100%;
+    max-width: 380px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.game-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+}
+.game-title { font-size: 18px; font-weight: 700; color: var(--text); }
+.game-close-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+}
+.game-body { text-align: center; }
+.game-result-text {
+    font-size: 22px; font-weight: 800;
+    margin: 12px 0;
+}
+.game-result-text.win  { color: var(--green); }
+.game-result-text.lose { color: var(--red); }
+.game-result-text.draw { color: var(--gold); }
+
+/* CoinFlip */
+.coin-display {
+    font-size: 80px;
+    display: block;
+    margin: 10px auto;
+    cursor: pointer;
+    transition: transform 0.15s;
+    user-select: none;
+}
+.coin-display:active { transform: scale(0.9) rotate(-10deg); }
+.coin-choices { display: flex; gap: 10px; margin: 12px 0; }
+.coin-choice-btn {
+    flex: 1;
+    padding: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+}
+.coin-choice-btn:active  { transform: scale(0.95); }
+.coin-choice-btn.chosen  { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+
+/* RPS */
+.rps-choices { display: flex; gap: 10px; margin: 12px 0; justify-content: center; }
+.rps-btn {
+    width: 72px; height: 72px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 32px;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+}
+.rps-btn:active { transform: scale(0.9); border-color: var(--gold); }
+.rps-vs { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 13px; color: var(--text-dim); }
+.rps-pick { font-size: 42px; }
+.rps-vs-label { font-weight: 700; color: var(--text-dim); font-size: 12px; }
+
+/* Guess Number */
+.guess-input-wrap { display: flex; gap: 8px; margin: 12px 0; }
+.guess-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 18px; font-weight: 700; text-align: center;
+    font-family: 'Space Mono', monospace;
+}
+.guess-input:focus { outline: none; border-color: var(--gold); }
+.guess-submit-btn {
+    background: var(--gold-dim);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    color: var(--gold);
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+}
+.guess-attempts { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+.guess-hint { font-size: 14px; color: var(--text-dim); font-weight: 600; min-height: 24px; }
+
+/* Memory Game */
+.memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 12px 0;
+}
+.memory-card {
+    aspect-ratio: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    user-select: none;
+}
+.memory-card.flipped  { background: var(--gold-dim); border-color: var(--border-gold); }
+.memory-card.matched  { background: var(--green-dim); border-color: rgba(34,197,94,0.3); opacity: 0.7; }
+.memory-card:active   { transform: scale(0.93); }
+.memory-stats { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+
+/* Game action button */
+.game-action-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 13px;
+    color: #09090F;
+    font-size: 14px; font-weight: 800;
+    cursor: pointer;
+    margin-top: 12px;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+}
+.game-action-btn:active { transform: scale(0.97); opacity: 0.9; }
+
+/* ── QUESTS TAB ── */
+.quest-list { display: flex; flex-direction: column; gap: 10px; }
+.quest-item {
+    background: var(--surface2);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 14px;
+    transition: border-color 0.2s;
+}
+.quest-item.done { border-color: rgba(34,197,94,0.3); background: var(--green-dim); }
+.quest-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.quest-title  { font-size: 13px; font-weight: 700; color: var(--text); }
+.quest-reward { font-size: 12px; font-weight: 700; color: var(--gold); font-family: 'Space Mono', monospace; }
+.quest-desc   { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; line-height: 1.5; }
+.quest-progress-wrap {
+    height: 5px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px; overflow: hidden;
+    margin-bottom: 5px;
+}
+.quest-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+.quest-footer { display: flex; justify-content: space-between; align-items: center; }
+.quest-count     { font-size: 10px; color: var(--text-dim); font-family: 'Space Mono', monospace; }
+.quest-done-badge{ font-size: 11px; color: var(--green); font-weight: 700; }
+
+/* ── LEADERBOARD TAB ── */
+.lb-list { display: flex; flex-direction: column; gap: 7px; }
+.lb-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2);
+    border-radius: var(--radius-md);
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+}
+.lb-item.me { border-color: var(--border-gold); background: var(--gold-dim); }
+.lb-rank   { font-size: 18px; font-weight: 800; min-width: 30px; text-align: center; }
+.lb-info   { flex: 1; }
+.lb-name         { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
+.lb-rank-label   { display: block; font-size: 10px; color: var(--text-dim); }
+.lb-clicks {
+    font-size: 13px; font-weight: 700; color: var(--gold);
+    font-family: 'Space Mono', monospace;
+}
+.lb-my-rank {
+    text-align: center; margin-top: 12px;
+    color: var(--text-dim); font-size: 12px;
+    padding: 10px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+#myRankNum { font-weight: 700; color: var(--gold); }
+
+/* ── REFERRAL TAB ── */
+.ref-hero {
+    background: var(--surface2);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    text-align: center;
+    margin-bottom: 14px;
+}
+.ref-hero-icon   { font-size: 36px; margin-bottom: 8px; display: block; }
+.ref-hero-text   { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+.ref-hero-reward { font-size: 28px; font-weight: 800; color: var(--gold); font-family: 'Space Mono', monospace; }
+
+.ref-stats-row {
+    display: flex; align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+.ref-stat { flex: 1; padding: 14px; text-align: center; }
+.ref-stat-divider { width: 1px; height: 40px; background: var(--border); }
+.ref-stat-val   { display: block; font-size: 24px; font-weight: 800; color: var(--gold); font-family: 'Space Mono', monospace; }
+.ref-stat-label { display: block; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+.ref-link-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 10px;
+}
+.ref-link-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.ref-link-box   { font-size: 11px; color: var(--text-faint); word-break: break-all; font-family: 'Space Mono', monospace; }
+
+.ref-actions { display: flex; gap: 8px; margin-bottom: 4px; }
+.ref-btn {
+    flex: 1;
+    border: none; border-radius: var(--radius-md);
+    padding: 12px;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+}
+.ref-btn:active { transform: scale(0.97); }
+.ref-btn-copy  { background: var(--gold-dim);  border: 1px solid var(--border-gold); color: var(--gold); }
+.ref-btn-share { background: var(--energy-dim); border: 1px solid rgba(34,211,238,0.2); color: var(--energy); }
+
+.ref-lb-list { display: flex; flex-direction: column; gap: 7px; }
+
+/* ── WALLET TAB ── */
+.wallet-hero {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 14px;
+}
+.wallet-hero-icon { font-size: 44px; display: block; margin-bottom: 10px; }
+.wallet-hero-text { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+
+.ton-btn-wrap { display: flex; justify-content: center; margin-bottom: 14px; }
+
+.wallet-status-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.wallet-status-row, .wallet-address-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+.wallet-address-row { border-bottom: none; }
+.wallet-status-label { color: var(--text-dim); }
+.wallet-status-value { color: var(--gold); font-weight: 700; }
+.wallet-address-value {
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    word-break: break-all; text-align: right; max-width: 60%;
+}
+
+.wallet-info-list { display: flex; flex-direction: column; gap: 8px; }
+.wallet-info-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+.wallet-info-icon { font-size: 16px; flex-shrink: 0; }
+.wallet-info-text { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+
+/* ── LOADING STATES ── */
+.loading-state {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px; padding: 30px 20px;
+    color: var(--text-dim); font-size: 13px;
+}
+.loading-spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-dim);
+}
+.empty-state-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+.empty-state-text { font-size: 13px; }
+.empty-state-hint { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+
+/* ── TOAST ── */
+.toast {
+    position: fixed; bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 18px;
+    font-size: 13px; font-weight: 600;
+    color: var(--text);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s;
+    z-index: 1000;
+    white-space: nowrap;
+    max-width: 90vw;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.toast.success { border-color: rgba(34,197,94,0.4); color: var(--green); }
+.toast.error   { border-color: rgba(239,68,68,0.4);  color: var(--red); }
+.toast.gold    { border-color: var(--border-gold);    color: var(--gold); }
+
+/* ── UTILITIES ── */
+.text-gold    { color: var(--gold); }
+.text-dim     { color: var(--text-dim); }
+.text-energy  { color: var(--energy); }
+.text-boost   { color: var(--boost); }
+.text-green   { color: var(--green); }
+.mono         { font-family: 'Space Mono', monospace; }

@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Admin – Kovanica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --gold-1: #FFF2A0;
+            --gold-2: #ECC33D;
+            --gold-3: #B78F1F;
+            --gold-glow: rgba(236,195,61,0.35);
+            --gold-soft: rgba(236,195,61,0.12);
+            --bg: #060A04;
+            --bg-2: #0C1109;
+            --surface: rgba(255,255,255,0.06);
+            --surface-2: rgba(255,255,255,0.09);
+            --surface-3: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.08);
+            --border-gold: rgba(236,195,61,0.22);
+            --text: #F5F6EE;
+            --muted: #9AA495;
+            --muted-2: #6B7567;
+            --energy: #6CFF93;
+            --boost: #FF8A3D;
+            --danger: #FF6B6B;
+            --info: #6CB4FF;
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-pill: 100px;
+        }
+        body {
+            font-family: 'Manrope', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
+            background-image: radial-gradient(120% 80% at 50% -10%, rgba(236,195,61,0.12) 0%, transparent 60%),
+                              radial-gradient(80% 60% at 100% 0%, rgba(108,255,147,0.06) 0%, transparent 50%);
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--gold-1), var(--gold-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .status-dot { width: 10px; height: 10px; background: var(--energy); border-radius: 50%; display: inline-block; box-shadow: 0 0 12px var(--energy); }
+        .status-text { color: var(--muted); font-size: 13px; font-weight: 600; }
+        .btn-logout {
+            background: rgba(255,107,107,0.15);
+            border: 1px solid rgba(255,107,107,0.3);
+            color: var(--danger);
+            padding: 8px 18px;
+            border-radius: var(--radius-pill);
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-logout:hover { background: rgba(255,107,107,0.25); }
+
+        /* LOGIN */
+        .login-box {
+            max-width: 400px;
+            margin: 80px auto;
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .login-box h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            color: var(--gold-2);
+            margin-bottom: 8px;
+        }
+        .login-box p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+        .login-box input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
+            margin-bottom: 16px;
+            transition: 0.3s;
+        }
+        .login-box input:focus {
+            outline: none;
+            border-color: var(--border-gold);
+            box-shadow: 0 0 20px var(--gold-glow);
+        }
+        .login-box button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(180deg, var(--gold-1), var(--gold-2));
+            border: none;
+            border-radius: var(--radius-pill);
+            color: #1A1A05;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(236,195,61,0.3);
+            transition: 0.2s;
+        }
+        .login-box button:hover { transform: scale(1.02); }
+        .login-box button:active { transform: scale(0.97); }
+        .login-error { color: var(--danger); margin-top: 12px; display: none; font-weight: 600; }
+
+        /* TABS */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
+            padding: 5px;
+            margin-bottom: 24px;
+        }
+        .tab-bar button {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-pill);
+            color: var(--muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .tab-bar button:hover { color: var(--text); }
+        .tab-bar button.active {
+            background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+            color: var(--gold-2);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .stat-card:hover { border-color: var(--border-gold); }
+        .stat-card .number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--gold-1), var(--gold-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card .label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+        .stat-card .number.green { background: linear-gradient(90deg, #50fa7b, #2E8B57); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card .number.blue { background: linear-gradient(90deg, #6CB4FF, #4A7FB5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card .number.red { background: linear-gradient(90deg, #FF6B6B, #c0392b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* SECTION CARD */
+        .section-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+        .section-card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--gold-2);
+            margin-bottom: 16px;
+        }
+
+        /* TABLE */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th {
+            color: var(--muted);
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        tr:hover { background: rgba(255,255,255,0.03); }
+
+        /* BUTTONS */
+        .btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: var(--radius-pill);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-success { background: rgba(108,255,147,0.15); color: var(--energy); border: 1px solid rgba(108,255,147,0.3); }
+        .btn-danger { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+        .btn-warning { background: rgba(255,138,61,0.15); color: var(--boost); border: 1px solid rgba(255,138,61,0.3); }
+        .btn-primary { background: var(--gold-soft); color: var(--gold-2); border: 1px solid var(--border-gold); }
+        .btn-info { background: rgba(108,180,255,0.15); color: var(--info); border: 1px solid rgba(108,180,255,0.3); }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-pending { background: rgba(255,138,61,0.15); color: var(--boost); border: 1px solid rgba(255,138,61,0.3); }
+        .badge-processed { background: rgba(108,255,147,0.15); color: var(--energy); border: 1px solid rgba(108,255,147,0.3); }
+        .badge-failed { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+        .badge-black { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+        .badge-ok { color: var(--energy); font-weight: 700; }
+
+        /* INPUTS */
+        .inp {
+            padding: 9px 14px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+        .inp:focus { outline: none; border-color: var(--border-gold); }
+
+        /* POOL BAR */
+        .pool-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            font-size: 13px;
+        }
+        .pool-bar .name { width: 160px; font-weight: 700; }
+        .pool-bar .pct { width: 50px; color: var(--gold-2); font-weight: 700; text-align: right; }
+        .pool-bar .track {
+            flex: 1;
+            height: 8px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+        }
+        .pool-bar .track .fill {
+            height: 100%;
+            border-radius: var(--radius-pill);
+            background: linear-gradient(90deg, var(--gold-3), var(--gold-2), var(--gold-1));
+            transition: width 0.5s ease;
+        }
+        .pool-bar .remaining { width: 140px; color: var(--muted); text-align: right; font-size: 12px; }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 14px 24px;
+            border-radius: var(--radius-lg);
+            background: rgba(10,14,8,0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .toast.show { display: block; animation: slideUp 0.3s ease; }
+        .toast.success { border-color: rgba(108,255,147,0.4); }
+        .toast.error { border-color: rgba(255,107,107,0.4); }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* MODAL */
+        .modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-bg.show { display: flex; }
+        .modal-box {
+            background: rgba(10,16,8,0.98);
+            border: 1px solid var(--border-gold);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+        }
+        .modal-box h3 { font-family: 'Space Grotesk', sans-serif; color: var(--gold-2); font-size: 18px; margin-bottom: 8px; }
+        .modal-box p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        /* HALVING */
+        .halving-card {
+            background: rgba(236,195,61,0.06);
+            border: 1px solid var(--border-gold);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        .h-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .h-row:last-child { border-bottom: none; }
+        .h-row .val { color: var(--gold-2); font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+
+        /* MISC */
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .sub { color: var(--muted-2); font-size: 12px; }
+        .mt-1 { margin-top: 10px; }
+        .mb-1 { margin-bottom: 10px; }
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .loading { color: var(--muted); padding: 30px; text-align: center; }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .header { flex-direction: column; gap: 10px; }
+            .tab-bar { width: 100%; }
+            .tab-bar button { font-size: 11px; padding: 8px 12px; flex: 1; text-align: center; }
+            .pool-bar { flex-wrap: wrap; }
+            .pool-bar .name { width: 100%; }
+            .pool-bar .remaining { width: 100%; text-align: left; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <header class="header" id="mainHeader" style="display:none;">
+        <h1>⚙️ Kovanica Admin</h1>
+        <div class="header-actions">
+            <span class="status-dot"></span>
+            <span class="status-text" id="lastRefresh">Ažurirano: -</span>
+            <button class="btn-logout" onclick="logout()">🚪 Odjava</button>
+        </div>
+    </header>
+
+    <!-- LOGIN -->
+    <div class="login-box" id="loginBox">
+        <h2>🔐 Admin Panel</h2>
+        <p>Unesi lozinku za pristup</p>
+        <div class="login-error" id="loginError">❌ Pogrešna lozinka!</div>
+        <input type="password" id="passwordInput" placeholder="Lozinka..." onkeydown="if(event.key==='Enter') login()">
+        <button onclick="login()">Prijava</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" style="display:none;">
+
+        <!-- TABS -->
+        <div class="tab-bar">
+            <button class="active" data-tab="stats" onclick="switchTab('stats')">📊 Stats</button>
+            <button data-tab="users" onclick="switchTab('users')">👥 Korisnici</button>
+            <button data-tab="nfts" onclick="switchTab('nfts')">🎨 NFT</button>
+            <button data-tab="pools" onclick="switchTab('pools')">💧 Pool</button>
+            <button data-tab="withdrawals" onclick="switchTab('withdrawals')">💸 Isplate</button>
+            <button data-tab="halving" onclick="switchTab('halving')">⛏️ Halving</button>
+            <button data-tab="broadcast" onclick="switchTab('broadcast')">📢 Broadcast</button>
+            <button data-tab="settings" onclick="switchTab('settings')">⚙️ Settings</button>
+        </div>
+
+        <!-- TAB: STATS -->
+        <div class="tab-content active" id="tab-stats">
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card"><div class="number" id="sUsers">-</div><div class="label">👥 Korisnici</div></div>
+                <div class="stat-card"><div class="number green" id="sActive">-</div><div class="label">✅ Aktivni danas</div></div>
+                <div class="stat-card"><div class="number" id="sClicks">-</div><div class="label">👆 Ukupno klikova</div></div>
+                <div class="stat-card"><div class="number blue" id="sNFTs">-</div><div class="label">🎨 NFT-ovi</div></div>
+                <div class="stat-card"><div class="number red" id="sPending">-</div><div class="label">⏳ Pending isplate</div></div>
+                <div class="stat-card"><div class="number green" id="sKVNC">-</div><div class="label">💰 Ukupno KVNC</div></div>
+            </div>
+
+            <div class="section-card">
+                <h2>💧 Pool-ovi</h2>
+                <div id="statsPoolList"><div class="loading">Učitavanje...</div></div>
+            </div>
+        </div>
+
+        <!-- TAB: USERS -->
+        <div class="tab-content" id="tab-users">
+            <div class="section-card">
+                <h2>👥 Korisnici</h2>
+                <div class="flex mb-1">
+                    <input class="inp" id="userSearch" placeholder="🔍 Pretraži..." style="flex:1;min-width:150px;" oninput="loadUsers()">
+                    <button class="btn btn-primary" onclick="loadUsers()">🔄 Osvježi</button>
+                    <span class="sub" id="userCount"></span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Telegram ID</th><th>Balans</th><th>Klikovi</th>
+                            <th>Dnevno</th><th>Referali</th><th>Wallet</th><th>Status</th><th>Akcije</th>
+                        </tr></thead>
+                        <tbody id="usersTable"><tr><td colspan="8" class="loading">Učitavanje...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: NFTS -->
+        <div class="tab-content" id="tab-nfts">
+            <div class="section-card">
+                <h2>🎨 NFT-ovi</h2>
+                <div class="flex mb-1">
+                    <button class="btn btn-primary" onclick="loadNFTs()">🔄 Osvježi</button>
+                    <span class="sub" id="nftCount"></span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>ID</th><th>Ime</th><th>Rarity</th><th>Bonus</th>
+                            <th>Staking</th><th>User ID</th><th>Status</th><th>Akcija</th>
+                        </tr></thead>
+                        <tbody id="nftsTable"><tr><td colspan="8" class="loading">Učitavanje...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: POOLS -->
+        <div class="tab-content" id="tab-pools">
+            <div class="section-card">
+                <h2>💧 Pool-ovi</h2>
+                <div id="poolMgmt"><div class="loading">Učitavanje...</div></div>
+            </div>
+            <div class="section-card">
+                <h2>➕ Dodaj sredstva</h2>
+                <div class="flex">
+                    <input class="inp" id="newPoolName" placeholder="Ime poola (npr. tap_base)" style="flex:1;min-width:150px;">
+                    <input class="inp" id="newPoolAmount" type="number" placeholder="Iznos (KVNC)" style="width:150px;">
+                    <button class="btn btn-success" onclick="createPool()">➕ Dodaj</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: WITHDRAWALS -->
+        <div class="tab-content" id="tab-withdrawals">
+            <div class="section-card">
+                <h2>💸 Isplate</h2>
+                <div class="flex mb-1">
+                    <button class="btn btn-primary" onclick="loadWithdrawals()">🔄 Osvježi</button>
+                    <select class="inp" id="wFilter" onchange="loadWithdrawals()" style="width:150px;">
+                        <option value="all">Sve</option>
+                        <option value="pending" selected>⏳ Pending</option>
+                        <option value="processed">✅ Obrađene</option>
+                        <option value="failed">❌ Neuspjele</option>
+                    </select>
+                    <span class="sub" id="wCount"></span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>ID</th><th>User</th><th>Iznos</th>
+                            <th>Adresa</th><th>Zatraženo</th><th>Status</th><th>Akcija</th>
+                        </tr></thead>
+                        <tbody id="wTable"><tr><td colspan="7" class="loading">Učitavanje...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: HALVING -->
+        <div class="tab-content" id="tab-halving">
+            <div class="section-card">
+                <h2>⛏️ Halving status</h2>
+                <div id="halvingStatus"><div class="loading">Učitavanje...</div></div>
+            </div>
+            <div class="section-card">
+                <h2>📜 Povijest</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Epoch</th><th>Globalni klikovi</th><th>Stara nagrada</th><th>Nova nagrada</th><th>Datum</th></tr></thead>
+                        <tbody id="halvingTable"><tr><td colspan="5" class="loading">Učitavanje...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: BROADCAST -->
+        <div class="tab-content" id="tab-broadcast">
+            <div class="section-card">
+                <h2>📢 Broadcast</h2>
+                <p class="sub mb-1">Šalje poruku svim korisnicima (podržava Markdown).</p>
+                <textarea class="inp" id="broadcastMsg" rows="5" style="width:100%;resize:vertical;margin-bottom:12px;" placeholder="Upiši poruku..."></textarea>
+                <div class="flex">
+                    <button class="btn btn-warning" onclick="previewBroadcast()">👁️ Preview</button>
+                    <button class="btn btn-danger" onclick="sendBroadcast()">📤 Pošalji svima</button>
+                    <span class="sub" id="broadcastNote"></span>
+                </div>
+                <div id="broadcastPreview" style="display:none;margin-top:12px;padding:14px;background:rgba(0,0,0,0.3);border-radius:var(--radius-md);white-space:pre-wrap;font-size:14px;"></div>
+            </div>
+            <div class="section-card">
+                <h2>🎁 Airdrop</h2>
+                <p class="sub mb-1">Dodaje KVNC svim korisnicima odjednom.</p>
+                <div class="flex">
+                    <input class="inp" id="airdropAmount" type="number" placeholder="Iznos po korisniku" style="width:180px;">
+                    <button class="btn btn-success" onclick="sendAirdrop()">🎁 Pošalji airdrop</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: SETTINGS -->
+        <div class="tab-content" id="tab-settings">
+            <div class="section-card">
+                <h2>⚙️ Postavke</h2>
+                <div style="display:grid;gap:14px;max-width:500px;">
+                    <div><label class="sub">Dnevni limit klikova</label><input class="inp" id="sDailyLimit" style="width:100%;" /></div>
+                    <div><label class="sub">Nagrada po kliku (KVNC)</label><input class="inp" id="sInitialReward" style="width:100%;" step="0.0001" /></div>
+                    <div><label class="sub">Min. isplata (KVNC)</label><input class="inp" id="sMinWithdrawal" style="width:100%;" /></div>
+                    <div><label class="sub">Referral bonus - pozivatelj</label><input class="inp" id="sRefInviter" style="width:100%;" /></div>
+                    <div><label class="sub">Referral bonus - novi</label><input class="inp" id="sRefNew" style="width:100%;" /></div>
+                    <div class="flex">
+                        <button class="btn btn-success" onclick="saveSettings()">💾 Spremi</button>
+                        <span class="sub" id="settingsNote"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="section-card">
+                <h2>🚨 Opasne akcije</h2>
+                <div class="flex">
+                    <button class="btn btn-danger" onclick="resetDaily()">🔄 Reset dnevnih klikova</button>
+                    <button class="btn btn-warning" onclick="manualReport()">📊 Pošalji izvještaj</button>
+                </div>
+                <p class="sub mt-1">⚠️ Reset postavlja dailyClicks=0 za sve korisnike. Ne može se poništiti.</p>
+            </div>
+        </div>
+
+    </div><!-- /dashboard -->
+
+</div><!-- /container -->
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal">
+    <div class="modal-box">
+        <h3 id="modalTitle">Potvrda</h3>
+        <p id="modalMsg"></p>
+        <div class="modal-actions">
+            <button class="btn btn-warning" onclick="closeModal()">Odustani</button>
+            <button class="btn btn-danger" id="modalOk">Potvrdi</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// KOVANICA ADMIN - MODERNI UI
+// ============================================================
+
+let token = localStorage.getItem('adminToken') || '';
+let modalCb = null;
+
+// ── LOGIN ──────────────────────────────────────────────────
+function login() {
+    const pw = document.getElementById('passwordInput').value;
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+
+    fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success && d.token) {
+            token = d.token;
+            localStorage.setItem('adminToken', token);
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('mainHeader').style.display = 'flex';
+            loadAll();
+            toast('✅ Prijava uspješna!', 'success');
+        } else {
+            errEl.style.display = 'block';
+        }
+    })
+    .catch(() => {
+        errEl.style.display = 'block';
+    });
+}
+
+function logout() {
+    token = null;
+    localStorage.removeItem('adminToken');
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('mainHeader').style.display = 'none';
+}
+
+// Auto-login
+if (token) {
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('mainHeader').style.display = 'flex';
+    loadAll();
+}
+
+// ── API ────────────────────────────────────────────────────
+async function api(url, method = 'GET', body = null) {
+    const opts = { method, headers: { 'x-admin-token': token, 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    if (res.status === 401) { toast('❌ Sesija istekla.', 'error'); logout(); return {}; }
+    return res.json();
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + type + ' show';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── MODAL ─────────────────────────────────────────────────
+function showModal(title, msg, cb, okLabel = 'Potvrdi', okClass = 'btn-danger') {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMsg').textContent = msg;
+    const okBtn = document.getElementById('modalOk');
+    okBtn.textContent = okLabel;
+    okBtn.className = 'btn ' + okClass;
+    modalCb = cb;
+    document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); modalCb = null; }
+document.getElementById('modalOk').onclick = () => { closeModal(); if (modalCb) modalCb(); };
+document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(tab) {
+    document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.tab-bar button[data-tab="${tab}"]`).classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    const loaders = { users: loadUsers, nfts: loadNFTs, withdrawals: loadWithdrawals, pools: loadPools, halving: loadHalving, settings: loadSettings };
+    if (loaders[tab]) loaders[tab]();
+}
+
+function loadAll() { loadStats(); loadUsers(); loadNFTs(); loadWithdrawals(); loadPools(); loadSettings(); }
+
+// ── STATS ─────────────────────────────────────────────────
+async function loadStats() {
+    try {
+        const [s, p] = await Promise.all([api('/api/admin/stats'), api('/api/admin/pools')]);
+        document.getElementById('sUsers').textContent = (s.totalUsers || 0).toLocaleString();
+        document.getElementById('sActive').textContent = (s.todayUsers || 0).toLocaleString();
+        document.getElementById('sClicks').textContent = (s.totalClicks || 0).toLocaleString();
+        document.getElementById('sNFTs').textContent = (s.totalNFTs || 0).toLocaleString();
+        document.getElementById('sPending').textContent = (s.pendingWithdrawals || 0).toLocaleString();
+        document.getElementById('sKVNC').textContent = (s.totalBalance || 0).toFixed(2);
+        document.getElementById('lastRefresh').textContent = 'Ažurirano: ' + new Date().toLocaleTimeString('hr-HR');
+
+        const pools = p.pools || [];
+        const el = document.getElementById('statsPoolList');
+        if (!pools.length) { el.innerHTML = '<div class="sub">Nema pool-ova</div>'; return; }
+        el.innerHTML = pools.map(p => {
+            const used = p.totalAllocated > 0 ? ((p.spent / p.totalAllocated) * 100).toFixed(1) : '0.0';
+            const emoji = { tap_base: '⛏️', nft_mint_rewards: '🎨', referral_pool: '👥', dex_kvnc_gram: '💧', dex_kvnc_usdt: '💧' }[p.poolName] || '📦';
+            return `<div class="pool-bar">
+                <span class="name">${emoji} ${p.poolName}</span>
+                <span class="pct">${used}%</span>
+                <div class="track"><div class="fill" style="width:${Math.min(100, used)}%"></div></div>
+                <span class="remaining">${(p.remaining || 0).toLocaleString()} KVNC</span>
+            </div>`;
+        }).join('');
+    } catch (e) { toast('❌ Greška pri učitavanju', 'error'); }
+}
+
+// ── USERS ─────────────────────────────────────────────────
+async function loadUsers() {
+    const tbody = document.getElementById('usersTable');
+    tbody.innerHTML = '<tr><td colspan="8" class="loading">Učitavanje...</td></tr>';
+    try {
+        const search = document.getElementById('userSearch').value.trim();
+        const d = await api('/api/admin/users?search=' + encodeURIComponent(search));
+        const users = d.users || [];
+        document.getElementById('userCount').textContent = users.length + ' korisnika';
+        if (!users.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">Nema korisnika</td></tr>'; return; }
+        tbody.innerHTML = users.map(u => {
+            const wallet = u.tonWallet ? `<span style="font-family:monospace;font-size:11px;color:var(--energy);cursor:pointer;" onclick="copyText('${u.tonWallet}')">${u.tonWallet.slice(0,6)}…${u.tonWallet.slice(-4)} 📋</span>` : '<span class="sub">—</span>';
+            const status = u.isBlacklisted ? '<span class="badge badge-black">🚫 Blokiran</span>' : '<span class="badge-ok">✅ OK</span>';
+            return `<tr>
+                <td style="font-family:monospace;font-size:12px;">${u.telegramId}</td>
+                <td style="color:var(--gold-2);font-weight:700;">${(u.clickBalance || 0).toFixed(2)}</td>
+                <td>${(u.totalClicks || 0).toLocaleString()}</td>
+                <td>${(u.dailyClicks || 0).toLocaleString()}</td>
+                <td>${u.referralCount || 0}</td>
+                <td>${wallet}</td>
+                <td>${status}</td>
+                <td>
+                    <div class="flex" style="gap:4px;">
+                        <button class="btn btn-success" onclick="addBalance('${u.telegramId}',100)">+100</button>
+                        <button class="btn btn-warning" onclick="addBalance('${u.telegramId}',1000)">+1K</button>
+                        <button class="btn btn-danger" onclick="addBalance('${u.telegramId}',-100)">-100</button>
+                        <button class="btn ${u.isBlacklisted ? 'btn-success' : 'btn-danger'}" onclick="toggleBlacklist('${u.telegramId}', ${u.isBlacklisted})">${u.isBlacklisted ? '✅' : '🚫'}</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) { tbody.innerHTML = '<tr><td colspan="8" class="loading">Greška</td></tr>'; }
+}
+
+async function addBalance(telegramId, amount) {
+    showModal('Promjena balansa', `Dodati ${amount > 0 ? '+' : ''}${amount} KVNC korisniku ${telegramId}?`, async () => {
+        const d = await api('/api/admin/user/balance', 'POST', { telegramId, amount });
+        if (d.success) { toast(`✅ Novi balans: ${d.newBalance.toFixed(2)} KVNC`, 'success'); loadUsers(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+async function toggleBlacklist(telegramId, current) {
+    const action = current ? 'odblokirati' : 'blokirati';
+    showModal('Promjena statusa', `${action} korisnika ${telegramId}?`, async () => {
+        const d = await api('/api/admin/user/blacklist', 'POST', { telegramId, blacklist: !current });
+        if (d.success) { toast(`✅ Korisnik ${action}!`, 'success'); loadUsers(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// ── NFTS ──────────────────────────────────────────────────
+const RARITY_EMOJI = { Mythic: '🔥', Legendary: '💎', Epic: '🥇', Rare: '🥈', Common: '⛏️' };
+const RARITY_COLOR = { Mythic: '#FF8A3D', Legendary: '#a855f7', Epic: '#ECC33D', Rare: '#6CB4FF', Common: '#9AA495' };
+
+async function loadNFTs() {
+    const tbody = document.getElementById('nftsTable');
+    tbody.innerHTML = '<tr><td colspan="8" class="loading">Učitavanje...</td></tr>';
+    try {
+        const d = await api('/api/admin/nfts');
+        const nfts = d.nfts || [];
+        document.getElementById('nftCount').textContent = nfts.length + ' NFT-ova';
+        if (!nfts.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">Nema NFT-ova</td></tr>'; return; }
+        tbody.innerHTML = nfts.map(n => {
+            const status = n.equipped ? '<span style="color:var(--gold-2);font-weight:700;">✅ Opremljen</span>' :
+                           n.staked ? '<span style="color:var(--energy);font-weight:700;">🔒 Stake-an</span>' :
+                           '<span class="sub">📦 U torbi</span>';
+            return `<tr>
+                <td class="sub">#${n.id}</td>
+                <td>${RARITY_EMOJI[n.rarity] || '🎨'} ${n.name || '—'}</td>
+                <td style="color:${RARITY_COLOR[n.rarity] || '#e0e0e0'};font-weight:700;">${n.rarity || '—'}</td>
+                <td style="color:var(--gold-2);font-weight:700;">${n.bonusMultiplier || 1}x</td>
+                <td class="sub">${(n.stakingReward || 0).toFixed(2)}/dan</td>
+                <td style="font-family:monospace;font-size:12px;color:var(--muted);">#${n.userId}</td>
+                <td>${status}</td>
+                <td><button class="btn btn-danger" onclick="deleteNFT(${n.id})">🗑️</button></td>
+            </tr>`;
+        }).join('');
+    } catch (e) { tbody.innerHTML = '<tr><td colspan="8" class="loading">Greška</td></tr>'; }
+}
+
+async function deleteNFT(id) {
+    showModal('Brisanje NFT-a', `Trajno izbrisati NFT #${id}?`, async () => {
+        const d = await api('/api/admin/nft/delete', 'POST', { id });
+        if (d.success) { toast('✅ NFT izbrisan!', 'success'); loadNFTs(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// ── WITHDRAWALS ───────────────────────────────────────────
+async function loadWithdrawals() {
+    const tbody = document.getElementById('wTable');
+    tbody.innerHTML = '<tr><td colspan="7" class="loading">Učitavanje...</td></tr>';
+    try {
+        const filter = document.getElementById('wFilter').value;
+        const d = await api('/api/admin/withdrawals');
+        let list = d.withdrawals || [];
+        if (filter !== 'all') list = list.filter(w => w.status === filter);
+        document.getElementById('wCount').textContent = list.length + ' isplata';
+        if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="loading">Nema isplata ✅</td></tr>'; return; }
+        tbody.innerHTML = list.map(w => {
+            const bc = w.status === 'processed' ? 'badge-processed' : w.status === 'failed' ? 'badge-failed' : 'badge-pending';
+            const label = w.status === 'processed' ? '✅ Obrađeno' : w.status === 'failed' ? '❌ Neuspjelo' : '⏳ Pending';
+            return `<tr>
+                <td class="sub">#${w.id}</td>
+                <td style="font-family:monospace;font-size:12px;">#${w.userId}</td>
+                <td style="color:var(--gold-2);font-weight:700;">${(w.amount || 0).toFixed(2)}</td>
+                <td style="font-family:monospace;font-size:11px;">${w.tonAddress ? w.tonAddress.slice(0,8) + '…' + w.tonAddress.slice(-6) : '—'}</td>
+                <td class="sub">${w.requestedAt ? new Date(w.requestedAt).toLocaleDateString('hr-HR') : '—'}</td>
+                <td><span class="badge ${bc}">${label}</span></td>
+                <td>${(w.status === 'pending' || w.status === 'failed') ? `<button class="btn btn-success" onclick="processWithdrawal(${w.id})">📤</button>` : '<span class="sub">—</span>'}</td>
+            </tr>`;
+        }).join('');
+    } catch (e) { tbody.innerHTML = '<tr><td colspan="7" class="loading">Greška</td></tr>'; }
+}
+
+async function processWithdrawal(id) {
+    showModal('📤 Procesiraj isplatu', `Poslati isplatu #${id} na TON mrežu?`, async () => {
+        const d = await api('/api/admin/withdrawal/process', 'POST', { id });
+        if (d.success) { toast('✅ Isplata obrađena!', 'success'); loadWithdrawals(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// ── POOLS ─────────────────────────────────────────────────
+async function loadPools() {
+    const el = document.getElementById('poolMgmt');
+    el.innerHTML = '<div class="loading">Učitavanje...</div>';
+    try {
+        const d = await api('/api/admin/pools');
+        const pools = d.pools || [];
+        if (!pools.length) { el.innerHTML = '<div class="sub">Nema pool-ova</div>'; return; }
+        el.innerHTML = pools.map(p => {
+            const used = p.totalAllocated > 0 ? ((p.spent / p.totalAllocated) * 100).toFixed(1) : '0.0';
+            const emoji = { tap_base: '⛏️', nft_mint_rewards: '🎨', referral_pool: '👥', dex_kvnc_gram: '💧', dex_kvnc_usdt: '💧' }[p.poolName] || '📦';
+            return `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
+                <div class="flex" style="justify-content:space-between;">
+                    <span style="font-weight:700;">${emoji} ${p.poolName}</span>
+                    <span class="sub">${p.lastUpdated ? new Date(p.lastUpdated).toLocaleDateString('hr-HR') : '—'}</span>
+                </div>
+                <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);margin:6px 0;">
+                    <span>Ukupno: <strong style="color:var(--text);">${(p.totalAllocated || 0).toLocaleString()}</strong></span>
+                    <span>Potrošeno: <strong style="color:var(--danger);">${(p.spent || 0).toLocaleString()}</strong></span>
+                    <span>Ostalo: <strong style="color:var(--energy);">${(p.remaining || 0).toLocaleString()}</strong></span>
+                </div>
+                <div class="pool-bar" style="margin:4px 0;">
+                    <span class="pct">${used}%</span>
+                    <div class="track"><div class="fill" style="width:${Math.min(100, used)}%"></div></div>
+                </div>
+                <div class="flex" style="margin-top:6px;">
+                    <button class="btn btn-primary" onclick="addFunds('${p.poolName}', 1000)">+1K</button>
+                    <button class="btn btn-warning" onclick="addFunds('${p.poolName}', 10000)">+10K</button>
+                    <button class="btn btn-success" onclick="addFunds('${p.poolName}', 100000)">+100K</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) { el.innerHTML = '<div class="loading">Greška</div>'; }
+}
+
+async function addFunds(poolName, amount) {
+    showModal('Dodaj sredstva', `Dodati ${amount.toLocaleString()} KVNC u pool "${poolName}"?`, async () => {
+        const d = await api('/api/admin/pool/add', 'POST', { poolName, amount });
+        if (d.success) { toast('✅ Sredstva dodana!', 'success'); loadPools(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+async function createPool() {
+    const name = document.getElementById('newPoolName').value.trim();
+    const amount = parseFloat(document.getElementById('newPoolAmount').value);
+    if (!name) { toast('❌ Unesi ime poola', 'error'); return; }
+    if (!amount || amount <= 0) { toast('❌ Unesi iznos', 'error'); return; }
+    showModal('Kreiraj pool', `Kreirati pool "${name}" s ${amount.toLocaleString()} KVNC?`, async () => {
+        const d = await api('/api/admin/pool/add', 'POST', { poolName: name, amount });
+        if (d.success) { toast('✅ Pool kreiran!', 'success'); document.getElementById('newPoolName').value = ''; document.getElementById('newPoolAmount').value = ''; loadPools(); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// ── HALVING ───────────────────────────────────────────────
+async function loadHalving() {
+    const statusEl = document.getElementById('halvingStatus');
+    const tbody = document.getElementById('halvingTable');
+    statusEl.innerHTML = '<div class="loading">Učitavanje...</div>';
+    tbody.innerHTML = '<tr><td colspan="5" class="loading">Učitavanje...</td></tr>';
+    try {
+        const d = await api('/api/admin/halving');
+        const pct = d.halvingInterval > 0 ? (((d.totalGlobal % d.halvingInterval) / d.halvingInterval) * 100).toFixed(1) : '0.0';
+        statusEl.innerHTML = `
+            <div class="halving-card">
+                <div class="h-row"><span class="sub">Trenutna nagrada</span><span class="val">${(d.currentReward || 0).toFixed(4)} KVNC</span></div>
+                <div class="h-row"><span class="sub">Halving epoch</span><span class="val">#${d.currentEpoch || 0}</span></div>
+                <div class="h-row"><span class="sub">Globalni klikovi</span><span class="val">${(d.totalGlobal || 0).toLocaleString()}</span></div>
+                <div class="h-row"><span class="sub">Sljedeći halving za</span><span class="val">${(d.clicksToNext || 0).toLocaleString()} klikova</span></div>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Napredak: ${pct}%</div>
+            <div style="height:8px;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:100px;overflow:hidden;">
+                <div style="height:100%;width:${Math.min(100, pct)}%;background:linear-gradient(90deg,var(--gold-3),var(--gold-2),var(--gold-1));border-radius:100px;"></div>
+            </div>`;
+        const events = d.events || [];
+        if (!events.length) { tbody.innerHTML = '<tr><td colspan="5" class="loading">Još nema halving evenata</td></tr>'; return; }
+        tbody.innerHTML = events.map(e => `<tr>
+            <td style="color:var(--gold-2);font-weight:700;">#${e.epoch}</td>
+            <td>${(e.totalClicks || 0).toLocaleString()}</td>
+            <td class="sub">${(e.oldReward || 0).toFixed(4)} KVNC</td>
+            <td style="color:var(--energy);font-weight:700;">${(e.newReward || 0).toFixed(4)} KVNC</td>
+            <td class="sub">${e.createdAt ? new Date(e.createdAt).toLocaleDateString('hr-HR') : '—'}</td>
+        </tr>`).join('');
+    } catch (e) { statusEl.innerHTML = '<div class="loading">Greška</div>'; tbody.innerHTML = '<tr><td colspan="5" class="loading">Greška</td></tr>'; }
+}
+
+// ── BROADCAST ─────────────────────────────────────────────
+function previewBroadcast() {
+    const msg = document.getElementById('broadcastMsg').value;
+    const prev = document.getElementById('broadcastPreview');
+    if (!msg.trim()) { prev.style.display = 'none'; return; }
+    prev.textContent = msg;
+    prev.style.display = 'block';
+}
+
+async function sendBroadcast() {
+    const msg = document.getElementById('broadcastMsg').value.trim();
+    if (!msg) { toast('❌ Poruka je prazna', 'error'); return; }
+    showModal('📢 Broadcast', 'Poslati poruku svim korisnicima? Ovo može potrajati.', async () => {
+        const d = await api('/api/admin/broadcast', 'POST', { message: msg });
+        if (d.success) { toast(`✅ Poslano: ${d.sent}/${d.total} korisnika`, 'success'); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+async function sendAirdrop() {
+    const amount = parseFloat(document.getElementById('airdropAmount').value);
+    if (!amount || amount <= 0) { toast('❌ Unesi iznos', 'error'); return; }
+    showModal('🎁 Airdrop', `Dodati ${amount} KVNC svim korisnicima?`, async () => {
+        const d = await api('/api/admin/airdrop', 'POST', { amount });
+        if (d.success) { toast(`✅ Airdrop poslan: ${d.affected} korisnika`, 'success'); loadStats(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+// ── SETTINGS ──────────────────────────────────────────────
+async function loadSettings() {
+    try {
+        const d = await api('/api/admin/settings');
+        document.getElementById('sDailyLimit').value = d.dailyLimit || 10000;
+        document.getElementById('sInitialReward').value = d.initialReward || 1.0;
+        document.getElementById('sMinWithdrawal').value = d.minWithdrawal || 1000;
+        document.getElementById('sRefInviter').value = d.referralBonusInviter || 10;
+        document.getElementById('sRefNew').value = d.referralBonusNew || 5;
+        document.getElementById('settingsNote').textContent = 'ENV: ' + (d.nodeEnv || '—');
+    } catch (e) { console.error(e); }
+}
+
+async function saveSettings() {
+    const settings = {
+        dailyLimit: parseInt(document.getElementById('sDailyLimit').value),
+        initialReward: parseFloat(document.getElementById('sInitialReward').value),
+        minWithdrawal: parseInt(document.getElementById('sMinWithdrawal').value),
+        referralBonusInviter: parseInt(document.getElementById('sRefInviter').value),
+        referralBonusNew: parseInt(document.getElementById('sRefNew').value)
+    };
+    const d = await api('/api/admin/settings', 'POST', settings);
+    if (d.success) toast('✅ ' + (d.message || 'Spremljeno!'), 'success');
+    else toast('❌ ' + (d.error || 'Greška'), 'error');
+}
+
+async function resetDaily() {
+    showModal('⚠️ Reset dnevnih klikova', 'Postaviti dailyClicks=0 za SVE korisnike? Ovo se ne može poništiti!', async () => {
+        const d = await api('/api/admin/reset-daily', 'POST');
+        if (d.success) { toast(`✅ Reset uspješan — ${d.affected} korisnika`, 'success'); loadUsers(); }
+        else toast('❌ ' + (d.error || 'Greška'), 'error');
+    });
+}
+
+async function manualReport() {
+    const d = await api('/api/admin/report', 'POST');
+    if (d.success) toast('✅ ' + d.message, 'success');
+    else toast('❌ ' + (d.error || 'Greška'), 'error');
+}
+
+function copyText(text) {
+    navigator.clipboard?.writeText(text).then(() => toast('📋 Kopirano!', 'success')).catch(() => toast('❌ Greška', 'error'));
+}
+
+// ── AUTO REFRESH ──────────────────────────────────────────
+setInterval(() => { if (token) loadStats(); }, 30000);
+
+console.log('🚀 Kovanica Admin Panel loaded!');
+</script>
+</body>
+</html>

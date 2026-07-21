@@ -1,0 +1,31 @@
+
+bot.callbackQuery("menu_tokenomics", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    let message = "🪙 **KVNC TOKENOMICS** 🪙\n\n";
+    
+    message += `📊 **Osnovni podaci**\n`;
+    message += `└── Total Supply: **1,000,000,000** KVNC\n`;
+    message += `└── Burnano: **100,000,000** KVNC (10%)\n`;
+    message += `└── Cirkulacija: **900,000,000** KVNC\n\n`;
+    
+    message += `📦 **Raspodjela**\n`;
+    message += `└── 🔥 Burnano: **10%** (100M)\n`;
+    message += `└── 💧 DEX Pool: **20%** (200M) - 25% korišteno\n`;
+    message += `└── 🔒 Locked: **20%** (200M) - 1+ godina\n`;
+    message += `└── ⛏️ Tap Reward: **35%** (350M)\n`;
+    message += `└── 🎨 NFT Ecosystem: **10%** (100M)\n`;
+    message += `└── 👥 Referral/Stake: **5%** (50M)\n\n`;
+    
+    message += `🔒 **Locked adrese**\n`;
+    message += `└── 1+ godina: \`EQCUFe-WDLd7XwnyPRZ99s1oFgEFnQSJ3denTZ4eC9fTpSo1\`\n`;
+    message += `└── LP Lock (4 godine): \`EQCAshCkucJuYbQStNoHjIUoe4nZ7hbz2Mx0si1GxBxwRBJ7\`\n\n`;
+    
+    message += `📊 **Pool status**\n`;
+    message += `└── DEX Pool: 50M/200M korišteno (25%)\n`;
+    message += `└── Preostalo za DEX: **150M KVNC**\n\n`;
+    
+    message += `🔗 **Explorer:**\n`;
+    message += `https://tonscan.org/jetton/${process.env.KVNC_JETTON_MASTER}`;
+
+    await ctx.reply(message, { parse_mode: 'Markdown' });
+});
