@@ -41,6 +41,10 @@ function getRank(totalClicks: number): string {
     return "🥉 Brončani rudar";
 }
 
+async function getCurrentReward(): Promise<number> {
+    return 1.0;
+}
+
 function isToday(date: Date): boolean {
     const now = new Date();
     return date.getFullYear() === now.getFullYear() &&
@@ -349,11 +353,11 @@ app.get('/api/quests', async (req, res) => {
 
         const quests = await Promise.all(DAILY_QUESTS.map(async (q) => {
             const existing = await prisma.quest.findFirst({
-                where: { userId: dbUser.id, type: q.type, date: { gte: today } }
+                where: { userId: dbUser.id, type: q.type, questDate: today }
             });
             if (existing) return existing;
             return prisma.quest.create({
-                data: { userId: dbUser.id, type: q.type, target: q.target, reward: q.reward, date: today }
+                data: { userId: dbUser.id, type: q.type, target: q.target, reward: q.reward, questDate: today }
             });
         }));
 

@@ -30,6 +30,7 @@ model User {
   nfts        NFT[]
   withdrawals Withdrawal[]
   quests      Quest[]
+  boosts      Boost[]
 
   referredByUser User?  @relation("UserReferrals", fields: [referredBy], references: [id])
   referrals      User[] @relation("UserReferrals")
@@ -88,6 +89,17 @@ model Quest {
 
   @@unique([userId, type, questDate])
   @@map("quests")
+}
+
+model Boost {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  type      String
+  expiresAt DateTime @map("expires_at")
+  active    Boolean  @default(true)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("boosts")
 }
 
 model PoolTracking {
