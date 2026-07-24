@@ -57,10 +57,10 @@ bot.command("start", async (ctx: Context) => {
     if (!ctx.from) return ctx.reply("Nema korisnika!");
     const telegramId = String(ctx.from.id);
 
-    // await QuestService.createDailyQuests(telegramId);
+    await QuestService.createDailyQuests(telegramId);
 
     const payload = ctx.message?.text?.split(" ");
-    let referrerId: number | null = null;
+    let referrerId: string | null = null;
     if (payload && payload.length > 1 && payload[1].startsWith("ref_")) {
         const refTelegramId = payload[1].replace("ref_", "");
         const referrer = await prisma.user.findUnique({
@@ -151,15 +151,11 @@ bot.command("status", async (ctx: Context) => {
 
     const rank = getRank(user.totalClicks);
     const equippedNFT = await NFTService.getEquippedNFT(telegramId);
-    
-    // Questovi su privremeno isključeni
-    const completedQuests = 0;
-    const totalQuests = 0;
-    
-    const achievements = await prisma.achievement.count({
-        where: { userId: user.id }
-    });
-    
+
+    const todayQuests = await QuestService.getTodayQuests(telegramId);
+    const completedQuests = todayQuests.filter((q: any) => q.completed).length;
+    const totalQuests = todayQuests.length;
+
     let bonusText = '';
     if (equippedNFT) {
         bonusText = `\n⭐ NFT bonus: ${equippedNFT.bonusMultiplier}x (${equippedNFT.name})`;
@@ -174,7 +170,6 @@ bot.command("status", async (ctx: Context) => {
         `📊 Nagrada po kliku: ${INITIAL_REWARD} KVNC${bonusText}\n` +
         `👥 Pozvanih korisnika: ${user.referralCount}\n` +
         `📋 Dnevni zadaci: ${completedQuests}/${totalQuests} dovršeno\n` +
-        `🏅 Postignuća: ${achievements}\n` +
         `⭐️ Daily bonus: ${user.lastBonusDate && isToday(user.lastBonusDate) ? "✅ Iskorišten danas" : "✅ Dostupan (2x)"}\n` +
         `📅 Zadnji klik: ${user.lastClickDate.toLocaleString()}`
     );
@@ -1228,14 +1223,14 @@ bot.callbackQuery("tap", async (ctx: Context) => {
     });
 
     const rank = getRank(updated.totalClicks);
-    
-    // await QuestService.updateQuestProgress(telegramId, 'clicks');
-    
+
+    await QuestService.updateQuestProgress(telegramId, 'clicks');
+
     const nftResult = await NFTService.checkAndMintNFT(telegramId, updated.totalClicks);
     let nftMessage = '';
     if (nftResult) {
-       // await QuestService.updateQuestProgress(telegramId, 'nft');
-        
+        await QuestService.updateQuestProgress(telegramId, 'nft');
+
         const nft = nftResult.nft;
         nftMessage = `\n\n🎉 **ISKOPAO SI NFT!**\n` +
                      `${nft.name} (${nft.rarity})\n` +

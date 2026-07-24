@@ -89,6 +89,7 @@ app.post('/api/me', async (req, res) => {
             referralCount: dbUser.referralCount,
             rank: getRank(dbUser.totalClicks),
             bonusAvailable,
+            baseReward: await getCurrentReward(),
         });
     } catch (error) {
         console.error("❌ /api/me error:", error);

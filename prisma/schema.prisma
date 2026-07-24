@@ -8,38 +8,38 @@ datasource db {
 }
 
 model User {
-  id             Int           @id @default(autoincrement())
-  telegramId     String        @unique @map("telegram_id")
-  tonWallet      String?       @map("ton_wallet")
-  clickBalance   Float         @default(0) @map("click_balance")
-  totalClicks    Int           @default(0) @map("total_clicks")
-  dailyClicks    Int           @default(0) @map("daily_clicks")
-  lastClickDate  DateTime      @default(now()) @map("last_click_date")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  referredBy     Int?          @map("referred_by")
-  referralCount  Int           @default(0) @map("referral_count")
-  lastBonusDate  DateTime?     @map("last_bonus_date")
-  energy         Int           @default(1000) @map("energy")
-  lastEnergyUpdate DateTime?   @map("last_energy_update")
-  isBlacklisted  Boolean       @default(false) @map("is_blacklisted")
-  achievements   Achievement[]
-  boosts         Boost[]
-  nfts           NFT[]
-  quests         Quest[]
-  spins          Spin?
-  referredByUser User?         @relation("UserReferrals", fields: [referredBy], references: [id])
-  referrals      User[]        @relation("UserReferrals")
-  vips           VIP[]
-  withdrawals    Withdrawal[]
-  transactions   Transaction[]
+  id                   String    @id @default(uuid())
+  telegramId           String    @unique
+  username             String?
+  clickBalance         Float     @default(0) @map("kvnc_balance")
+  kunaBalance          Float     @default(0) @map("kuna_balance")
+  energy               Int       @default(1000)
+  maxEnergy            Int       @default(1000) @map("max_energy")
+  lastEnergyUpdate     DateTime  @default(now()) @map("last_energy_update")
+  activePickaxeRarity  String    @default("COMMON") @map("active_pickaxe_rarity")
+  tonWallet            String?   @map("ton_wallet")
+  totalClicks          Int       @default(0) @map("total_clicks")
+  dailyClicks          Int       @default(0) @map("daily_clicks")
+  lastClickDate        DateTime  @default(now()) @map("last_click_date")
+  referredBy           String?   @map("referred_by")
+  referralCount        Int       @default(0) @map("referral_count")
+  lastBonusDate        DateTime? @map("last_bonus_date")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  nfts        NFT[]
+  withdrawals Withdrawal[]
+  quests      Quest[]
+
+  referredByUser User?  @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals      User[] @relation("UserReferrals")
 
   @@map("users")
 }
 
 model NFT {
   id              Int       @id @default(autoincrement())
-  userId          Int       @map("user_id")
+  userId          String    @map("user_id")
   tokenId         Int       @map("token_id")
   contractAddress String    @map("contract_address")
   rarity          String
@@ -56,22 +56,38 @@ model NFT {
   stakeStartDate  DateTime? @map("stake_start_date")
   staked          Boolean   @default(false)
   stakingReward   Float     @default(0.1) @map("staking_reward")
-  user            User      @relation(fields: [userId], references: [id])
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("nfts")
 }
 
 model Withdrawal {
   id          Int       @id @default(autoincrement())
-  userId      Int       @map("user_id")
+  userId      String    @map("user_id")
   amount      Float
   status      String    @default("pending")
   tonAddress  String    @map("ton_address")
   requestedAt DateTime  @default(now()) @map("requested_at")
   processedAt DateTime? @map("processed_at")
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("withdrawals")
+}
+
+model Quest {
+  id          Int       @id @default(autoincrement())
+  userId      String    @map("user_id")
+  type        String
+  target      Int
+  progress    Int       @default(0)
+  completed   Boolean   @default(false)
+  reward      Float
+  questDate   DateTime  @map("quest_date")
+  completedAt DateTime? @map("completed_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, questDate])
+  @@map("quests")
 }
 
 model PoolTracking {
@@ -85,88 +101,14 @@ model PoolTracking {
   @@map("pool_tracking")
 }
 
-model Quest {
-  id          Int       @id @default(autoincrement())
-  userId      Int       @map("user_id")
-  type        String
-  target      Int
-  progress    Int       @default(0)
-  completed   Boolean   @default(false)
-  reward      Float     @default(0)
-  date        DateTime  @default(now()) @map("quest_date")
-  completedAt DateTime? @map("completed_at")
-  user        User      @relation(fields: [userId], references: [id])
-
-  @@unique([userId, type, date])
-  @@map("quests")
-}
-
-model Achievement {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  type        String
-  name        String
-  description String
-  reward      Float
-  unlockedAt  DateTime @default(now()) @map("unlocked_at")
-  user        User     @relation(fields: [userId], references: [id])
-
-  @@unique([userId, type])
-  @@map("achievements")
-}
-
-model Spin {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @unique @map("user_id")
-  lastSpin   DateTime @default(now()) @map("last_spin")
-  reward     Float?
-  rewardType String?
-  user       User     @relation(fields: [userId], references: [id])
-
-  @@map("spins")
-}
-
-model Boost {
+model PriceHistory {
   id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  type      String
-  expiresAt DateTime @map("expires_at")
-  active    Boolean  @default(true)
-  user      User     @relation(fields: [userId], references: [id])
+  usdt      Float
+  gram      Float
+  volume24h Float
+  liquidity Float
+  marketCap Float
+  createdAt DateTime @default(now())
 
-  @@map("boosts")
-}
-
-model VIP {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  level     String   @default("gold")
-  expiresAt DateTime @map("expires_at")
-  active    Boolean  @default(true)
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@map("vips")
-}
-
-model HalvingEvent {
-  id          Int      @id @default(autoincrement())
-  epoch       Int
-  totalClicks Int      @map("total_clicks")
-  oldReward   Float    @map("old_reward")
-  newReward   Float    @map("new_reward")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@map("halving_events")
-}
-
-model Transaction {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  type      String
-  amount    Float
-  meta      String?
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@map("transactions")
+  @@index([createdAt])
 }

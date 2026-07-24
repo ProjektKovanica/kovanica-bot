@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -42,19 +43,15 @@ async function backupDatabase() {
         const filename = `backup_${timestamp}.sql`;
         const filepath = path.join(BACKUP_DIR, filename);
 
-        const dbUrl = process.env.DATABASE_URL || '';
-        const match = dbUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-        
-        if (!match) {
-            throw new Error('Ne mogu parsirati DATABASE_URL');
+        const dbUrl = (process.env.DATABASE_URL || '').split('?')[0];
+        if (!dbUrl) {
+            throw new Error('DATABASE_URL nije postavljen');
         }
-
-        const [, user, password, host, port, database] = match;
 
         console.log(`🔄 Kreiranje backup-a: ${filename}`);
 
         const { stdout, stderr } = await execAsync(
-            `PGPASSWORD="${password}" pg_dump -h ${host} -p ${port} -U ${user} -d ${database} > ${filepath}`
+            `pg_dump "${dbUrl}" > ${filepath}`
         );
 
         if (stderr && !stderr.includes('WARNING')) {
@@ -83,7 +80,7 @@ async function backupDatabase() {
     }
 }
 
-const isMainModule = process.argv[1] && require.main === module;
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isMainModule) {
     backupDatabase()
         .then(result => {
